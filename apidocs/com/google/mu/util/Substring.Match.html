@@ -184,8 +184,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isFollowedBy(com.google.mu.util.CharPredicate)" class="member-name-link">isFollowedBy</a><wbr>(<a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;lookahead)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns true if the match is immediately followed by a character that matches the
- <code>lookahead</code> predicate.</div>
+<div class="block">Returns true if the match is immediately followed by a character that matches the <code>
+ lookahead</code> predicate.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isFollowedBy(java.lang.String)" class="member-name-link">isFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookahead)</code></div>
@@ -395,8 +395,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Substring.Match.html" title="class in com.google.mu.util">Substring.Match</a></span>&nbsp;<span class="element-name">skip</span><wbr><span class="parameters">(int&nbsp;fromBeginning,
  int&nbsp;fromEnd)</span></div>
 <div class="block">Returns a new instance that's otherwise equivalent except with <code>fromBeginning</code>
- characters skipped from the beginning and <code>fromEnd</code> characters skipped from the end.
- If there are fewer characters, an empty match is returned.
+ characters skipped from the beginning and <code>fromEnd</code> characters skipped from the end. If
+ there are fewer characters, an empty match is returned.
 
  <p>For example, <code>first("hello").in("say hello").get().skip(2, 1)</code> returns "ll".</div>
 <dl class="notes">
@@ -470,8 +470,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>isFollowedBy</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isFollowedBy</span><wbr><span class="parameters">(<a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;lookahead)</span></div>
-<div class="block">Returns true if the match is immediately followed by a character that matches the
- <code>lookahead</code> predicate.</div>
+<div class="block">Returns true if the match is immediately followed by a character that matches the <code>
+ lookahead</code> predicate.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.0</dd>
@@ -550,9 +550,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  int&nbsp;end)</span></div>
 <div class="block">Returns a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link"><code>CharSequence</code></a> instance which is a sub-range of this <code>Match</code>.
 
- <p>For example, if this <code>Match</code> points to the range of <code>"wood"</code> from
- the <code>"Holywood"</code> string, calling <code>subSequence(1, 3)</code> will point to the
- range of <code>"oo"</code> from the original string.
+ <p>For example, if this <code>Match</code> points to the range of <code>"wood"</code> from the <code>
+ "Holywood"</code> string, calling <code>subSequence(1, 3)</code> will point to the range of <code>"oo"</code>
+ from the original string.
 
  <p>Can be used to further reduce the matched range manually.</div>
 <dl class="notes">

@@ -203,6 +203,7 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  <h2 id="from-apache-stringutils-to-substring-heading">From Apache StringUtils to Substring</h2>
+
  <table border="1" cellpadding="6" cellspacing="0">
  <thead><tr><th>StringUtils Style</th><th>Substring Style</th></tr></thead>
 
@@ -557,8 +558,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#all(com.google.mu.util.CharPredicate)" class="member-name-link">all</a><wbr>(<a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in
- the input string.</div>
+<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in the input
+ string.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#all(java.lang.String)" class="member-name-link">all</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;substr)</code></div>
@@ -569,8 +570,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#all(java.util.regex.Pattern)" class="member-name-link">all</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;pattern)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences of <code>pattern</code> in
- the input string.</div>
+<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences of <code>pattern</code> in the input string.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#before(com.google.mu.util.Substring.Pattern)" class="member-name-link">before</a><wbr>(<a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a>&nbsp;delimiter)</code></div>
@@ -590,8 +590,8 @@ loadScripts(document, 'script');</script>
  char&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Similar to <a href="#between(char,char)"><code>between(char, char)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(char,char)"><code>between(char, char)</code></a> but allows to use alternative bound styles to include
+ or exclude the delimiters at both ends.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.BoundStyle,com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.BoundStyle)" class="member-name-link">between</a><wbr>(<a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a>&nbsp;open,
@@ -599,8 +599,8 @@ loadScripts(document, 'script');</script>
  <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a>&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Similar to <a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.Pattern)"><code>between(Pattern, Pattern)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.Pattern)"><code>between(Pattern, Pattern)</code></a> but allows to use alternative bound styles to
+ include or exclude the delimiters at both ends.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.Pattern)" class="member-name-link">between</a><wbr>(<a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a>&nbsp;open,
@@ -614,8 +614,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Similar to <a href="#between(java.lang.String,java.lang.String)"><code>between(String, String)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(java.lang.String,java.lang.String)"><code>between(String, String)</code></a> but allows to use alternative bound styles to
+ include or exclude the delimiters at both ends.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#between(java.lang.String,java.lang.String)" class="member-name-link">between</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;open,
@@ -1069,8 +1069,8 @@ loadScripts(document, 'script');</script>
 <h3>all</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></span>&nbsp;<span class="element-name">all</span><wbr><span class="parameters">(<a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher)</span></div>
-<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in
- the input string. It's equivalent to <code>first(matcher).repeatedly()</code>.</div>
+<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in the input
+ string. It's equivalent to <code>first(matcher).repeatedly()</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>8.6</dd>
@@ -1083,8 +1083,8 @@ loadScripts(document, 'script');</script>
 <h3>all</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></span>&nbsp;<span class="element-name">all</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;pattern)</span></div>
-<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences of <code>pattern</code> in
- the input string. It's equivalent to <code>first(pattern).repeatedly()</code>.</div>
+<div class="block">Returns a <a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences of <code>pattern</code> in the input string.
+ It's equivalent to <code>first(pattern).repeatedly()</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.5</dd>
@@ -1097,20 +1097,20 @@ loadScripts(document, 'script');</script>
 <h3>topLevelGroups</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></span>&nbsp;<span class="element-name">topLevelGroups</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;regexPattern)</span></div>
-<div class="block">Returns a repeating pattern representing all the top-level groups from <code>regexPattern</code>.
- If <code>regexPattern</code> has no capture group, the entire pattern is considered the only group.
+<div class="block">Returns a repeating pattern representing all the top-level groups from <code>regexPattern</code>. If
+ <code>regexPattern</code> has no capture group, the entire pattern is considered the only group.
 
- <p>For example, <code>topLevelGroups(compile("(g+)(o+)")).from("ggooo")</code> will return
- <code>["gg", "ooo"]</code>.
+ <p>For example, <code>topLevelGroups(compile("(g+)(o+)")).from("ggooo")</code> will return <code>
+ ["gg", "ooo"]</code>.
 
  <p>Nested capture groups are not taken into account. For example: <code>
- topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")</code> will return
- <code>["foofoobar", "zoo"]</code>.
+ topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")</code> will return <code>
+ ["foofoobar", "zoo"]</code>.
 
  <p>Note that the top-level groups are statically determined by the <code>regexPattern</code>.
  Particularly, quantifiers on a capture group do not increase or decrease the number of captured
- groups. That is, when matching <code>"(foo)+"</code> against <code>"foofoofoo"</code>, there will only
- be one top-level group, with <code>"foo"</code> as the value.</div>
+ groups. That is, when matching <code>"(foo)+"</code> against <code>"foofoofoo"</code>, there will only be
+ one top-level group, with <code>"foo"</code> as the value.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>5.3</dd>
@@ -1279,8 +1279,8 @@ loadScripts(document, 'script');</script>
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;openBound,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</span></div>
-<div class="block">Similar to <a href="#between(java.lang.String,java.lang.String)"><code>between(String, String)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(java.lang.String,java.lang.String)"><code>between(String, String)</code></a> but allows to use alternative bound styles to
+ include or exclude the delimiters at both ends.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>7.2</dd>
@@ -1314,8 +1314,8 @@ loadScripts(document, 'script');</script>
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;openBound,
  char&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</span></div>
-<div class="block">Similar to <a href="#between(char,char)"><code>between(char, char)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(char,char)"><code>between(char, char)</code></a> but allows to use alternative bound styles to include
+ or exclude the delimiters at both ends.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>7.2</dd>
@@ -1348,8 +1348,8 @@ loadScripts(document, 'script');</script>
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;openBound,
  <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a>&nbsp;close,
  <a href="Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a>&nbsp;closeBound)</span></div>
-<div class="block">Similar to <a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.Pattern)"><code>between(Pattern, Pattern)</code></a> but allows to use alternative bound styles
- to include or exclude the delimiters at both ends.</div>
+<div class="block">Similar to <a href="#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.Pattern)"><code>between(Pattern, Pattern)</code></a> but allows to use alternative bound styles to
+ include or exclude the delimiters at both ends.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>7.2</dd>

@@ -281,41 +281,34 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color">
 <div class="block">Parses the given regular expression string and returns its <a href="../RegexPattern.html" title="interface in com.google.common.labs.regex"><code>RegexPattern</code></a> representation.</div>
 </div>
-<div class="col-first even-row-color"><code>static <a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.</span><code><a href="../RegexPattern.html#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;regex)</code></div>
+<div class="col-first even-row-color"><code>default <a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.</span><code><a href="../RegexPattern.html#precededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">precededBy</a><wbr>(<a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
 <div class="col-last even-row-color">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">use <a href="../RegexPattern.html#of(java.lang.String)"><code>of(java.lang.String)</code></a> instead</div>
-</div>
-</div>
-<div class="col-first odd-row-color"><code>default <a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.</span><code><a href="../RegexPattern.html#precededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">precededBy</a><wbr>(<a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
-<div class="col-last odd-row-color">
 <div class="block">Returns a pattern that matches <code>this</code> only if it is preceded by <code>prefix</code>.</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.Lookaround.Lookahead.</span><code><a href="../RegexPattern.Lookaround.Lookahead.html#target()" class="member-name-link">target</a>()</code></div>
-<div class="col-last even-row-color">
-<div class="block">Returns the value of the <code>target</code> record component.</div>
-</div>
 <div class="col-first odd-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.Lookaround.Lookbehind.</span><code><a href="../RegexPattern.Lookaround.Lookbehind.html#target()" class="member-name-link">target</a>()</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.Lookaround.Lookahead.</span><code><a href="../RegexPattern.Lookaround.Lookahead.html#target()" class="member-name-link">target</a>()</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Returns the value of the <code>target</code> record component.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.Lookaround.NegativeLookahead.</span><code><a href="../RegexPattern.Lookaround.NegativeLookahead.html#target()" class="member-name-link">target</a>()</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.Lookaround.Lookbehind.</span><code><a href="../RegexPattern.Lookaround.Lookbehind.html#target()" class="member-name-link">target</a>()</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns the value of the <code>target</code> record component.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.Lookaround.NegativeLookbehind.</span><code><a href="../RegexPattern.Lookaround.NegativeLookbehind.html#target()" class="member-name-link">target</a>()</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.Lookaround.NegativeLookahead.</span><code><a href="../RegexPattern.Lookaround.NegativeLookahead.html#target()" class="member-name-link">target</a>()</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Returns the value of the <code>target</code> record component.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.Lookaround.</span><code><a href="../RegexPattern.Lookaround.html#target()" class="member-name-link">target</a>()</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RegexPattern.Lookaround.NegativeLookbehind.</span><code><a href="../RegexPattern.Lookaround.NegativeLookbehind.html#target()" class="member-name-link">target</a>()</code></div>
 <div class="col-last even-row-color">
+<div class="block">Returns the value of the <code>target</code> record component.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">RegexPattern.Lookaround.</span><code><a href="../RegexPattern.Lookaround.html#target()" class="member-name-link">target</a>()</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Returns the AST node representing the pattern inside the lookaround.</div>
 </div>
 </div>

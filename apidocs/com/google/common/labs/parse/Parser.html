@@ -67,11 +67,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#one(char)" tabindex="0">one(char)</a></li>
-<li><a href="#one(com.google.common.labs.parse.CharacterSet)" tabindex="0">one(CharacterSet)</a></li>
 <li><a href="#one(java.lang.String)" tabindex="0">one(String)</a></li>
 <li><a href="#one(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">one(CharPredicate, String)</a></li>
 <li><a href="#consecutive(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">consecutive(CharPredicate, String)</a></li>
-<li><a href="#consecutive(com.google.common.labs.parse.CharacterSet)" tabindex="0">consecutive(CharacterSet)</a></li>
 <li><a href="#consecutive(java.lang.String)" tabindex="0">consecutive(String)</a></li>
 <li><a href="#chars(int)" tabindex="0">chars(int)</a></li>
 <li><a href="#word(java.lang.String)" tabindex="0">word(String)</a></li>
@@ -89,7 +87,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Production)" tabindex="0">quotedByWithEscapes(String, char, Production)</a></li>
 <li><a href="#nestedBy(java.lang.String,java.lang.String)" tabindex="0">nestedBy(String, String)</a></li>
 <li><a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" tabindex="0">nestedByWithEscapes(char, char, Production)</a></li>
-<li><a href="#bmpCodeUnit()" tabindex="0">bmpCodeUnit()</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Parser, BiFunction)</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Production, BiFunction)</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" tabindex="0">sequence(Parser.OrEmpty, Parser.OrEmpty, BiFunction)</a></li>
@@ -115,7 +112,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#atLeastOnceDelimitedBy(java.lang.String,java.util.function.BinaryOperator)" tabindex="0">atLeastOnceDelimitedBy(String, BinaryOperator)</a></li>
 <li><a href="#atLeastOnceDelimitedBy(java.lang.String,java.util.stream.Collector)" tabindex="0">atLeastOnceDelimitedBy(String, Collector)</a></li>
 <li><a href="#atLeastOnceDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" tabindex="0">atLeastOnceDelimitedBy(Parser, Collector)</a></li>
-<li><a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)" tabindex="0">zeroOrMore(CharacterSet)</a></li>
 <li><a href="#zeroOrMore(java.lang.String)" tabindex="0">zeroOrMore(String)</a></li>
 <li><a href="#zeroOrMore(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">zeroOrMore(CharPredicate, String)</a></li>
 <li><a href="#zeroOrMore()" tabindex="0">zeroOrMore()</a></li>
@@ -124,10 +120,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#zeroOrMoreDelimitedBy(java.lang.String,java.util.stream.Collector)" tabindex="0">zeroOrMoreDelimitedBy(String, Collector)</a></li>
 <li><a href="#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" tabindex="0">zeroOrMoreDelimitedBy(Parser, Collector)</a></li>
 <li><a href="#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" tabindex="0">zeroOrMoreDelimited(Parser, Production, String, BiCollector)</a></li>
-<li><a href="#withPrefixes(com.google.common.labs.parse.Parser)" tabindex="0">withPrefixes(Parser)</a></li>
-<li><a href="#withPostfixes(com.google.common.labs.parse.Parser)" tabindex="0">withPostfixes(Parser)</a></li>
-<li><a href="#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">withPostfixes(Parser, BiFunction)</a></li>
-<li><a href="#withPostfixes(java.lang.String,java.util.function.UnaryOperator)" tabindex="0">withPostfixes(String, UnaryOperator)</a></li>
 <li><a href="#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">between(Parser.OrEmpty, Parser.OrEmpty)</a></li>
 <li><a href="#map(java.util.function.Function)" tabindex="0">map(Function)</a></li>
 <li><a href="#mapWithIndex(com.google.mu.function.ObjInt2Function)" tabindex="0">mapWithIndex(ObjInt2Function)</a></li>
@@ -141,7 +133,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" tabindex="0">followedByZeroOrMore(String, UnaryOperator)</a></li>
 <li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">followedByZeroOrMore(Parser, BiFunction)</a></li>
 <li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" tabindex="0">followedByZeroOrMore(Parser)</a></li>
-<li><a href="#followedByOrEof(com.google.common.labs.parse.Parser)" tabindex="0">followedByOrEof(Parser)</a></li>
 <li><a href="#optionallyFollowedBy(java.lang.String)" tabindex="0">optionallyFollowedBy(String)</a></li>
 <li><a href="#optionallyFollowedBy(com.google.common.labs.parse.Parser)" tabindex="0">optionallyFollowedBy(Parser)</a></li>
 <li><a href="#optionallyFollowedBy(java.lang.String,java.util.function.Function)" tabindex="0">optionallyFollowedBy(String, Function)</a></li>
@@ -252,7 +243,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -332,34 +323,20 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Returns a parser that matches <code>this</code> pattern enclosed between <code>prefix</code> and <code>
  suffix</code>, both allowed to be empty.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#bmpCodeUnit()" class="member-name-link">bmpCodeUnit</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">use <a href="Parsers.html#BMP_CODE_UNIT"><code>Parsers.BMP_CODE_UNIT</code></a> instead.</div>
-</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#caseInsensitive(java.lang.String)" class="member-name-link">caseInsensitive</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#caseInsensitive(java.lang.String)" class="member-name-link">caseInsensitive</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches a literal <code>string</code> case insensitively.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#caseInsensitiveWord(java.lang.String)" class="member-name-link">caseInsensitiveWord</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#caseInsensitiveWord(java.lang.String)" class="member-name-link">caseInsensitiveWord</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block"><code>caseInsensitiveWord("or")</code> matches "Or" and "OR", but not "orange".</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#chars(int)" class="member-name-link">chars</a><wbr>(int&nbsp;n)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#chars(int)" class="member-name-link">chars</a><wbr>(int&nbsp;n)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Consumes exactly <code>n</code> consecutive characters.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#consecutive(com.google.common.labs.parse.CharacterSet)" class="member-name-link">consecutive</a><wbr>(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#consecutive(java.lang.String)"><code>consecutive(String)</code></a> instead</div>
-</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#consecutive(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">consecutive</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher,
@@ -414,138 +391,123 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">The current production may optionally be followed by <code>suffix</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#followedByOrEof(com.google.common.labs.parse.Parser)" class="member-name-link">followedByOrEof</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
-     followedByOrEof(one("[\r\n]"))</code>.</div>
-</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the result functions iteratively.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the <code>postfixFunction</code> iteratively.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> string
  zero or more times and applies the <code>postfixFunction</code> iteratively.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hexDigits(int)" class="member-name-link">hexDigits</a><wbr>(int&nbsp;n)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hexDigits(int)" class="member-name-link">hexDigits</a><wbr>(int&nbsp;n)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches <code>n</code> hex digits of <code>[0-9a-fA-F]</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isPrefixOf(java.lang.String)" class="member-name-link">isPrefixOf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isPrefixOf(java.lang.String)" class="member-name-link">isPrefixOf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if this parser represents a non-empty prefix of the given <code>input</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;p1,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;p1,
  <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p2,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p1,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>; useful
  for matching a pattern of characters without spaces in between.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
  <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> are called.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;rule)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;rule)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Specifies that the optional (or zero-or-more) <code>rule</code> should be matched literally even if
  <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is called.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#map(java.util.function.Function)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#map(java.util.function.Function)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">If this parser matches, returns the result of applying the given function to the match.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapWithIndex(com.google.mu.function.ObjInt2Function)" class="member-name-link">mapWithIndex</a><wbr>(<a href="../../../mu/function/ObjInt2Function.html" title="interface in com.google.mu.function">ObjInt2Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapWithIndex(com.google.mu.function.ObjInt2Function)" class="member-name-link">mapWithIndex</a><wbr>(<a href="../../../mu/function/ObjInt2Function.html" title="interface in com.google.mu.function">ObjInt2Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">If this parser matches, returns the result of applying the given function, with the parse
  result of type <code>T</code>, the beginning index (inclusive) and the end index (exclusive) as
  parameters passed to the function.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#matches(java.lang.String)" class="member-name-link">matches</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#matches(java.lang.String)" class="member-name-link">matches</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if this parser matches the entirety of the <code>input</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedBy(java.lang.String,java.lang.String)" class="member-name-link">nestedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;before,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedBy(java.lang.String,java.lang.String)" class="member-name-link">nestedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;before,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;after)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches the characters nested by <code>before</code> and <code>after</code>, supporting balanced nesting,
  and returns the nested string in between.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;before,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;before,
  char&nbsp;after,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches the characters nested by <code>before</code> and <code>after</code> with backslash escapes,
  supporting balanced nesting, and returns the unescaped nested string in between.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedBy(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">notFollowedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">A form of negative lookahead such that the match is rejected if followed by <code>suffix</code>.</div>
-</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedBy(java.lang.String)" class="member-name-link">notFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedBy(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">notFollowedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">A form of negative lookahead such that the match is rejected if followed by <code>suffix</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedByEof()" class="member-name-link">notFollowedByEof</a>()</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedBy(java.lang.String)" class="member-name-link">notFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">A form of negative lookahead such that the match is rejected if followed by <code>suffix</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedByEof()" class="member-name-link">notFollowedByEof</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">A form of negative lookahead such that the match is rejected if followed by EOF.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notImmediatelyFollowedBy(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">notImmediatelyFollowedBy</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;predicate,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notImmediatelyFollowedBy(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">notImmediatelyFollowedBy</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;predicate,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">A form of negative lookahead such that the match is rejected if <em>immediately</em> followed
  by (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between)
  a character that matches <code>predicate</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#one(char)" class="member-name-link">one</a><wbr>(char&nbsp;c)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#one(char)" class="member-name-link">one</a><wbr>(char&nbsp;c)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches the given character <code>c</code>.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#one(com.google.common.labs.parse.CharacterSet)" class="member-name-link">one</a><wbr>(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#one(java.lang.String)"><code>one(String)</code></a> instead</div>
-</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#one(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">one</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher,
@@ -825,37 +787,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">If this parser matches, returns the given result.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#withPostfixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPostfixes</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)"><code>followedByZeroOrMore(Parser)</code></a> instead.</div>
-</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final &lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">withPostfixes</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;operator,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)"><code>followedByZeroOrMore(Parser, BiFunction)</code></a> instead.</div>
-</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#withPostfixes(java.lang.String,java.util.function.UnaryOperator)" class="member-name-link">withPostfixes</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;operator,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)"><code>followedByZeroOrMore(String, UnaryOperator)</code></a> instead.</div>
-</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="Parsers.Suffix.html#withPrefixes(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)"><code>withPrefixes(prefix,
-     suffix)</code></a> instead</div>
-</div>
-</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#word()" class="member-name-link">word</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
@@ -871,56 +802,49 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching the current parser zero or more times.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)" class="member-name-link">zeroOrMore</a><wbr>(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#zeroOrMore(java.lang.String)"><code>zeroOrMore(String)</code></a> instead.</div>
-</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMore(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">zeroOrMore</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToMatch,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMore(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">zeroOrMore</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToMatch,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching consecutive <code>charsToMatch</code> zero or more times.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMore(java.lang.String)" class="member-name-link">zeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMore(java.lang.String)" class="member-name-link">zeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching consecutive characters in the <code>characterClass</code> zero or
  more times.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMore(java.util.stream.Collector)" class="member-name-link">zeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMore(java.util.stream.Collector)" class="member-name-link">zeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching the current parser zero or more times.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;second,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter,
  <a href="../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a>&lt;? super A, ? super B, R&gt;&nbsp;collector)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Applies <code>first</code> and the optional <code>second</code> pattern in order, for zero or more times,
  collecting the results using the provided <a href="../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;delimiter,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;delimiter,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Starts a fluent chain for matching the current parser zero or more times, delimited by <code>
- delimiter</code>.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(java.lang.String)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching the current parser zero or more times, delimited by <code>
  delimiter</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(java.lang.String,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(java.lang.String)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Starts a fluent chain for matching the current parser zero or more times, delimited by <code>
+ delimiter</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#zeroOrMoreDelimitedBy(java.lang.String,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Starts a fluent chain for matching the current parser zero or more times, delimited by <code>
  delimiter</code>.</div>
 </div>
@@ -950,23 +874,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">one</span><wbr><span class="parameters">(char&nbsp;c)</span></div>
 <div class="block">Matches the given character <code>c</code>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>9.9.9</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="one(com.google.common.labs.parse.CharacterSet)">
-<h3>one</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">one</span><wbr><span class="parameters">(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#one(java.lang.String)"><code>one(String)</code></a> instead</div>
-</div>
-<div class="block">Matches a character in <code>characterSet</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.9</dd>
@@ -1024,23 +931,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">consecutive</span><wbr><span class="parameters">(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</span></div>
 <div class="block">Matches one or more consecutive characters as specified by <code>matcher</code>.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="consecutive(com.google.common.labs.parse.CharacterSet)">
-<h3>consecutive</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">consecutive</span><wbr><span class="parameters">(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#consecutive(java.lang.String)"><code>consecutive(String)</code></a> instead</div>
-</div>
-<div class="block">Matches one or more consecutive characters contained in <code>characterSet</code>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>9.4</dd>
-</dl>
 </div>
 </section>
 </li>
@@ -1370,18 +1260,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dt>Since:</dt>
 <dd>10.3</dd>
 </dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="bmpCodeUnit()">
-<h3>bmpCodeUnit</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</span>&nbsp;<span class="element-name">bmpCodeUnit</span>()</div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">use <a href="Parsers.html#BMP_CODE_UNIT"><code>Parsers.BMP_CODE_UNIT</code></a> instead.</div>
-</div>
 </div>
 </section>
 </li>
@@ -1839,23 +1717,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="zeroOrMore(com.google.common.labs.parse.CharacterSet)">
-<h3>zeroOrMore</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">zeroOrMore</span><wbr><span class="parameters">(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#zeroOrMore(java.lang.String)"><code>zeroOrMore(String)</code></a> instead.</div>
-</div>
-<div class="block">For example: <code>zeroOrMore(charsIn("[a-zA-Z0-9_-]"))</code>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>9.9.9</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="zeroOrMore(java.lang.String)">
 <h3>zeroOrMore</h3>
 <div class="horizontal-scroll">
@@ -2020,57 +1881,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dt>Since:</dt>
 <dd>9.4</dd>
 </dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="withPrefixes(com.google.common.labs.parse.Parser)">
-<h3>withPrefixes</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">withPrefixes</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="Parsers.Suffix.html#withPrefixes(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)"><code>withPrefixes(prefix,
-     suffix)</code></a> instead</div>
-</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="withPostfixes(com.google.common.labs.parse.Parser)">
-<h3>withPostfixes</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">withPostfixes</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)"><code>followedByZeroOrMore(Parser)</code></a> instead.</div>
-</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">
-<h3>withPostfixes</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">withPostfixes</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;operator,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)"><code>followedByZeroOrMore(Parser, BiFunction)</code></a> instead.</div>
-</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="withPostfixes(java.lang.String,java.util.function.UnaryOperator)">
-<h3>withPostfixes</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">withPostfixes</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;operator,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)"><code>followedByZeroOrMore(String, UnaryOperator)</code></a> instead.</div>
-</div>
 </div>
 </section>
 </li>
@@ -2298,25 +2108,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.8</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="followedByOrEof(com.google.common.labs.parse.Parser)">
-<h3>followedByOrEof</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByOrEof</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
-     followedByOrEof(one("[\r\n]"))</code>.</div>
-</div>
-<div class="block">Specifies that the matched pattern must be either followed by <code>suffix</code> or EOF. No other
- suffixes allowed.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>9.4</dd>
 </dl>
 </div>
 </section>

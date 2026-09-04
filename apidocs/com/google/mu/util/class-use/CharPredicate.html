@@ -77,20 +77,6 @@ loadScripts(document, 'script');</script>
 <li>
 <section class="detail" id="com.google.common.labs.parse">
 <h2>Uses of <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a> in <a href="../../../common/labs/parse/package-summary.html">com.google.common.labs.parse</a></h2>
-<div class="caption"><span>Classes in <a href="../../../common/labs/parse/package-summary.html">com.google.common.labs.parse</a> that implement <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></span></div>
-<div class="summary-table three-column-summary">
-<div class="table-header col-first">Modifier and Type</div>
-<div class="table-header col-second">Class</div>
-<div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code>final class&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="../../../common/labs/parse/CharacterSet.html" class="type-name-link" title="class in com.google.common.labs.parse">CharacterSet</a></code></div>
-<div class="col-last even-row-color">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use the <code>Parser</code> overloads that directly take a <code>characterClass</code> string
-     parameter, such as <a href="../../../common/labs/parse/Parser.html#consecutive(java.lang.String)"><code>Parser.consecutive(String)</code></a>.</div>
-</div>
-</div>
-</div>
 <div class="caption"><span>Methods in <a href="../../../common/labs/parse/package-summary.html">com.google.common.labs.parse</a> with parameters of type <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></span></div>
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -239,8 +225,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>default <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">CharPredicate.</span><code><a href="../CharPredicate.html#or(java.lang.String)" class="member-name-link">or</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;chars)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns a <a href="../CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> that evaluates true if either this evaluates to true,
- or the character is equal to any of <code>chars</code>.</div>
+<div class="block">Returns a <a href="../CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> that evaluates true if either this evaluates to true, or the
+ character is equal to any of <code>chars</code>.</div>
 </div>
 <div class="col-first odd-row-color"><code>default <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">CharPredicate.</span><code><a href="../CharPredicate.html#orRange(char,char)" class="member-name-link">orRange</a><wbr>(char&nbsp;from,
@@ -252,7 +238,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>default <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">CharPredicate.</span><code><a href="../CharPredicate.html#precomputeForAscii()" class="member-name-link">precomputeForAscii</a>()</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns an equivalent <a href="../CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but pre-computes the results for all ASCII characters.</div>
+<div class="block">Returns an equivalent <a href="../CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but pre-computes the results for all ASCII
+ characters.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">CharPredicate.</span><code><a href="../CharPredicate.html#range(char,char)" class="member-name-link">range</a><wbr>(char&nbsp;from,
@@ -269,8 +256,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#all(com.google.mu.util.CharPredicate)" class="member-name-link">all</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in
- the input string.</div>
+<div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in the input
+ string.</div>
 </div>
 <div class="col-first odd-row-color"><code>default <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">CharPredicate.</span><code><a href="../CharPredicate.html#and(com.google.mu.util.CharPredicate)" class="member-name-link">and</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;that)</code></div>
@@ -292,8 +279,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>boolean</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Substring.Match.</span><code><a href="../Substring.Match.html#isFollowedBy(com.google.mu.util.CharPredicate)" class="member-name-link">isFollowedBy</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;lookahead)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns true if the match is immediately followed by a character that matches the
- <code>lookahead</code> predicate.</div>
+<div class="block">Returns true if the match is immediately followed by a character that matches the <code>
+ lookahead</code> predicate.</div>
 </div>
 <div class="col-first odd-row-color"><code>boolean</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Substring.Match.</span><code><a href="../Substring.Match.html#isPrecededBy(com.google.mu.util.CharPredicate)" class="member-name-link">isPrecededBy</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;lookbehind)</code></div>
@@ -321,18 +308,18 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>final <a href="../Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Substring.Pattern.</span><code><a href="../Substring.Pattern.html#separatedBy(com.google.mu.util.CharPredicate)" class="member-name-link">separatedBy</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;separator)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns an otherwise equivalent <code>Pattern</code>, except it only matches if it's next
- to the beginning of the string, the end of the string, or the <code>separator</code> character(s).</div>
+<div class="block">Returns an otherwise equivalent <code>Pattern</code>, except it only matches if it's next to the
+ beginning of the string, the end of the string, or the <code>separator</code> character(s).</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Substring.Pattern.</span><code><a href="../Substring.Pattern.html#separatedBy(com.google.mu.util.CharPredicate,com.google.mu.util.CharPredicate)" class="member-name-link">separatedBy</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;separatorBefore,
  <a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;separatorAfter)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns an otherwise equivalent <code>Pattern</code>, except it requires the
- beginning of the match must either be the beginning of the string, or be separated from the rest
- of the string by the <code>separatorBefore</code> character; and the end of the match must either
- be the end of the string, or be separated from the rest of the string by the <code>
- separatorAfter</code> character.</div>
+<div class="block">Returns an otherwise equivalent <code>Pattern</code>, except it requires the beginning of the
+ match must either be the beginning of the string, or be separated from the rest of the string
+ by the <code>separatorBefore</code> character; and the end of the match must either be the end of
+ the string, or be separated from the rest of the string by the <code>separatorAfter</code>
+ character.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#trailing(com.google.mu.util.CharPredicate)" class="member-name-link">trailing</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher)</code></div>

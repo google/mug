@@ -220,8 +220,8 @@ loadScripts(document, 'script');</script>
  <p>An empty stream is returned if this pattern has no matches in the <code>input</code> string.</div>
 <dl class="notes">
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IndexOutOfBoundsException.html" title="class or interface in java.lang" class="external-link">IndexOutOfBoundsException</a></code> - if <code>fromIndex</code> is negative or greater than
-     <code>input.length()</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IndexOutOfBoundsException.html" title="class or interface in java.lang" class="external-link">IndexOutOfBoundsException</a></code> - if <code>fromIndex</code> is negative or greater than <code>
+     input.length()</code></dd>
 <dt>Since:</dt>
 <dd>8.2</dd>
 </dl>
@@ -359,25 +359,23 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
 <div class="block">Returns a <a href="stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> of key value pairs from <code>input</code>.
 
- <p>The key-value pairs are delimited by this repeating pattern.
- with the key and value separated by <code>keyValueSeparator</code>.
+ <p>The key-value pairs are delimited by this repeating pattern. with the key and value
+ separated by <code>keyValueSeparator</code>.
 
- <p>Empty parts (including leading and trailing separator) are ignored.
- Although whitespaces are not trimmed. For example:
+ <p>Empty parts (including leading and trailing separator) are ignored. Although whitespaces
+ are not trimmed. For example:
 
  <pre><code>
  all(',').splitKeyValuesAround(first('='), "k1=v1,,k2=v2,")
  </code></pre>
- will result in a <code>BiStream</code> equivalent to <code>[(k1, v1), (k2, v2)]</code>,
- but <code>"k1=v1, ,k2=v2"</code> will fail to be split due to the whitespace after the first
- <code>','</code>.
 
- <p>Non-empty parts where <code>keyValueSeparator</code> is absent will result in
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.
+ will result in a <code>BiStream</code> equivalent to <code>[(k1, v1), (k2, v2)]</code>, but <code>
+ "k1=v1, ,k2=v2"</code> will fail to be split due to the whitespace after the first <code>','</code>.
+
+ <p>Non-empty parts where <code>keyValueSeparator</code> is absent will result in <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.
 
  <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
- empty parts. consider to use <a href="#split(java.lang.String)"><code>split(java.lang.String)</code></a> and <a href="Substring.Pattern.html#split(java.lang.CharSequence,java.util.function.BiFunction)"><code>Substring.Pattern.split(java.lang.CharSequence, java.util.function.BiFunction&lt;? super java.lang.String, ? super java.lang.String, ? extends T&gt;)</code></a> directly,
- such as:
+ empty parts. consider to use <a href="#split(java.lang.String)"><code>split(java.lang.String)</code></a> and <a href="Substring.Pattern.html#split(java.lang.CharSequence,java.util.function.BiFunction)"><code>Substring.Pattern.split(java.lang.CharSequence, java.util.function.BiFunction&lt;? super java.lang.String, ? super java.lang.String, ? extends T&gt;)</code></a> directly, such as:
 
  <pre><code>
  all(',')
@@ -413,8 +411,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
 <div class="block">Returns a <a href="stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> of key value pairs from <code>input</code>.
 
- <p>The key-value pairs are delimited by this repeating pattern.
- with the key and value separated by <code>keyValueSeparator</code>.
+ <p>The key-value pairs are delimited by this repeating pattern. with the key and value
+ separated by <code>keyValueSeparator</code>.
 
  <p>All keys and values are trimmed, with empty parts (including leading and trailing
  separator) ignored. For example:
@@ -422,14 +420,14 @@ loadScripts(document, 'script');</script>
  <pre><code>
  all(',').splitThenTrimKeyValuesAround(first('='), "k1 = v1, , k2=v2,")
  </code></pre>
+
  will result in a <code>BiStream</code> equivalent to <code>[(k1, v1), (k2, v2)]</code>.
 
- <p>Non-empty parts where <code>keyValueSeparator</code> is absent will result in
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.
+ <p>Non-empty parts where <code>keyValueSeparator</code> is absent will result in <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.
 
  <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
- empty parts. consider to use <a href="#split(java.lang.String)"><code>split(java.lang.String)</code></a> and <a href="Substring.Pattern.html#splitThenTrim(java.lang.CharSequence,java.util.function.BiFunction)"><code>Substring.Pattern.splitThenTrim(java.lang.CharSequence, java.util.function.BiFunction&lt;? super java.lang.String, ? super java.lang.String, ? extends T&gt;)</code></a> directly,
- such as:
+ empty parts. consider to use <a href="#split(java.lang.String)"><code>split(java.lang.String)</code></a> and <a href="Substring.Pattern.html#splitThenTrim(java.lang.CharSequence,java.util.function.BiFunction)"><code>Substring.Pattern.splitThenTrim(java.lang.CharSequence, java.util.function.BiFunction&lt;? super java.lang.String, ? super java.lang.String, ? extends T&gt;)</code></a> directly, such
+ as:
 
  <pre><code>
  all(',')
@@ -465,8 +463,8 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the alternation of this pattern from the <code>input</code> string, with the matched
  substring alternated with the trailing substring before the next match.
 
- <p>For example: to find bulleted items (strings prefixed by <code>1:</code>, <code>2:</code>,
- <code>456:</code> etc.), you can:
+ <p>For example: to find bulleted items (strings prefixed by <code>1:</code>, <code>2:</code>, <code>
+ 456:</code> etc.), you can:
 
  <pre><code>
  Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
