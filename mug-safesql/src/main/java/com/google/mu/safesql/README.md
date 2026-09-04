@@ -301,7 +301,7 @@ construction—areas where mistakes are easy to make and hard to find otherwise.
 
 ## Security Best Practices
 
-No additional best practices are needed: if your code compiles and the `SafeSql` object is succesfully constructed,
+No additional best practices are needed: if your code compiles and the `SafeSql` object is successfully constructed,
 your SQL is safe from injection.
 
 But just as a tip to avoid running into safety-related runtime errors during test: remember to identifier-quote
