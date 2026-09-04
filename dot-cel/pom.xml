@@ -37,7 +37,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.9.4</version>
+                <version>11.0</version>
               </path>
             </annotationProcessorPaths>
           </configuration>

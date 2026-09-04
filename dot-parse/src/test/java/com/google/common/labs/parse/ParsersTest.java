@@ -41,79 +41,92 @@ public class ParsersTest {
     assertThat(regex("[a-z]+").followedBy("!")).fromString("abc!").parsesTo("abc");
   }
 
-  @Test public void regex_emptyPattern_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_emptyPattern_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex(""));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: ");
   }
 
-  @Test public void regex_anchorStart_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_anchorStart_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("^a"));
     assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: ^");
   }
 
-  @Test public void regex_anchorEnd_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_anchorEnd_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a$"));
     assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: $");
   }
 
-  @Test public void regex_anchorWordBoundary_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_anchorWordBoundary_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("anchors are not allowed in regex parser: \\b");
   }
 
-  @Test public void regex_lookaheadPositive_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_lookaheadPositive_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?=b)");
   }
 
-  @Test public void regex_lookaheadNegative_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_lookaheadNegative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?!b)");
   }
 
-  @Test public void regex_backreferenceNumeric_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_backreferenceNumeric_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\1");
   }
 
-  @Test public void regex_backreferenceNamed_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_backreferenceNamed_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\k<foo>");
   }
 
-  @Test public void regex_quantifierZeroOrMore_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_quantifierZeroOrMore_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a*");
   }
 
-  @Test public void regex_sequenceOfOptionalPatterns_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_sequenceOfOptionalPatterns_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*foo?(c+)*"));
     assertThat(exception)
         .hasMessageThat()
         .isEqualTo("regex must not match empty string: a*foo?(c+)*");
   }
 
-  @Test public void regex_quantifierOptional_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_quantifierOptional_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a?"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a?");
   }
 
-  @Test public void regex_quantifierGroupOptional_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_quantifierGroupOptional_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(foo)?"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: (foo)?");
   }
 
-  @Test public void regex_alternationWithEmptyAlternative_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_alternationWithEmptyAlternative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("foo|"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: foo|");
   }
@@ -124,27 +137,32 @@ public class ParsersTest {
     regex("(?:foo|bar)+");
   }
 
-  @Test public void regex_empty_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_empty_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex(""));
   }
 
-  @Test public void regex_emptyMatchingWithSpace() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_emptyMatchingWithSpace() {
     regex("a* b*");
     assertThrows(IllegalArgumentException.class, () -> regex("(?x)a* b*"));
   }
 
-  @Test public void regex_anchor_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_anchor_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("^a"));
     assertThrows(IllegalArgumentException.class, () -> regex("a$"));
     assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
   }
 
-  @Test public void regex_lookaround_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_lookaround_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
     assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
   }
 
-  @Test public void regex_backreference_throws() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_backreference_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
     assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
   }
@@ -1330,12 +1348,12 @@ public class ParsersTest {
   }
 
   @Test public void regex_withFunction_namedGroup_parsesToMappedValue() {
-    Parser<Integer> parser = regex("id:(?<id>\\d+)", s -> Integer.parseInt(s));
+    Parser<Integer> parser = regex("id:(?<id>\\d+)", id -> Integer.parseInt(id));
     assertThat(parser).fromString("id:123").parsesTo(123);
   }
 
-  @Test public void
-      regex_withFunction_namedGroup_cardinalityMismatch_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_namedGroup_cardinalityMismatch_throwsIllegalArgumentException() {
     var ex =
         assertThrows(IllegalArgumentException.class, () -> regex("(?<k>\\w+)=(?<v>\\d+)", s -> s));
     assertThat(ex)
@@ -1354,14 +1372,16 @@ public class ParsersTest {
     assertThat(parser).fromString("prefix:123").parsesTo(123);
   }
 
-  @Test public void regex_withFunction_onlyNonCapturingGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_onlyNonCapturingGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(?:abc)(?:def)", s -> s));
     assertThat(ex)
         .hasMessageThat()
         .isEqualTo("regex pattern '(?:abc)(?:def)' has 0 capturing group(s), but 1 expected");
   }
 
-  @Test public void regex_withFunction_zeroGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_zeroGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class, () -> regex("[a-z]+", s -> s.toUpperCase(Locale.ROOT)));
     assertThat(ex)
@@ -1369,7 +1389,8 @@ public class ParsersTest {
         .isEqualTo("regex pattern '[a-z]+' has 0 capturing group(s), but 1 expected");
   }
 
-  @Test public void regex_withFunction_twoGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_twoGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class,
         () -> regex("(\\w+)=(\\d+)", s -> s.toUpperCase(Locale.ROOT)));
@@ -1378,48 +1399,56 @@ public class ParsersTest {
         .isEqualTo("regex pattern '(\\w+)=(\\d+)' has 2 capturing group(s), but 1 expected");
   }
 
-  @Test public void regex_withFunction_anchor_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_anchor_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("^(\\d+)", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: ^");
   }
 
-  @Test public void regex_withFunction_lookaround_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_lookaround_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(?=\\d)(\\w+)", s -> s));
     assertThat(ex)
         .hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?=\\d)");
   }
 
-  @Test public void regex_withFunction_backreference_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_backreference_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\w+)-\\1", s -> s));
     assertThat(ex)
         .hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\1");
   }
 
-  @Test public void regex_withFunction_emptyPattern_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_emptyPattern_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("", s -> s));
     assertThat(ex)
         .hasMessageThat()
         .isEqualTo("regex pattern '' has 0 capturing group(s), but 1 expected");
   }
 
-  @Test public void regex_withFunction_emptyGroup_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_emptyGroup_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("()", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: ()");
   }
 
-  @Test public void regex_withFunction_matchesEmpty_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_matchesEmpty_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\d*)", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (\\d*)");
   }
 
-  @Test public void regex_withFunction_zeroWidthAlternation_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_zeroWidthAlternation_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(a|)", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (a|)");
   }
 
-  @Test public void regex_withFunction_zeroWidthOptionalGroup_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withFunction_zeroWidthOptionalGroup_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(a)?", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (a)?");
   }
@@ -1456,14 +1485,16 @@ public class ParsersTest {
     assertThat(parser).fromString("foo-item-baz-42").parsesTo(List.of("item", "42"));
   }
 
-  @Test public void regex_withBiFunction_oneGroup_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withBiFunction_oneGroup_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)", (a, b) -> a + b));
     assertThat(ex)
         .hasMessageThat()
         .isEqualTo("regex pattern '(\\d+)' has 1 capturing group(s), but 2 expected");
   }
 
-  @Test public void regex_withBiFunction_threeGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withBiFunction_threeGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b) -> a + b));
     assertThat(ex)
@@ -1502,7 +1533,8 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("ab").parsesTo(List.of("ab", "a", "b"));
   }
 
-  @Test public void regex_withMapFrom3_twoGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom3_twoGroups_throwsIllegalArgumentException() {
     var ex =
         assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)", (a, b, c) -> a));
     assertThat(ex)
@@ -1516,7 +1548,8 @@ public class ParsersTest {
     assertThat(parser).fromString("127.0.0.1").parsesTo(List.of("127", "0", "0", "1"));
   }
 
-  @Test public void regex_withMapFrom4_threeGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom4_threeGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b, c, d) -> a));
     assertThat(ex)
@@ -1530,7 +1563,8 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("abcde").parsesTo(List.of("a", "b", "c", "d", "e"));
   }
 
-  @Test public void regex_withMapFrom5_fourGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom5_fourGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)", (a, b, c, d, e) -> a));
     assertThat(ex)
@@ -1544,7 +1578,8 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("abcdef").parsesTo(List.of("a", "b", "c", "d", "e", "f"));
   }
 
-  @Test public void regex_withMapFrom6_fiveGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom6_fiveGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)(e)", (a, b, c, d, e, f) -> a));
     assertThat(ex)
@@ -1560,7 +1595,8 @@ public class ParsersTest {
         .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g"));
   }
 
-  @Test public void regex_withMapFrom7_sixGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom7_sixGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class,
         () -> regex("(a)(b)(c)(d)(e)(f)", (a, b, c, d, e, f, g) -> a));
@@ -1577,7 +1613,8 @@ public class ParsersTest {
         .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
   }
 
-  @Test public void regex_withMapFrom8_sevenGroups_throwsIllegalArgumentException() {
+  @Test @SuppressWarnings("ParsersRegexCheck")
+  public void regex_withMapFrom8_sevenGroups_throwsIllegalArgumentException() {
     var ex = assertThrows(
         IllegalArgumentException.class,
         () -> regex("(a)(b)(c)(d)(e)(f)(g)", (a, b, c, d, e, f, g, h) -> a));
