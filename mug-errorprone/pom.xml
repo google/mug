@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>11.0</version>
+    <version>11.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-errorprone</artifactId>
@@ -13,7 +13,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-09-04T05:26:29Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-09-04T05:30:29Z</project.build.outputTimestamp>
     <maven.javadoc.skip>true</maven.javadoc.skip>
     <jacoco.skip>true</jacoco.skip>
     <module.name>errorprone</module.name>
