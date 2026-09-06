@@ -71,7 +71,8 @@ final class OrParser<T> extends Parser<T> {
       }
     }
     MatchResult.Failure<T> farthestFailure = null;
-    for (Parser<T> parser : candidates) {
+    for (int i = 0, n = candidates.size(); i < n; i++) {
+      Parser<T> parser = candidates.get(i);
       MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
       if (result instanceof MatchResult.Failure<T> failure) {
         if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {

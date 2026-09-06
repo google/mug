@@ -51,12 +51,16 @@ on:
     branches-ignore:
       - 'gh-pages'
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
   pull_request:
     branches-ignore:
       - 'gh-pages'
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
 
 # Read-only on purpose: coverage badges are committed by ci.yaml, not here.
 permissions:

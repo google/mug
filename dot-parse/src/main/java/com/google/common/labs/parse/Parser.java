@@ -867,7 +867,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @SafeVarargs
   public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
-    Map<String, T> longerFirst = biStream(stream(values)).mapKeys(Object::toString)
+    Map<String, T> longerFirst = biStream(stream(values))
+        .mapKeys(Object::toString)
         // reverse alphabetical order, so that we parse "++" before "+"
         .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
     return BiStream.from(longerFirst)
@@ -2040,9 +2041,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
      * optional parser, at least one element is guaranteed to be returned, even if match failed. For
-     * example, {@code word().orElse("").delimitedBy(",")} will {@link #parse parse}
-     * input {@code ",a,"} as {@code List.of("", "a", "")}; and parse empty input {@code ""} as
-     * {@code List.of("")}.
+     * example, {@code word().orElse("").delimitedBy(",")} will {@link #parse parse} input {@code
+     * ",a,"} as {@code List.of("", "a", "")}; and parse empty input {@code ""} as {@code
+     * List.of("")}.
      *
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
@@ -2228,6 +2229,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     public T parse(String input, int fromIndex) {
       return forTokens().parse(input, fromIndex);
+    }
+
+    /**
+     * Parses the entire {@code input} string while skipping skippable patterns around lexical
+     * tokens, returning an {@link Optional} containing the result, or {@code Optional.empty()} if
+     * the input does not match, is not fully consumed, or parses to {@code null}.
+     *
+     * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
+     * failures.
+     *
+     * @since 11.1
+     */
+    public Optional<T> tryParse(String input) {
+      return forTokens().tryParse(input);
     }
 
     /**
@@ -2554,6 +2569,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   Set<String> computePrefixes() {
     return EMPTY_PREFIX;
+  }
+
+  /**
+   * Parses the entire {@code input} string, returning an {@link Optional} containing the result, or
+   * {@code Optional.empty()} if the input does not match, is not fully consumed, or parses to
+   * {@code null}.
+   *
+   * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
+   * failures.
+   *
+   * @since 11.1
+   */
+  public final Optional<T> tryParse(String input) {
+    return tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
+                instanceof MatchResult.Success<T> result
+            && result.tail() == input.length()
+        ? Optional.ofNullable(result.value())
+        : Optional.empty();
   }
 
   /**
