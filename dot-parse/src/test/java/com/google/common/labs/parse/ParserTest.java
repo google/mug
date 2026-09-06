@@ -5448,6 +5448,16 @@ public class ParserTest {
     assertThat(parser.tryParse("10++a")).isEmpty();
   }
 
+  @Test public void tryParse_resultIsNull_returnsEmpty() {
+    Parser<String> parser = string("a").map(s -> (String) null);
+    assertThat(parser.parse("a")).isNull();
+    assertThat(parser.tryParse("a")).isEmpty();
+    assertThat(parser.matches("a")).isTrue();
+    assertThat(parser.skipping(whitespace()).parse(" a ")).isNull();
+    assertThat(parser.skipping(whitespace()).tryParse(" a ")).isEmpty();
+    assertThat(parser.skipping(whitespace()).matches(" a ")).isTrue();
+  }
+
   @Test public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
