@@ -15,12 +15,16 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
   schedule:
     - cron: '33 9 * * 2'
 

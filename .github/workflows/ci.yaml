@@ -4,12 +4,16 @@ on:
     branches-ignore:
       - 'gh-pages'
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
   pull_request:
     branches-ignore:
       - 'gh-pages'
     paths-ignore:
-      - '**/*.md'
+      - '**.md'
+      - '**.markdown'
+      - '**/README*'
 
 permissions:
   contents: write    # Required to push the badge SVG back to the repo
