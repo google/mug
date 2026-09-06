@@ -5449,7 +5449,7 @@ public class ParserTest {
   }
 
   @Test public void tryParse_resultIsNull_returnsEmpty() {
-    Parser<String> parser = string("a").map(s -> (String) null);
+    Parser<String> parser = string("a").thenReturn(null);
     assertThat(parser.parse("a")).isNull();
     assertThat(parser.tryParse("a")).isEmpty();
     assertThat(parser.matches("a")).isTrue();
