@@ -539,30 +539,28 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
                                     throws <span class="exceptions">E</span></div>
 <div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).
 
- <p>If the input does not match to the end of the input, <code>onRemainder</code> is invoked with
- the index of the first unconsumed character, and the default empty value is returned.
+ <p>If the entirety of the input isn't matched, the <code>onRemainder</code> handler is invoked
+ with the index of the first unconsumed character; and if the handler doesn't throw, the
+ default empty value is returned.
 
  <p>This method accommodates two common call site use cases:
 
- <h3 id="1-to-abort-partial-matches-with-a-custom-exception-heading">1. To abort partial matches with a custom exception</h3>
-
- <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a>:
-
- <pre><code>
- int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -&gt; {
-   throw new BadRequestException("unrecognized characters from index " + leftOver);
- });
- </code></pre>
-
- <h3 id="2-to-tolerate-partial-matches-through-the-returned-value-heading">2. To tolerate partial matches through the returned value</h3>
-
- <p>When partial matches or syntax mismatches should not cause an exception but instead be
- handled as an absent or default value, pass a no-op handler:
-
- <pre><code>
- Optional&lt;Integer&gt; id =
-     UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -&gt; {});
- </code></pre></div>
+ <ol>
+   <li>To abort partial matches with a custom exception:
+       <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a>:
+       <pre><code>
+       int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -&gt; {
+         throw new BadRequestException("unrecognized characters from index " + leftOver);
+       });
+       </code></pre>
+   <li>To tolerate partial matches through the returned value:
+       <p>When partial matches or syntax mismatches should not cause an exception but instead
+       be handled as an absent or default value, pass a no-op handler:
+       <pre><code>
+       Optional&lt;Integer&gt; id =
+           UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -&gt; {});
+       </code></pre>
+ </ol></div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>input</code> - the input string to parse</dd>
