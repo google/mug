@@ -2145,8 +2145,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Parses the entire input string and returns the result; if input is empty, returns the default
-     * empty value.
+     * Parses the entire {@code input} string and returns the result (or the default empty value).
      */
     @Override public T parse(String input) {
       return unsafeZeroWidthParser.parse(input);
@@ -2180,19 +2179,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * <ol>
      *   <li>To abort partial matches with a custom exception:
-     *       <p>Like {@link #parse(String)}, but throws a custom exception instead of {@link
+     *       <p>Like {@link #parse(String)}, but throws a custom exception instead of {@code
      *       ParseException}:
      *       <pre>{@code
-     *       int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -> {
-     *         throw new BadRequestException("unrecognized characters from index " + leftOver);
-     *       });
+     *       int id = Parser.digits()
+     *           .map(Integer::parseInt)
+     *           .orElse(0)
+     *           .parse(input, leftOver -> {
+     *             throw new BadRequestException("unrecognized characters from index " + leftOver);
+     *           });
      *       }</pre>
      *   <li>To tolerate partial matches through the returned value:
      *       <p>When partial matches or syntax mismatches should not cause an exception but instead
      *       be handled as an absent or default value, pass a no-op handler:
      *       <pre>{@code
-     *       Optional<Integer> id =
-     *           UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -> {});
+     *       Optional<Integer> id = Parser.digits()
+     *           .map(Integer::parseInt)
+     *           .optional()
+     *           .parse(input, leftOver -> {});
      *       }</pre>
      * </ol>
      *
