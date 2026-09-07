@@ -5165,6 +5165,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Parses <code>dateTimeString</code> to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/OffsetDateTime.html" title="class or interface in java.time" class="external-link"><code>OffsetDateTime</code></a> using heuristics in this class to infer
  the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> for common formats.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#parseOrDefault(java.lang.String)" class="member-name-link">parseOrDefault(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
+<dd>
+<div class="block">Parses the entire <code>input</code> string and returns the result, or returns the default empty
+ value if the input does not match or is not fully consumed.</div>
+</dd>
 <dt><a href="com/google/mu/util/StringFormat.html#parseOrThrow(java.lang.String,com.google.mu.function.MapFrom3)" class="member-name-link">parseOrThrow(String, MapFrom3&lt;? super String, R&gt;)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
 <div class="block">Similar to <code>AbstractStringFormat.parseOrThrow(String, BiFunction)</code>, but parses <code>input</code> and applies
@@ -7616,18 +7621,6 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/protobuf/util/MoreValues.html#TRUE" class="member-name-link">TRUE</a> - Static variable in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/MoreValues.html" title="class in com.google.mu.protobuf.util">MoreValues</a></dt>
 <dd>
 <div class="block">The <code>Value</code> for boolean <code>true</code>.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.Lexical.html#tryParse(java.lang.String)" class="member-name-link">tryParse(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.Lexical.html" title="class in com.google.common.labs.parse">Parser.Lexical</a></dt>
-<dd>
-<div class="block">Parses the entire <code>input</code> string while skipping skippable patterns around lexical
- tokens, returning an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a> containing the result, or <code>Optional.empty()</code> if
- the input does not match, is not fully consumed, or parses to <code>null</code>.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#tryParse(java.lang.String)" class="member-name-link">tryParse(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
-<dd>
-<div class="block">Parses the entire <code>input</code> string, returning an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a> containing the result, or
- <code>Optional.empty()</code> if the input does not match, is not fully consumed, or parses to
- <code>null</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Struct.html#typeName()" class="member-name-link">typeName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></dt>
 <dd>

@@ -68,7 +68,6 @@ loadScripts(document, 'script');</script>
 <ol class="toc-list">
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
 <li><a href="#parse(java.lang.String,int)" tabindex="0">parse(String, int)</a></li>
-<li><a href="#tryParse(java.lang.String)" tabindex="0">tryParse(String)</a></li>
 <li><a href="#matches(java.lang.String)" tabindex="0">matches(String)</a></li>
 <li><a href="#parseToStream(java.lang.String)" tabindex="0">parseToStream(String)</a></li>
 <li><a href="#parseToStream(java.lang.String,int)" tabindex="0">parseToStream(String, int)</a></li>
@@ -179,13 +178,6 @@ loadScripts(document, 'script');</script>
 <div class="block">Lazily and iteratively matches <code>input</code> starting from <code>fromIndex</code>, skipping the
  skippable patterns, until the input is exhausted or matching failed.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#tryParse(java.lang.String)" class="member-name-link">tryParse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the entire <code>input</code> string while skipping skippable patterns around lexical
- tokens, returning an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a> containing the result, or <code>Optional.empty()</code> if
- the input does not match, is not fully consumed, or parses to <code>null</code>.</div>
-</div>
 </div>
 </div>
 </div>
@@ -220,24 +212,6 @@ loadScripts(document, 'script');</script>
  int&nbsp;fromIndex)</span></div>
 <div class="block">Parses <code>input</code> starting from <code>fromIndex</code> while skipping patterns around lexical
  tokens.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="tryParse(java.lang.String)">
-<h3>tryParse</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">tryParse</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
-<div class="block">Parses the entire <code>input</code> string while skipping skippable patterns around lexical
- tokens, returning an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a> containing the result, or <code>Optional.empty()</code> if
- the input does not match, is not fully consumed, or parses to <code>null</code>.
-
- <p>Unlike <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, this method does not throw <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> on syntax
- failures.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>11.1</dd>
-</dl>
 </div>
 </section>
 </li>
