@@ -5074,6 +5074,10 @@ loadScripts(document, 'script');</script>
  <code>'*'</code> character as <a href="com/google/mu/collect/Selection.html#all()"><code>Selection.all()</code></a>, and delegating to
  <code>elementParser</code> to parse each explicit selection element.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#parse(java.lang.String,com.google.mu.function.CheckedIntConsumer)" class="member-name-link">parse(String, CheckedIntConsumer&lt;E&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
+<dd>
+<div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).</div>
+</dd>
 <dt><a href="com/google/mu/util/StringFormat.html#parse(java.lang.String,com.google.mu.function.MapFrom3)" class="member-name-link">parse(String, MapFrom3&lt;? super String, ? extends R&gt;)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
 <div class="block">Similar to <code>AbstractStringFormat.parse(String, BiFunction)</code>, but parses <code>input</code> and applies <code>
@@ -5164,11 +5168,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Parses <code>dateTimeString</code> to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/OffsetDateTime.html" title="class or interface in java.time" class="external-link"><code>OffsetDateTime</code></a> using heuristics in this class to infer
  the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> for common formats.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#parseOrDefault(java.lang.String)" class="member-name-link">parseOrDefault(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
-<dd>
-<div class="block">Parses the entire <code>input</code> string and returns the result, or returns the default empty
- value if the input does not match or is not fully consumed.</div>
 </dd>
 <dt><a href="com/google/mu/util/StringFormat.html#parseOrThrow(java.lang.String,com.google.mu.function.MapFrom3)" class="member-name-link">parseOrThrow(String, MapFrom3&lt;? super String, R&gt;)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
@@ -6879,6 +6878,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:T">T</h2>
 <dl class="index">
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#1-to-abort-partial-matches-with-a-custom-exception-heading" class="search-tag-link">1. To abort partial matches with a custom exception</a> - Search tag in com.google.common.labs.parse.Parser.OrEmpty.parse(String, CheckedIntConsumer&lt;E&gt;)</dt>
+<dd>Section</dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#2-to-tolerate-partial-matches-through-the-returned-value-heading" class="search-tag-link">2. To tolerate partial matches through the returned value</a> - Search tag in com.google.common.labs.parse.Parser.OrEmpty.parse(String, CheckedIntConsumer&lt;E&gt;)</dt>
+<dd>Section</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Lookaround.Lookahead.html#target()" class="member-name-link">target()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Lookaround.Lookahead.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.Lookahead</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>target</code> record component.</div>

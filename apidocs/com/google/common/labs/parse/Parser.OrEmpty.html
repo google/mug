@@ -83,7 +83,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
 <li><a href="#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">parseSkipping(CharPredicate, String)</a></li>
 <li><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" tabindex="0">parseSkipping(Parser, String)</a></li>
-<li><a href="#parseOrDefault(java.lang.String)" tabindex="0">parseOrDefault(String)</a></li>
+<li><a href="#parse(java.lang.String,com.google.mu.function.CheckedIntConsumer)" tabindex="0">parse(String, CheckedIntConsumer)</a></li>
 <li><a href="#matches(java.lang.String)" tabindex="0">matches(String)</a></li>
 </ol>
 </li>
@@ -213,11 +213,11 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Parses the entire input string and returns the result; if input is empty, returns the default
  empty value.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseOrDefault(java.lang.String)" class="member-name-link">parseOrDefault</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;<br><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parse(java.lang.String,com.google.mu.function.CheckedIntConsumer)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input,
+ <a href="../../../mu/function/CheckedIntConsumer.html" title="interface in com.google.mu.function">CheckedIntConsumer</a>&lt;E&gt;&nbsp;onRemainder)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the entire <code>input</code> string and returns the result, or returns the default empty
- value if the input does not match or is not fully consumed.</div>
+<div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">parseSkipping</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;skip,
@@ -531,19 +531,45 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="parseOrDefault(java.lang.String)">
-<h3>parseOrDefault</h3>
+<section class="detail" id="parse(java.lang.String,com.google.mu.function.CheckedIntConsumer)">
+<h3>parse</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parseOrDefault</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
-<div class="block">Parses the entire <code>input</code> string and returns the result, or returns the default empty
- value if the input does not match or is not fully consumed.
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parse</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input,
+ <a href="../../../mu/function/CheckedIntConsumer.html" title="interface in com.google.mu.function">CheckedIntConsumer</a>&lt;E&gt;&nbsp;onRemainder)</span>
+                                    throws <span class="exceptions">E</span></div>
+<div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).
 
- <p>Unlike <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, this method does not throw <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> on syntax
- failures.
+ <p>If the input does not match to the end of the input, <code>onRemainder</code> is invoked with
+ the index of the first unconsumed character, and the default empty value is returned.
 
- <p>For example, <code>parser.optional().parseOrDefault(input)</code> returns an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>
- containing the result, or <code>Optional.empty()</code> if the match failed.</div>
+ <p>This method accommodates two common call site use cases:
+
+ <h3 id="1-to-abort-partial-matches-with-a-custom-exception-heading">1. To abort partial matches with a custom exception</h3>
+
+ <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a>:
+
+ <pre><code>
+ int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -&gt; {
+   throw new BadRequestException("unrecognized characters from index " + leftOver);
+ });
+ </code></pre>
+
+ <h3 id="2-to-tolerate-partial-matches-through-the-returned-value-heading">2. To tolerate partial matches through the returned value</h3>
+
+ <p>When partial matches or syntax mismatches should not cause an exception but instead be
+ handled as an absent or default value, pass a no-op handler:
+
+ <pre><code>
+ Optional&lt;Integer&gt; id =
+     UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -&gt; {});
+ </code></pre></div>
 <dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>input</code> - the input string to parse</dd>
+<dd><code>onRemainder</code> - callback invoked with the index of the first unconsumed character if the
+     input does not match to the end of the input</dd>
+<dt>Throws:</dt>
+<dd><code>E</code> - thrown by <code>onRemainder</code></dd>
 <dt>Since:</dt>
 <dd>11.1</dd>
 </dl>
