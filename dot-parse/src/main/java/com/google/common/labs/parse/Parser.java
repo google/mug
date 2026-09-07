@@ -2169,6 +2169,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
+     * Parses the entire {@code input} string and returns the result, or returns the default empty
+     * value if the input does not match or is not fully consumed.
+     *
+     * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
+     * failures.
+     *
+     * <p>For example, {@code parser.optional().parseOrDefault(input)} returns an {@link Optional}
+     * containing the result, or {@code Optional.empty()} if the match failed.
+     *
+     * @since 11.1
+     */
+    public final T parseOrDefault(String input) {
+      return notEmpty().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
+                  instanceof MatchResult.Success<T> result
+              && result.tail() == input.length()
+          ? result.value()
+          : computeDefaultValue();
+    }
+
+    /**
      * Returns true if this parser matches the entirety of the {@code input}, or if the input is
      * empty. It's similar to the regex {@code Matcher.matches(String)} method.
      *
@@ -2229,20 +2249,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     public T parse(String input, int fromIndex) {
       return forTokens().parse(input, fromIndex);
-    }
-
-    /**
-     * Parses the entire {@code input} string while skipping skippable patterns around lexical
-     * tokens, returning an {@link Optional} containing the result, or {@code Optional.empty()} if
-     * the input does not match, is not fully consumed, or parses to {@code null}.
-     *
-     * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
-     * failures.
-     *
-     * @since 11.1
-     */
-    public Optional<T> tryParse(String input) {
-      return forTokens().tryParse(input);
     }
 
     /**
@@ -2571,29 +2577,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return EMPTY_PREFIX;
   }
 
-  /**
-   * Parses the entire {@code input} string, returning an {@link Optional} containing the result, or
-   * {@code Optional.empty()} if the input does not match, is not fully consumed, or parses to
-   * {@code null}.
-   *
-   * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
-   * failures.
-   *
-   * @since 11.1
-   */
-  public final Optional<T> tryParse(String input) {
-    return tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
-                instanceof MatchResult.Success<T> result
-            && result.tail() == input.length()
-        ? Optional.ofNullable(result.value())
-        : Optional.empty();
-  }
-
-  /**
-   * Matches the input string starting at the given position.
-   *
-   * @return a MatchResult containing the parsed value and the [start, end) range of the match.
-   */
   MatchResult<T> tryParse(CharInput input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
   }
