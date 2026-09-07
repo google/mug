@@ -2179,7 +2179,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * <ol>
      *   <li>To abort partial matches with a custom exception:
-     *       <p>Like {@link #parse(String)}, but throws a custom exception instead of {@link
+     *       <p>Like {@link #parse(String)}, but throws a custom exception instead of {@code
      *       ParseException}:
      *       <pre>{@code
      *       int id = Parser.digits()
