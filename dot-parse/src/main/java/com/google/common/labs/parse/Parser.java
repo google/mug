@@ -2197,7 +2197,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * </ol>
      *
      * @param input the input string to parse
-     * @param onRemainder handler invoked with the index of the first unconsumed character on
+     * @param onRemainder the handler invoked with the index of the first unconsumed character on
      *     partial match
      * @throws E thrown by {@code onRemainder}
      * @since 11.1
