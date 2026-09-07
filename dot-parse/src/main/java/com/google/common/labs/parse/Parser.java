@@ -2172,31 +2172,29 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * Parses the entire {@code input} string and returns the result (or the default empty value).
      *
-     * <p>If the input does not match to the end of the input, {@code onRemainder} is invoked with
-     * the index of the first unconsumed character, and the default empty value is returned.
+     * <p>If the entirety of the input isn't matched, the {@code onRemainder} handler is invoked
+     * with the index of the first unconsumed character; and if the handler doesn't throw, the
+     * default empty value is returned.
      *
      * <p>This method accommodates two common call site use cases:
      *
-     * <h3>1. To abort partial matches with a custom exception</h3>
-     *
-     * <p>Like {@link #parse(String)}, but throws a custom exception instead of {@link
-     * ParseException}:
-     *
-     * <pre>{@code
-     * int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -> {
-     *   throw new BadRequestException("unrecognized characters from index " + leftOver);
-     * });
-     * }</pre>
-     *
-     * <h3>2. To tolerate partial matches through the returned value</h3>
-     *
-     * <p>When partial matches or syntax mismatches should not cause an exception but instead be
-     * handled as an absent or default value, pass a no-op handler:
-     *
-     * <pre>{@code
-     * Optional<Integer> id =
-     *     UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -> {});
-     * }</pre>
+     * <ol>
+     *   <li>To abort partial matches with a custom exception:
+     *       <p>Like {@link #parse(String)}, but throws a custom exception instead of {@link
+     *       ParseException}:
+     *       <pre>{@code
+     *       int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -> {
+     *         throw new BadRequestException("unrecognized characters from index " + leftOver);
+     *       });
+     *       }</pre>
+     *   <li>To tolerate partial matches through the returned value:
+     *       <p>When partial matches or syntax mismatches should not cause an exception but instead
+     *       be handled as an absent or default value, pass a no-op handler:
+     *       <pre>{@code
+     *       Optional<Integer> id =
+     *           UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -> {});
+     *       }</pre>
+     * </ol>
      *
      * @param input the input string to parse
      * @param onRemainder callback invoked with the index of the first unconsumed character if the
