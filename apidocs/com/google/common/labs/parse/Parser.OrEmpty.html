@@ -210,8 +210,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the entire input string and returns the result; if input is empty, returns the default
- empty value.</div>
+<div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;<br><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parse(java.lang.String,com.google.mu.function.CheckedIntConsumer)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input,
@@ -490,8 +489,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <h3>parse</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parse</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
-<div class="block">Parses the entire input string and returns the result; if input is empty, returns the default
- empty value.</div>
+<div class="block">Parses the entire <code>input</code> string and returns the result (or the default empty value).</div>
 <dl class="notes">
 <dt>Specified by:</dt>
 <dd><code><a href="Production.html#parse(java.lang.String)">parse</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
@@ -547,18 +545,24 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 
  <ol>
    <li>To abort partial matches with a custom exception:
-       <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <a href="Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a>:
+       <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <code>
+       ParseException</code>:
        <pre><code>
-       int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -&gt; {
-         throw new BadRequestException("unrecognized characters from index " + leftOver);
-       });
+       int id = Parser.digits()
+           .map(Integer::parseInt)
+           .orElse(0)
+           .parse(input, leftOver -&gt; {
+             throw new BadRequestException("unrecognized characters from index " + leftOver);
+           });
        </code></pre>
    <li>To tolerate partial matches through the returned value:
        <p>When partial matches or syntax mismatches should not cause an exception but instead
        be handled as an absent or default value, pass a no-op handler:
        <pre><code>
-       Optional&lt;Integer&gt; id =
-           UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -&gt; {});
+       Optional&lt;Integer&gt; id = Parser.digits()
+           .map(Integer::parseInt)
+           .optional()
+           .parse(input, leftOver -&gt; {});
        </code></pre>
  </ol></div>
 <dl class="notes">
