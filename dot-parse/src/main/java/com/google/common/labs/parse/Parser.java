@@ -2193,8 +2193,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *       <p>When partial matches or syntax mismatches should not cause an exception but instead
      *       be handled as an absent or default value, pass a no-op handler:
      *       <pre>{@code
-     *       Optional<Integer> id =
-     *           UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -> {});
+     *       Optional<Integer> id = Parser.digits()
+     *           .map(Integer::parseInt)
+     *           .optional()
+     *           .parse(input, leftOver -> {});
      *       }</pre>
      * </ol>
      *
