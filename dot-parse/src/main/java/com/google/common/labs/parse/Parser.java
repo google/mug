@@ -43,6 +43,7 @@ import com.google.common.labs.parse.ErrorContext.ErrorTracker;
 import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.function.CheckedIntConsumer;
 import com.google.mu.function.Function4;
 import com.google.mu.function.ObjInt2Function;
 import com.google.mu.function.TriFunction;
@@ -2169,23 +2170,56 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Parses the entire {@code input} string and returns the result, or returns the default empty
-     * value if the input does not match or is not fully consumed.
+     * Parses the entire {@code input} string and returns the result (or the default empty value).
      *
-     * <p>Unlike {@link #parse(String)}, this method does not throw {@link ParseException} on syntax
-     * failures.
+     * <p>If the input does not match to the end of the input, {@code onRemainder} is invoked with
+     * the index of the first unconsumed character, and the default empty value is returned.
      *
-     * <p>For example, {@code parser.optional().parseOrDefault(input)} returns an {@link Optional}
-     * containing the result, or {@code Optional.empty()} if the match failed.
+     * <p>This method accommodates two common call site use cases:
      *
+     * <h3>1. To abort partial matches with a custom exception</h3>
+     *
+     * <p>Like {@link #parse(String)}, but throws a custom exception instead of {@link
+     * ParseException}:
+     *
+     * <pre>{@code
+     * int id = UNSIGNED_INTEGER.map(Integer::parseInt).orElse(0).parse(input, leftOver -> {
+     *   throw new BadRequestException("unrecognized characters from index " + leftOver);
+     * });
+     * }</pre>
+     *
+     * <h3>2. To tolerate partial matches through the returned value</h3>
+     *
+     * <p>When partial matches or syntax mismatches should not cause an exception but instead be
+     * handled as an absent or default value, pass a no-op handler:
+     *
+     * <pre>{@code
+     * Optional<Integer> id =
+     *     UNSIGNED_INTEGER.map(Integer::parseInt).optional().parse(input, leftOver -> {});
+     * }</pre>
+     *
+     * @param input the input string to parse
+     * @param onRemainder callback invoked with the index of the first unconsumed character if the
+     *     input does not match to the end of the input
+     * @throws E thrown by {@code onRemainder}
      * @since 11.1
      */
-    public final T parseOrDefault(String input) {
-      return notEmpty().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
-                  instanceof MatchResult.Success<T> result
-              && result.tail() == input.length()
-          ? result.value()
-          : computeDefaultValue();
+    public final <E extends Throwable> T parse(
+        String input, CheckedIntConsumer<E> onRemainder) throws E {
+      requireNonNull(onRemainder);
+      if (input.isEmpty()) {
+        return computeDefaultValue();
+      }
+      if (notEmpty().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
+          instanceof MatchResult.Success<T> result) {
+        if (result.tail() == input.length()) {
+          return result.value();
+        }
+        onRemainder.accept(result.tail());
+      } else {
+        onRemainder.accept(0);
+      }
+      return computeDefaultValue();
     }
 
     /**
