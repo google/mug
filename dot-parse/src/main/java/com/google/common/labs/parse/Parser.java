@@ -2422,7 +2422,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         @Override MatchResult<T> skipAndMatch(
             Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
             ErrorContext context) {
-          return left().skipAndMatch(toSkip, toSkip, input, start, context);
+          return left().skipAndMatch(preskipper, toSkip, input, start, context);
         }
 
         @Override Parser<?> doIgnoreReturn() {

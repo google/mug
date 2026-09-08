@@ -9606,12 +9606,14 @@ public class ParserTest {
     assertThat(parser.optional().parse("a  b", i -> {})).hasValue("ab");
   }
 
-  @Test public void skipping_within_charPredicate_leadingSpacingSkipped() {
+  @Test public void skipping_within_charPredicate_leadingSpacingNotSkipped() {
     Parser<String> parser = sequence(string("a"), string("b"), (a, b) -> a + b)
         .skipping(Character::isWhitespace)
         .within();
-    assertThat(parser.parse(" a b")).isEqualTo("ab");
-    assertThat(parser.optional().parse(" a b", i -> {})).hasValue("ab");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(" a b"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+    assertThat(parser.optional().parse(" a b", i -> {})).isEmpty();
   }
 
   @Test public void skipping_within_charPredicate_trailingSpacingNotSkipped() {
@@ -9629,11 +9631,25 @@ public class ParserTest {
     assertThat(parser.optional().parse("a   b", i -> {})).hasValue("ab");
   }
 
-  @Test public void skipping_within_parser_leadingSpacingSkipped() {
+  @Test public void skipping_within_parser_leadingSpacingNotSkipped() {
     Parser<String> parser =
         sequence(string("a"), string("b"), (a, b) -> a + b).skipping(string(" ")).within();
-    assertThat(parser.parse(" a b")).isEqualTo("ab");
-    assertThat(parser.optional().parse(" a b", i -> {})).hasValue("ab");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(" a b"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+    assertThat(parser.optional().parse(" a b", i -> {})).isEmpty();
+  }
+
+  @Test public void skipping_within_spacesBeforeSubparserNotSkipped() {
+    Parser<String> parser = sequence(
+        string("a"),
+        sequence(string("b"), string("c"), (b, c) -> b + c)
+            .skipping(Character::isWhitespace)
+            .within(),
+        (a, bc) -> a + bc);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a bc"));
+    assertThat(thrown).hasMessageThat().contains("1:2");
+    assertThat(thrown).hasMessageThat().contains("expecting <b>");
   }
 
   @Test public void skipping_within_parser_trailingSpacingNotSkipped() {
