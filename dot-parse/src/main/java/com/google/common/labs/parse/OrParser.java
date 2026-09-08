@@ -59,9 +59,9 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override MatchResult<T> skipAndMatch(
-      Skipper skip, CharInput input, int start, ErrorContext context) {
+      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context) {
     // All top-level parsers allow input to apply pre-skipping.
-    start = Parser.skipIfAny(skip, input, start);
+    start = Parser.skipIfAny(preskipper, input, start);
     List<Parser<T>> candidates = parsers;
     var prefixTree = getPrefixTree();
     if (prefixTree != null) {
@@ -73,7 +73,7 @@ final class OrParser<T> extends Parser<T> {
     MatchResult.Failure<T> farthestFailure = null;
     for (int i = 0, n = candidates.size(); i < n; i++) {
       Parser<T> parser = candidates.get(i);
-      MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
+      MatchResult<T> result = parser.skipAndMatch(null, innerSkipper, input, start, context);
       if (result instanceof MatchResult.Failure<T> failure) {
         if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
           farthestFailure = failure;

@@ -5802,6 +5802,23 @@ public class ParserTest {
         .containsExactly("foo", "bar");
   }
 
+  @Test public void skipping_withAnyOf_doesNotReskipWhitespaceForCandidate() {
+    AtomicInteger testCount = new AtomicInteger();
+    CharPredicate whitespace = new CharPredicate() {
+      @Override public boolean test(char c) {
+        testCount.incrementAndGet();
+        return c == ' ';
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+    };
+    Parser<String> foobar = anyOf(string("foo"), string("bar"));
+    assertThat(foobar.parseSkipping(whitespace, " foo")).isEqualTo("foo");
+    assertThat(testCount.get()).isEqualTo(2);
+  }
+
   @Test public void skipping_propagatesThroughOr() {
     Parser<String> foo = string("foo");
     Parser<String> bar = string("bar");

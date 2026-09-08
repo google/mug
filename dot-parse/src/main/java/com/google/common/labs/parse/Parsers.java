@@ -731,8 +731,9 @@ public final class Parsers {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Parser<T>() {
       @Override MatchResult<T> skipAndMatch(
-          Skipper skip, CharInput input, int start, ErrorContext context) {
-        start = Parser.skipIfAny(skip, input, start);
+          Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
+          ErrorContext context) {
+        start = Parser.skipIfAny(preskipper, input, start);
         Matcher matcher = input.matcher(jdkPattern, metadata, start);
         if (!matcher.lookingAt()) {
           return context.expecting(name, start);
