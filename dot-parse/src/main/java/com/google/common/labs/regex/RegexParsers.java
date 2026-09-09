@@ -36,6 +36,7 @@ import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
@@ -77,7 +78,7 @@ final class RegexParsers {
           literally(one("[4-7]"), one("[0-7]").optional()))
       .source()
       .map(digits -> Integer.parseInt(digits, 8));
-  private static final Parser<String> ESCAPED = anyOf(
+  private static final Parser<String> ESCAPED_IN_CHAR_CLASS = anyOf(
       string("\\n").thenReturn("\n"),
       string("\\r").thenReturn("\r"),
       string("\\t").thenReturn("\t"),
@@ -94,6 +95,15 @@ final class RegexParsers {
           .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
           .map(Character::codePointOf)
           .map(Character::toString),
+      literally(
+              string("\\")
+                  .then(
+                      one(
+                          range('a', 'z').or(range('A', 'Z')).or(range('0', '9')).not(),
+                          "escaped char")))
+          .map(String::valueOf));
+  private static final Parser<String> ESCAPED = anyOf(
+      ESCAPED_IN_CHAR_CLASS,
       literally(string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char")))
           .map(String::valueOf));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
@@ -169,7 +179,7 @@ final class RegexParsers {
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
     Parser<Integer> literalChar = anyOf(
         one("[^-&\\][]").map(c -> (int) c),
-        ESCAPED.map(s -> s.codePointAt(0)),
+        ESCAPED_IN_CHAR_CLASS.map(s -> s.codePointAt(0)),
         one('&').notFollowedBy("&").map(c -> (int) c));
     Parser<CharSetElement> element = anyOf(
         anyOf(PredefinedCharClass.values())

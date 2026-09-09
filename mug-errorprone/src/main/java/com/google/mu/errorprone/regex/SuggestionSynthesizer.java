@@ -100,6 +100,11 @@ final class SuggestionSynthesizer {
 
   static Optional<Suggestion.RegexSuggestion> rewritePolynomialToSafeRegex(RegexPattern pattern) {
     requireNonNull(pattern);
+    if (Walker.inTree(RegexPatternUtils::childrenOf)
+        .preOrderFrom(pattern)
+        .anyMatch(RegexPattern.Backreference.class::isInstance)) {
+      return Optional.empty();
+    }
     List<String> caveats = new ArrayList<>();
     RegexPattern rewritten = transform(pattern, node -> rewritePolynomialNode(node, caveats));
     return optionally(
@@ -114,33 +119,24 @@ final class SuggestionSynthesizer {
       RegexPattern node, List<String> caveats) {
     if (node instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
+          .filter(p ->
+              p.secondIndex() == p.firstIndex() + 1
+                  && p.first().element().equals(p.second().element())
+                  && p.first().quantifier() instanceof RegexPattern.AtLeast q1 && !q1.isReluctant()
+                  && !q1.isPossessive()
+                  && p.second().quantifier() instanceof RegexPattern.AtLeast q2 && !q2.isReluctant()
+                  && !q2.isPossessive())
           .map(p -> {
-            if (p.secondIndex() == p.firstIndex() + 1
-                && p.first().element().equals(p.second().element())
-                && p.first().quantifier() instanceof RegexPattern.AtLeast q1
-                && p.second().quantifier() instanceof RegexPattern.AtLeast q2) {
-              int totalMin = q1.min() + q2.min();
-              RegexPattern merged = new RegexPattern.Quantified(
-                  p.first().element(), RegexPattern.Quantifier.atLeast(totalMin));
-              RegexPattern preservedMerged =
-                  preserveGroup(seq.elements().get(p.firstIndex()), merged);
-              List<RegexPattern> newElements = new ArrayList<>(seq.elements());
-              newElements.set(p.firstIndex(), preservedMerged);
-              newElements.remove(p.secondIndex());
-              return newElements.size() == 1
-                  ? newElements.get(0)
-                  : new RegexPattern.Sequence(newElements);
-            }
-            RegexPattern rewrittenFirst = new RegexPattern.Quantified(
-                p.first().element(), p.first().quantifier().possessive());
-            RegexPattern preservedFirst =
-                preserveGroup(seq.elements().get(p.firstIndex()), rewrittenFirst);
+            RegexPattern.AtLeast q1 = (RegexPattern.AtLeast) p.first().quantifier();
+            RegexPattern.AtLeast q2 = (RegexPattern.AtLeast) p.second().quantifier();
+            int totalMin = q1.min() + q2.min();
+            RegexPattern merged = new RegexPattern.Quantified(
+                p.first().element(), RegexPattern.Quantifier.atLeast(totalMin));
+            RegexPattern preservedMerged =
+                preserveGroup(seq.elements().get(p.firstIndex()), merged);
             List<RegexPattern> newElements = new ArrayList<>(seq.elements());
-            newElements.set(p.firstIndex(), preservedFirst);
-            caveats.add(
-                "Possessive quantifier /" + rewrittenFirst
-                    + "/ prevents backtracking and may fail if subsequent tokens require"
-                    + " characters greedily consumed by /" + rewrittenFirst + "/");
+            newElements.set(p.firstIndex(), preservedMerged);
+            newElements.remove(p.secondIndex());
             return newElements.size() == 1
                 ? newElements.get(0)
                 : new RegexPattern.Sequence(newElements);

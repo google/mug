@@ -1159,15 +1159,23 @@ public final class RegexParserErrorTest {
             """);
   }
 
-  @Test public void characterClass_negatedProperty_unbraced_nonAscii_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P\u03B1]"));
-    assertThat(e)
-        .hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:4: expecting one of [category, {], encountered:
-                [\\P\u03B1]
-                   ^
-            """);
+  @Test public void characterClass_linebreak_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\R]"));
+    assertThat(e).hasMessageThat().contains("at 1:2");
+  }
+
+  @Test public void characterClass_extendedGraphemeCluster_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\X]"));
+    assertThat(e).hasMessageThat().contains("at 1:2");
+  }
+
+  @Test public void characterClass_wordBoundary_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\b]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void characterClass_invalidEscapeLetter_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\q]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
   }
 }

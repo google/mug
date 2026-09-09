@@ -2,6 +2,7 @@ package com.google.mu.errorprone.regex;
 
 import static com.google.common.collect.Range.closedOpen;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
@@ -181,9 +182,42 @@ public final class CharRangesTest {
     assertThat(ranges.contains((int) '0')).isFalse();
   }
 
-  @Test public void from_unknownUnicodeProperty_returnsAny() {
+  @Test public void from_unicodePropertyL_containsNonAsciiLetter() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{L}]");
+    assertThat(ranges.contains((int) 'é')).isTrue();
+  }
+
+  @Test public void from_unicodePropertyLu_containsNonAsciiUppercase() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Lu}]");
+    assertThat(ranges.contains((int) 'É')).isTrue();
+  }
+
+  @Test public void from_unicodePropertyLl_containsNonAsciiLowercase() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Ll}]");
+    assertThat(ranges.contains((int) 'é')).isTrue();
+  }
+
+  @Test public void from_unicodePropertyNd_containsNonAsciiDigit() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Nd}]");
+    assertThat(ranges.contains(0x0660)).isTrue();
+  }
+
+  @Test public void from_unicodeProperty_inHebrew_returnsHebrewBlock() {
     ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{InHebrew}]");
-    assertThat(ranges).isEqualTo(CharRanges.ANY);
+    assertThat(ranges.contains(0x05D0)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+    assertThat(ranges).isNotEqualTo(CharRanges.ANY);
+  }
+
+  @Test public void from_unicodeProperty_negatedInHebrew_isNotEmpty() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[^\\p{InHebrew}]");
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains(0x05D0)).isFalse();
+    assertThat(ranges).isNotEqualTo(CharRanges.EMPTY);
+  }
+
+  @Test public void from_unicodeProperty_unrecognized_throws() {
+    assertThrows(IllegalArgumentException.class, () -> fromPattern("[\\p{NoSuchProperty}]"));
   }
 
   @Test public void sampleChar_uppercaseOnly_returnsA() {
@@ -632,6 +666,24 @@ public final class CharRangesTest {
     ImmutableRangeSet<Integer> ranges =
         RegexPatternUtils.charRangesOf(RegexPattern.of("\uD83D\uDE00"));
     assertThat(ranges.contains(0x1F600)).isTrue();
+  }
+
+  @Test public void from_characterSet_containingLinebreak_evaluatesToLinebreakRanges() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from(RegexPattern.anyOf(RegexPattern.PredefinedCharClass.LINEBREAK));
+    assertThat(ranges).isEqualTo(CharRanges.from(RegexPattern.PredefinedCharClass.LINEBREAK));
+  }
+
+  @Test public void from_characterSet_containingExtendedGraphemeCluster_evaluatesToAny() {
+    ImmutableRangeSet<Integer> ranges = CharRanges.from(
+        RegexPattern.anyOf(RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER));
+    assertThat(ranges).isEqualTo(CharRanges.ANY);
+  }
+
+  @Test public void from_characterSet_containingAnyChar_evaluatesToAnyCharRanges() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from(RegexPattern.anyOf(RegexPattern.PredefinedCharClass.ANY_CHAR));
+    assertThat(ranges).isEqualTo(CharRanges.from(RegexPattern.PredefinedCharClass.ANY_CHAR));
   }
 
   private static ImmutableRangeSet<Integer> fromPattern(String regex) {

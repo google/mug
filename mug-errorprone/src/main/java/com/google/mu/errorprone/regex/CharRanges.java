@@ -9,6 +9,9 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.labs.regex.RegexPattern;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility functions for operating on Unicode character sets represented as {@link
@@ -72,33 +75,19 @@ final class CharRanges {
     };
   }
 
-  private static ImmutableRangeSet<Integer> fromCharSetElement(
-      RegexPattern.CharSetElement element) {
-    if (element == RegexPattern.PredefinedCharClass.ANY_CHAR) {
-      return of('.');
-    }
-    if (element == RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER) {
-      return of('X');
-    }
-    if (element == RegexPattern.PredefinedCharClass.LINEBREAK) {
-      return of('R');
-    }
-    return from(element);
-  }
-
   static ImmutableRangeSet<Integer> from(RegexPattern.CharacterSet characterSet) {
     return switch (characterSet) {
       case RegexPattern.CharacterSet.AnyOf anyOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : anyOf.elements()) {
-          tree.addAll(fromCharSetElement(e));
+          tree.addAll(from(e));
         }
         yield ImmutableRangeSet.copyOf(tree);
       }
       case RegexPattern.CharacterSet.NoneOf noneOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : noneOf.elements()) {
-          tree.addAll(fromCharSetElement(e));
+          tree.addAll(from(e));
         }
         yield complement(tree);
       }
@@ -270,10 +259,11 @@ final class CharRanges {
 
   private static ImmutableRangeSet<Integer> fromUnicodeProperty(String name) {
     return switch (Ascii.toLowerCase(name)) {
-      case "nd", "digit" -> DIGIT;
-      case "l", "letter" -> ALPHA;
-      case "lu" -> UPPER;
-      case "ll" -> LOWER;
+      case "nd" -> UnicodeData.UNICODE_DECIMAL_DIGIT;
+      case "digit" -> DIGIT;
+      case "l", "letter" -> UnicodeData.UNICODE_LETTER;
+      case "lu" -> UnicodeData.UNICODE_UPPER;
+      case "ll" -> UnicodeData.UNICODE_LOWER;
       case "alpha" -> ALPHA;
       case "alnum" -> ALNUM;
       case "ascii" -> ASCII;
@@ -283,8 +273,192 @@ final class CharRanges {
       case "zp" -> UNICODE_ZP;
       case "zs" -> UNICODE_ZS;
       case "z", "separator" -> UNICODE_Z;
-      default -> ANY;
+      default -> {
+        ImmutableRangeSet<Integer> resolved = UnicodeData.resolve(name);
+        if (resolved != null) {
+          yield resolved;
+        }
+        throw new IllegalArgumentException("unrecognized Unicode property: " + name);
+      }
     };
+  }
+
+  private static final class UnicodeData {
+    static final ImmutableRangeSet<Integer> UNICODE_LETTER;
+    static final ImmutableRangeSet<Integer> UNICODE_UPPER;
+    static final ImmutableRangeSet<Integer> UNICODE_LOWER;
+    static final ImmutableRangeSet<Integer> UNICODE_DECIMAL_DIGIT;
+    private static final Map<Character.UnicodeBlock, Range<Integer>> BLOCK_RANGES;
+
+    static {
+      ImmutableRangeSet.Builder<Integer> letterBuilder = ImmutableRangeSet.builder();
+      ImmutableRangeSet.Builder<Integer> upperBuilder = ImmutableRangeSet.builder();
+      ImmutableRangeSet.Builder<Integer> lowerBuilder = ImmutableRangeSet.builder();
+      ImmutableRangeSet.Builder<Integer> digitBuilder = ImmutableRangeSet.builder();
+      Map<Character.UnicodeBlock, Range<Integer>> blockMap = new HashMap<>();
+
+      int letterStart = -1;
+      int upperStart = -1;
+      int lowerStart = -1;
+      int digitStart = -1;
+      int blockStart = -1;
+      Character.UnicodeBlock currentBlock = null;
+
+      for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
+        int type = Character.getType(cp);
+        boolean isLetter =
+            type == Character.UPPERCASE_LETTER || type == Character.LOWERCASE_LETTER
+                || type == Character.TITLECASE_LETTER || type == Character.MODIFIER_LETTER
+                || type == Character.OTHER_LETTER;
+        boolean isUpper = type == Character.UPPERCASE_LETTER;
+        boolean isLower = type == Character.LOWERCASE_LETTER;
+        boolean isDigit = type == Character.DECIMAL_DIGIT_NUMBER;
+
+        if (isLetter) {
+          if (letterStart < 0) {
+            letterStart = cp;
+          }
+        } else if (letterStart >= 0) {
+          letterBuilder.add(closedOpen(letterStart, cp));
+          letterStart = -1;
+        }
+
+        if (isUpper) {
+          if (upperStart < 0) {
+            upperStart = cp;
+          }
+        } else if (upperStart >= 0) {
+          upperBuilder.add(closedOpen(upperStart, cp));
+          upperStart = -1;
+        }
+
+        if (isLower) {
+          if (lowerStart < 0) {
+            lowerStart = cp;
+          }
+        } else if (lowerStart >= 0) {
+          lowerBuilder.add(closedOpen(lowerStart, cp));
+          lowerStart = -1;
+        }
+
+        if (isDigit) {
+          if (digitStart < 0) {
+            digitStart = cp;
+          }
+        } else if (digitStart >= 0) {
+          digitBuilder.add(closedOpen(digitStart, cp));
+          digitStart = -1;
+        }
+
+        Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
+        if (b != currentBlock) {
+          if (currentBlock != null) {
+            blockMap.put(currentBlock, closedOpen(blockStart, cp));
+          }
+          currentBlock = b;
+          blockStart = cp;
+        }
+      }
+
+      if (letterStart >= 0) {
+        letterBuilder.add(closedOpen(letterStart, MAX_CODE_POINT + 1));
+      }
+      if (upperStart >= 0) {
+        upperBuilder.add(closedOpen(upperStart, MAX_CODE_POINT + 1));
+      }
+      if (lowerStart >= 0) {
+        lowerBuilder.add(closedOpen(lowerStart, MAX_CODE_POINT + 1));
+      }
+      if (digitStart >= 0) {
+        digitBuilder.add(closedOpen(digitStart, MAX_CODE_POINT + 1));
+      }
+      if (currentBlock != null) {
+        blockMap.put(currentBlock, closedOpen(blockStart, MAX_CODE_POINT + 1));
+      }
+
+      UNICODE_LETTER = letterBuilder.build();
+      UNICODE_UPPER = upperBuilder.build();
+      UNICODE_LOWER = lowerBuilder.build();
+      UNICODE_DECIMAL_DIGIT = digitBuilder.build();
+      BLOCK_RANGES = Collections.unmodifiableMap(blockMap);
+    }
+
+    static ImmutableRangeSet<Integer> resolve(String name) {
+      if (name.startsWith("gc=")) {
+        return resolveCategory(name.substring(3));
+      }
+      if (name.startsWith("blk=")) {
+        return resolveBlock(name.substring(4));
+      }
+      if (name.startsWith("sc=")) {
+        return resolveScript(name.substring(3));
+      }
+      if (name.length() >= 3 && (name.startsWith("In") || name.startsWith("in"))) {
+        ImmutableRangeSet<Integer> block = resolveBlock(name.substring(2));
+        if (block != null) {
+          return block;
+        }
+      }
+      if (name.length() >= 3 && (name.startsWith("Is") || name.startsWith("is"))) {
+        ImmutableRangeSet<Integer> script = resolveScript(name.substring(2));
+        if (script != null) {
+          return script;
+        }
+      }
+      ImmutableRangeSet<Integer> cat = resolveCategory(name);
+      if (cat != null) {
+        return cat;
+      }
+      ImmutableRangeSet<Integer> block = resolveBlock(name);
+      if (block != null) {
+        return block;
+      }
+      return resolveScript(name);
+    }
+
+    private static ImmutableRangeSet<Integer> resolveCategory(String cat) {
+      return switch (Ascii.toLowerCase(cat)) {
+        case "l", "letter" -> UNICODE_LETTER;
+        case "lu" -> UNICODE_UPPER;
+        case "ll" -> UNICODE_LOWER;
+        case "nd" -> UNICODE_DECIMAL_DIGIT;
+        default -> null;
+      };
+    }
+
+    private static ImmutableRangeSet<Integer> resolveBlock(String blockName) {
+      try {
+        Character.UnicodeBlock block = Character.UnicodeBlock.forName(blockName);
+        Range<Integer> range = BLOCK_RANGES.get(block);
+        return range == null ? null : ImmutableRangeSet.of(range);
+      } catch (IllegalArgumentException e) {
+        return null;
+      }
+    }
+
+    private static ImmutableRangeSet<Integer> resolveScript(String scriptName) {
+      try {
+        Character.UnicodeScript script = Character.UnicodeScript.forName(scriptName);
+        ImmutableRangeSet.Builder<Integer> builder = ImmutableRangeSet.builder();
+        int start = -1;
+        for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
+          if (Character.UnicodeScript.of(cp) == script) {
+            if (start < 0) {
+              start = cp;
+            }
+          } else if (start >= 0) {
+            builder.add(closedOpen(start, cp));
+            start = -1;
+          }
+        }
+        if (start >= 0) {
+          builder.add(closedOpen(start, MAX_CODE_POINT + 1));
+        }
+        return builder.build();
+      } catch (IllegalArgumentException e) {
+        return null;
+      }
+    }
   }
 
   private CharRanges() {}

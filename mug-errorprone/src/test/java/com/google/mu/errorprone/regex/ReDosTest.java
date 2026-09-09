@@ -302,11 +302,7 @@ public final class ReDosTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on /\\d+/ and /\\w+/");
-    assertThat(thrown).hasMessageThat().contains("consider: /\\d++\\w+/");
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("caveat: Possessive quantifier /\\d++/ prevents backtracking");
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\d++\\w+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -317,8 +313,7 @@ public final class ReDosTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on /[0-9]+/ and /[0-9a-z]+/");
-    assertThat(thrown).hasMessageThat().contains("consider: /[0-9]++[0-9a-z]+/");
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("[0-9]++[0-9a-z]+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -340,7 +335,7 @@ public final class ReDosTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("attack payload: \"prefix_000000000000000000000000000000!\"");
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix_\\d++\\w+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void suggestRedosRewrite_nonCapturingNestedQuantifier_suggestsFlattened() {
@@ -519,9 +514,14 @@ public final class ReDosTest {
         .hasValue("\\d{2,}");
   }
 
-  @Test public void suggestPolynomialRewrite_overlappingQuantifiers_suggestsPossessive() {
+  @Test public void suggestPolynomialRewrite_overlappingDifferentQuantifiers_returnsEmpty() {
     assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("\\d+\\w+")))
-        .hasValue("\\d++\\w+");
+        .isEmpty();
+  }
+
+  @Test public void suggestPolynomialRewrite_patternWithBackreference_returnsEmpty() {
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("(a)\\1a+a+")))
+        .isEmpty();
   }
 
   @Test public void suggestPolynomialRewrite_disjointQuantifiers_returnsEmpty() {
@@ -591,7 +591,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("\\d+.*\\d+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\d++.*\\d+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -599,7 +599,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("\\w+.*\\w+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\w++.*\\w+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkPolynomialBacktracking_adjacentDotStars_throwsIllegalArgumentException() {
@@ -614,7 +614,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("[a-z]+[a-z0-9]+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("[a-z]++[a-z0-9]+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -622,7 +622,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("a+b?a+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("a++b?a+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -640,12 +640,11 @@ public final class ReDosTest {
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("^prefix(a{2,})suffix$");
   }
 
-  @Test public void
-      checkPolynomialBacktracking_siblingOverlappingInGroup_suggestsPossessiveRegex() {
+  @Test public void checkPolynomialBacktracking_siblingOverlappingInGroup_returnsEmpty() {
     RegexPattern pattern = RegexPattern.of("prefix(\\d+\\w+)suffix");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix(\\d++\\w+)suffix");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_nestedQuantifiersInSequence_suggestsSplicedRegex() {
@@ -1290,7 +1289,7 @@ public final class ReDosTest {
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getPattern()).isEqualTo(pattern);
     assertThat(thrown.getAttackPayload()).isEqualTo("000000000000000000000000000000!");
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\d++\\w+");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkPolynomialBacktracking_delimitedWildcards_suggestsStringFormat() {
@@ -1473,17 +1472,20 @@ public final class ReDosTest {
     assertThat(suggestion.toString()).isEqualTo("(a+)");
   }
 
-  @Test public void
-      getSuggestions_possessiveRegexSuggestion_isStrictlyEquivalentIsFalseAndHasCaveats() {
-    RegexPattern pattern = RegexPattern.of("\\d+\\w+");
-    VulnerableRegexException thrown = assertThrows(
-        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    Suggestion suggestion = thrown.getSuggestions().get(0);
-    assertThat(suggestion).isInstanceOf(Suggestion.RegexSuggestion.class);
-    assertThat(suggestion.isStrictlyEquivalent()).isFalse();
-    assertThat(suggestion.caveats()).isNotEmpty();
-    assertThat(suggestion.replacement()).isEqualTo("\\d++\\w+");
-    assertThat(suggestion.toString()).isEqualTo("\\d++\\w+");
+  @Test public void suggestion_regexSuggestion_withoutCaveats_isStrictlyEquivalent() {
+    Suggestion.RegexSuggestion rs = new Suggestion.RegexSuggestion("a{2,}");
+    assertThat(rs.replacement()).isEqualTo("a{2,}");
+    assertThat(rs.isStrictlyEquivalent()).isTrue();
+    assertThat(rs.caveats()).isEmpty();
+    assertThat(rs.toString()).isEqualTo("a{2,}");
+  }
+
+  @Test public void suggestion_regexSuggestion_withCaveat_isNotStrictlyEquivalent() {
+    Suggestion.RegexSuggestion rs = new Suggestion.RegexSuggestion("a{2,}", "warning caveat");
+    assertThat(rs.replacement()).isEqualTo("a{2,}");
+    assertThat(rs.isStrictlyEquivalent()).isFalse();
+    assertThat(rs.caveats()).containsExactly("warning caveat");
+    assertThat(rs.toString()).isEqualTo("a{2,}");
   }
 
   @Test public void getSuggestions_delimitedWildcards_suggestsSubstringLastWithoutCaveat() {
@@ -1544,19 +1546,6 @@ public final class ReDosTest {
     Pattern original = Pattern.compile("(a+)+");
     Pattern suggestion = Pattern.compile("a+");
     assertThat(suggestion.matcher("b").matches()).isEqualTo(original.matcher("b").matches());
-  }
-
-  @Test public void suggestedAlternative_possessiveQuantifier_matchesEquivalentDisjointTokens() {
-    Pattern original = Pattern.compile("\\d+\\w+");
-    Pattern suggestion = Pattern.compile("\\d++\\w+");
-    assertThat(suggestion.matcher("123abc").matches())
-        .isEqualTo(original.matcher("123abc").matches());
-  }
-
-  @Test public void suggestedAlternative_possessiveQuantifier_rejectsNonMatchingInput() {
-    Pattern original = Pattern.compile("\\d+\\w+");
-    Pattern suggestion = Pattern.compile("\\d++\\w+");
-    assertThat(suggestion.matcher("abc").matches()).isEqualTo(original.matcher("abc").matches());
   }
 
   @Test public void suggestedAlternative_mergedPlusQuantifiers_matchesEquivalentInput() {
@@ -1681,9 +1670,9 @@ public final class ReDosTest {
         .isEmpty();
   }
 
-  @Test public void suggestPolynomialRewrite_boundedRepetitionOverThreshold_suggestsPossessive() {
+  @Test public void suggestPolynomialRewrite_boundedRepetitionOverThreshold_returnsEmpty() {
     assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a{1,6}a{1,6}")))
-        .hasValue("a{1,6}+a{1,6}");
+        .isEmpty();
   }
 
   @Test public void
@@ -2156,12 +2145,10 @@ public final class ReDosTest {
     assertThat(thrown.getAttackPayload()).isNotNull();
   }
 
-  @Test public void
-      checkPolynomialBacktracking_overlappingUnicodeProperty_suggestsMergedRegex() {
+  @Test public void checkPolynomialBacktracking_overlappingUnicodeProperty_suggestsMergedRegex() {
     RegexPattern pattern = RegexPattern.of("\\p{L}+\\p{L}+");
-    VulnerableRegexException thrown =
-        assertThrows(
-            VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\p{L}{2,}");
   }
 }

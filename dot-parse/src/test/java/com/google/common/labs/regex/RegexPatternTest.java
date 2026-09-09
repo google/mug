@@ -1739,10 +1739,6 @@ public final class RegexPatternTest {
                 new Literal(""), List.of(), List.of(ModifierFlag.CANONICAL_EQUIVALENCE)));
   }
 
-  @Test public void of_charClass_withExtendedGraphemeCluster() {
-    assertThat(RegexPattern.of("[\\X]")).isEqualTo(anyOf(new LiteralChar('X')));
-  }
-
   @Test public void of_unicodeProperty_singleLetterUnbraced_letter() {
     assertThat(RegexPattern.of("\\pL")).isEqualTo(new UnicodeProperty("L"));
   }
@@ -1792,7 +1788,17 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("[\\ca]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
   }
 
-  @Test public void of_charClass_withLinebreak() {
-    assertThat(RegexPattern.of("[\\R]")).isEqualTo(anyOf(new LiteralChar('R')));
+  @Test public void literal_toString_escapesControlCharacters() {
+    assertThat(new Literal("\0\u0001\u001B").toString()).isEqualTo("\\u0000\\u0001\\u001B");
+  }
+
+  @Test public void literal_toString_preservesStandardEscapes() {
+    assertThat(new Literal("\n\r\t\f").toString()).isEqualTo("\\n\\r\\t\\f");
+  }
+
+  @Test public void literalChar_toString_escapesControlCharacters() {
+    assertThat(new LiteralChar(0).toString()).isEqualTo("\\u0000");
+    assertThat(new LiteralChar(1).toString()).isEqualTo("\\u0001");
+    assertThat(new LiteralChar(0x1B).toString()).isEqualTo("\\u001B");
   }
 }

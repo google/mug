@@ -517,15 +517,27 @@ public sealed interface RegexPattern {
     }
 
     @Override public String toString() {
-      return ESCAPED_CHARS.replaceAllFrom(
-          value,
-          m -> switch (m.toString()) {
-            case "\n" -> "\\n";
-            case "\r" -> "\\r";
-            case "\t" -> "\\t";
-            case "\f" -> "\\f";
-            default -> "\\" + m;
+      StringBuilder sb = new StringBuilder();
+      value
+          .codePoints()
+          .forEach(cp -> {
+            switch (cp) {
+              case '\n' -> sb.append("\\n");
+              case '\r' -> sb.append("\\r");
+              case '\t' -> sb.append("\\t");
+              case '\f' -> sb.append("\\f");
+              case '.', '[', ']', '{', '}', '(', ')', '*', '+', '-', '?', '^', '$', '|', '\\' ->
+                  sb.append('\\').append((char) cp);
+              default -> {
+                if (cp < 0x20 || cp == 0x7F) {
+                  sb.append(String.format("\\u%04X", cp));
+                } else {
+                  sb.appendCodePoint(cp);
+                }
+              }
+            }
           });
+      return sb.toString();
     }
   }
 
@@ -666,7 +678,12 @@ public sealed interface RegexPattern {
         case '\f' -> "\\f";
         // Characters that are special inside character classes.
         case '[', ']', '\\', '^', '&', '-' -> "\\" + (char) codePoint;
-        default -> Character.toString(codePoint);
+        default -> {
+          if (codePoint < 0x20 || codePoint == 0x7F) {
+            yield String.format("\\u%04X", codePoint);
+          }
+          yield Character.toString(codePoint);
+        }
       };
     }
   }
