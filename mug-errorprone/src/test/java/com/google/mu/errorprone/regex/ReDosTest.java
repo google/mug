@@ -6,14 +6,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
@@ -21,6 +13,12 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public final class ReDosTest {
@@ -2151,11 +2149,19 @@ public final class ReDosTest {
     ReDos.checkPolynomialBacktracking(pattern);
   }
 
-  @Test
-  public void checkRedosVulnerability_largeQuantifiedSubPattern_doesNotExhaustMemory() {
+  @Test public void checkRedosVulnerability_largeQuantifiedSubPattern_doesNotExhaustMemory() {
     RegexPattern pattern = RegexPattern.of("((a+{92275707})+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown.getAttackPayload()).isNotNull();
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_overlappingUnicodeProperty_suggestsMergedRegex() {
+    RegexPattern pattern = RegexPattern.of("\\p{L}+\\p{L}+");
+    VulnerableRegexException thrown =
+        assertThrows(
+            VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\p{L}{2,}");
   }
 }

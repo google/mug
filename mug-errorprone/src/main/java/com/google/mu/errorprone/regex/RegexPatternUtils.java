@@ -113,11 +113,9 @@ public final class RegexPatternUtils {
           .reduce(CharRanges.EMPTY, CharRanges::union);
       case RegexPattern.Quantified q -> firstCharRangesOf(q.element());
       case RegexPattern.Group group -> firstCharRangesOf(group.content());
-      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
-      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
+      case RegexPattern.CharSetElement cse -> CharRanges.from(cse);
       case RegexPattern.Literal lit ->
-          lit.value().isEmpty() ? CharRanges.EMPTY : CharRanges.of(lit.value().charAt(0));
+          lit.value().isEmpty() ? CharRanges.EMPTY : CharRanges.of(lit.value().codePointAt(0));
       default -> CharRanges.EMPTY;
     };
   }
@@ -142,11 +140,11 @@ public final class RegexPatternUtils {
           .reduce(CharRanges.EMPTY, CharRanges::union);
       case RegexPattern.Quantified q -> charRangesOf(q.element());
       case RegexPattern.Group group -> charRangesOf(group.content());
-      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
-      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.Literal lit ->
-          lit.value().chars().mapToObj(CharRanges::of).reduce(CharRanges.EMPTY, CharRanges::union);
+      case RegexPattern.CharSetElement cse -> CharRanges.from(cse);
+      case RegexPattern.Literal lit -> lit.value()
+          .codePoints()
+          .mapToObj(CharRanges::of)
+          .reduce(CharRanges.EMPTY, CharRanges::union);
       default -> CharRanges.EMPTY;
     };
   }

@@ -589,6 +589,51 @@ public final class CharRangesTest {
     assertThat(space.contains((int) 'a')).isFalse();
   }
 
+  @Test public void from_anyChar_containsVerticalTab() {
+    ImmutableRangeSet<Integer> anyChar = CharRanges.from(PredefinedCharClass.ANY_CHAR);
+    assertThat(anyChar.contains(0x0B)).isTrue();
+  }
+
+  @Test public void from_anyChar_containsFormFeed() {
+    ImmutableRangeSet<Integer> anyChar = CharRanges.from(PredefinedCharClass.ANY_CHAR);
+    assertThat(anyChar.contains((int) '\f')).isTrue();
+  }
+
+  @Test public void firstCharRangesOf_unicodeProperty_returnsPropertyRanges() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.firstCharRangesOf(RegexPattern.of("\\p{L}"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+  }
+
+  @Test public void firstCharRangesOf_negatedCharacterProperty_returnsPropertyRanges() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.firstCharRangesOf(RegexPattern.of("\\P{Digit}"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+  }
+
+  @Test public void firstCharRangesOf_supplementaryLiteral_returnsFullCodePoint() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.firstCharRangesOf(RegexPattern.of("\uD83D\uDE00"));
+    assertThat(ranges.contains(0x1F600)).isTrue();
+  }
+
+  @Test public void charRangesOf_unicodeProperty_returnsPropertyRanges() {
+    ImmutableRangeSet<Integer> ranges = RegexPatternUtils.charRangesOf(RegexPattern.of("\\p{L}"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+  }
+
+  @Test public void charRangesOf_negatedCharacterProperty_returnsPropertyRanges() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.charRangesOf(RegexPattern.of("\\P{Digit}"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+  }
+
+  @Test public void charRangesOf_supplementaryLiteral_returnsFullCodePoint() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.charRangesOf(RegexPattern.of("\uD83D\uDE00"));
+    assertThat(ranges.contains(0x1F600)).isTrue();
+  }
+
   private static ImmutableRangeSet<Integer> fromPattern(String regex) {
     return CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of(regex));
   }

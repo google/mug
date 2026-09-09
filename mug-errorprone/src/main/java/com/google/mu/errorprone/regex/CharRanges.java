@@ -213,13 +213,21 @@ final class CharRanges {
         .build();
   }
 
+  private static final ImmutableRangeSet<Integer> LINE_TERMINATORS =
+      ImmutableRangeSet.<Integer>builder()
+          .add(only('\n'))
+          .add(only('\r'))
+          .add(only(0x85))
+          .add(range(0x2028, 0x2029))
+          .build();
+
+  static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINE_TERMINATORS);
+
   private static final ImmutableRangeSet<Integer> LINEBREAK = ImmutableRangeSet.<Integer>builder()
       .add(range('\n', '\r'))
       .add(only(0x85))
       .add(range(0x2028, 0x2029))
       .build();
-
-  static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
 
   private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
       .add(only(0x0020))
