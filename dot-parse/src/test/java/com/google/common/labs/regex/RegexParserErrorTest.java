@@ -1178,4 +1178,14 @@ public final class RegexParserErrorTest {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\q]"));
     assertThat(e).hasMessageThat().contains("at 1:3");
   }
+
+  @Test public void escape_undefinedLetter_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\q"));
+    assertThat(e).hasMessageThat().contains("at 1:2");
+  }
+
+  @Test public void escape_undefinedLetterInSequence_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\j\\d\\w"));
+    assertThat(e).hasMessageThat().contains("at 1:2");
+  }
 }

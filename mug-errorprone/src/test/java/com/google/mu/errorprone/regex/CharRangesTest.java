@@ -220,6 +220,109 @@ public final class CharRangesTest {
     assertThrows(IllegalArgumentException.class, () -> fromPattern("[\\p{NoSuchProperty}]"));
   }
 
+  @Test public void from_unicodePropertyN_containsDigitsAndLetterNumbers() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{N}]");
+    assertThat(ranges.contains((int) '0')).isTrue();
+    assertThat(ranges.contains(0x2160)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_singleLetterUnbraced_number() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\pN]");
+    assertThat(ranges.contains((int) '5')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_numberLongName() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Number}]");
+    assertThat(ranges.contains((int) '5')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyP_containsPunctuation() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{P}]");
+    assertThat(ranges.contains((int) '!')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyS_containsSymbol() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{S}]");
+    assertThat(ranges.contains((int) '$')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyM_containsMark() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{M}]");
+    assertThat(ranges.contains(0x0300)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyC_containsControl() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{C}]");
+    assertThat(ranges.contains(0)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertySc_containsCurrency() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Sc}]");
+    assertThat(ranges.contains((int) '$')).isTrue();
+    assertThat(ranges.contains(0x20AC)).isTrue();
+    assertThat(ranges.contains((int) '+')).isFalse();
+  }
+
+  @Test public void from_unicodePropertySm_containsMath() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Sm}]");
+    assertThat(ranges.contains((int) '+')).isTrue();
+    assertThat(ranges.contains((int) '=')).isTrue();
+    assertThat(ranges.contains((int) '$')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyPd_containsDash() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Pd}]");
+    assertThat(ranges.contains((int) '-')).isTrue();
+    assertThat(ranges.contains(0x2014)).isTrue();
+    assertThat(ranges.contains((int) '!')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isAlphabetic_containsLettersAndLetterNumbers() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsAlphabetic}]");
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains(0x2160)).isTrue();
+    assertThat(ranges.contains((int) '0')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isDigit_containsDigits() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsDigit}]");
+    assertThat(ranges.contains((int) '0')).isTrue();
+    assertThat(ranges.contains(0x0660)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isIdeographic_containsCjk() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsIdeographic}]");
+    assertThat(ranges.contains(0x4E00)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isWhitespace_containsWhitespace() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsWhitespace}]");
+    assertThat(ranges.contains((int) ' ')).isTrue();
+    assertThat(ranges.contains((int) '\t')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isLowerCase_containsLower() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsLowerCase}]");
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains((int) 'A')).isFalse();
+  }
+
+  @Test public void from_unicodeProperty_isUpperCase_containsUpper() {
+    ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{IsUpperCase}]");
+    assertThat(ranges.contains((int) 'A')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
   @Test public void sampleChar_uppercaseOnly_returnsA() {
     assertThat(CharRanges.sampleChar(fromPattern("[A-Z]"))).isEqualTo((int) 'A');
   }

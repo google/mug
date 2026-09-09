@@ -259,16 +259,18 @@ final class CharRanges {
 
   private static ImmutableRangeSet<Integer> fromUnicodeProperty(String name) {
     return switch (Ascii.toLowerCase(name)) {
-      case "nd" -> UnicodeData.UNICODE_DECIMAL_DIGIT;
       case "digit" -> DIGIT;
-      case "l", "letter" -> UnicodeData.UNICODE_LETTER;
-      case "lu" -> UnicodeData.UNICODE_UPPER;
-      case "ll" -> UnicodeData.UNICODE_LOWER;
       case "alpha" -> ALPHA;
       case "alnum" -> ALNUM;
       case "ascii" -> ASCII;
+      case "blank" -> BLANK;
+      case "cntrl" -> CNTRL;
+      case "graph" -> GRAPH;
+      case "print" -> PRINT;
       case "punct" -> PUNCT;
       case "space" -> SPACE;
+      case "word" -> WORD;
+      case "xdigit" -> XDIGIT;
       case "zl" -> UNICODE_ZL;
       case "zp" -> UNICODE_ZP;
       case "zs" -> UNICODE_ZS;
@@ -284,63 +286,63 @@ final class CharRanges {
   }
 
   private static final class UnicodeData {
-    static final ImmutableRangeSet<Integer> UNICODE_LETTER;
-    static final ImmutableRangeSet<Integer> UNICODE_UPPER;
-    static final ImmutableRangeSet<Integer> UNICODE_LOWER;
-    static final ImmutableRangeSet<Integer> UNICODE_DECIMAL_DIGIT;
+    private static final Map<String, ImmutableRangeSet<Integer>> CATEGORIES;
+    private static final Map<String, ImmutableRangeSet<Integer>> BINARY_PROPERTIES;
     private static final Map<Character.UnicodeBlock, Range<Integer>> BLOCK_RANGES;
 
     static {
-      ImmutableRangeSet.Builder<Integer> letterBuilder = ImmutableRangeSet.builder();
-      ImmutableRangeSet.Builder<Integer> upperBuilder = ImmutableRangeSet.builder();
-      ImmutableRangeSet.Builder<Integer> lowerBuilder = ImmutableRangeSet.builder();
+      @SuppressWarnings("unchecked")
+      ImmutableRangeSet.Builder<Integer>[] typeBuilders =
+          (ImmutableRangeSet.Builder<Integer>[]) new ImmutableRangeSet.Builder<?>[31];
+      for (int i = 0; i < 31; i++) {
+        typeBuilders[i] = ImmutableRangeSet.builder();
+      }
+      ImmutableRangeSet.Builder<Integer> alphaBuilder = ImmutableRangeSet.builder();
+      ImmutableRangeSet.Builder<Integer> ideoBuilder = ImmutableRangeSet.builder();
       ImmutableRangeSet.Builder<Integer> digitBuilder = ImmutableRangeSet.builder();
+      ImmutableRangeSet.Builder<Integer> wsBuilder = ImmutableRangeSet.builder();
       Map<Character.UnicodeBlock, Range<Integer>> blockMap = new HashMap<>();
 
-      int letterStart = -1;
-      int upperStart = -1;
-      int lowerStart = -1;
+      int currentType = -1;
+      int currentTypeStart = -1;
+      int alphaStart = -1;
+      int ideoStart = -1;
       int digitStart = -1;
+      int wsStart = -1;
       int blockStart = -1;
       Character.UnicodeBlock currentBlock = null;
 
       for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
         int type = Character.getType(cp);
-        boolean isLetter =
-            type == Character.UPPERCASE_LETTER || type == Character.LOWERCASE_LETTER
-                || type == Character.TITLECASE_LETTER || type == Character.MODIFIER_LETTER
-                || type == Character.OTHER_LETTER;
-        boolean isUpper = type == Character.UPPERCASE_LETTER;
-        boolean isLower = type == Character.LOWERCASE_LETTER;
-        boolean isDigit = type == Character.DECIMAL_DIGIT_NUMBER;
-
-        if (isLetter) {
-          if (letterStart < 0) {
-            letterStart = cp;
+        if (type != currentType) {
+          if (currentType >= 0) {
+            typeBuilders[currentType].add(closedOpen(currentTypeStart, cp));
           }
-        } else if (letterStart >= 0) {
-          letterBuilder.add(closedOpen(letterStart, cp));
-          letterStart = -1;
+          currentType = type;
+          currentTypeStart = cp;
         }
 
-        if (isUpper) {
-          if (upperStart < 0) {
-            upperStart = cp;
+        boolean isAlpha = Character.isAlphabetic(cp);
+        if (isAlpha) {
+          if (alphaStart < 0) {
+            alphaStart = cp;
           }
-        } else if (upperStart >= 0) {
-          upperBuilder.add(closedOpen(upperStart, cp));
-          upperStart = -1;
+        } else if (alphaStart >= 0) {
+          alphaBuilder.add(closedOpen(alphaStart, cp));
+          alphaStart = -1;
         }
 
-        if (isLower) {
-          if (lowerStart < 0) {
-            lowerStart = cp;
+        boolean isIdeo = Character.isIdeographic(cp);
+        if (isIdeo) {
+          if (ideoStart < 0) {
+            ideoStart = cp;
           }
-        } else if (lowerStart >= 0) {
-          lowerBuilder.add(closedOpen(lowerStart, cp));
-          lowerStart = -1;
+        } else if (ideoStart >= 0) {
+          ideoBuilder.add(closedOpen(ideoStart, cp));
+          ideoStart = -1;
         }
 
+        boolean isDigit = Character.isDigit(cp);
         if (isDigit) {
           if (digitStart < 0) {
             digitStart = cp;
@@ -348,6 +350,16 @@ final class CharRanges {
         } else if (digitStart >= 0) {
           digitBuilder.add(closedOpen(digitStart, cp));
           digitStart = -1;
+        }
+
+        boolean isWs = (H_WHITESPACE.contains(cp) || V_WHITESPACE.contains(cp)) && cp != 0x180E;
+        if (isWs) {
+          if (wsStart < 0) {
+            wsStart = cp;
+          }
+        } else if (wsStart >= 0) {
+          wsBuilder.add(closedOpen(wsStart, cp));
+          wsStart = -1;
         }
 
         Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
@@ -360,27 +372,134 @@ final class CharRanges {
         }
       }
 
-      if (letterStart >= 0) {
-        letterBuilder.add(closedOpen(letterStart, MAX_CODE_POINT + 1));
+      if (currentType >= 0) {
+        typeBuilders[currentType].add(closedOpen(currentTypeStart, MAX_CODE_POINT + 1));
       }
-      if (upperStart >= 0) {
-        upperBuilder.add(closedOpen(upperStart, MAX_CODE_POINT + 1));
+      if (alphaStart >= 0) {
+        alphaBuilder.add(closedOpen(alphaStart, MAX_CODE_POINT + 1));
       }
-      if (lowerStart >= 0) {
-        lowerBuilder.add(closedOpen(lowerStart, MAX_CODE_POINT + 1));
+      if (ideoStart >= 0) {
+        ideoBuilder.add(closedOpen(ideoStart, MAX_CODE_POINT + 1));
       }
       if (digitStart >= 0) {
         digitBuilder.add(closedOpen(digitStart, MAX_CODE_POINT + 1));
+      }
+      if (wsStart >= 0) {
+        wsBuilder.add(closedOpen(wsStart, MAX_CODE_POINT + 1));
       }
       if (currentBlock != null) {
         blockMap.put(currentBlock, closedOpen(blockStart, MAX_CODE_POINT + 1));
       }
 
-      UNICODE_LETTER = letterBuilder.build();
-      UNICODE_UPPER = upperBuilder.build();
-      UNICODE_LOWER = lowerBuilder.build();
-      UNICODE_DECIMAL_DIGIT = digitBuilder.build();
+      @SuppressWarnings("unchecked")
+      ImmutableRangeSet<Integer>[] typeRanges =
+          (ImmutableRangeSet<Integer>[]) new ImmutableRangeSet<?>[31];
+      for (int i = 0; i < 31; i++) {
+        typeRanges[i] = typeBuilders[i].build();
+      }
+
+      Map<String, ImmutableRangeSet<Integer>> categories = new HashMap<>();
+      categories.put("cn", typeRanges[Character.UNASSIGNED]);
+      categories.put("lu", typeRanges[Character.UPPERCASE_LETTER]);
+      categories.put("ll", typeRanges[Character.LOWERCASE_LETTER]);
+      categories.put("lt", typeRanges[Character.TITLECASE_LETTER]);
+      categories.put("lm", typeRanges[Character.MODIFIER_LETTER]);
+      categories.put("lo", typeRanges[Character.OTHER_LETTER]);
+      categories.put("mn", typeRanges[Character.NON_SPACING_MARK]);
+      categories.put("me", typeRanges[Character.ENCLOSING_MARK]);
+      categories.put("mc", typeRanges[Character.COMBINING_SPACING_MARK]);
+      categories.put("nd", typeRanges[Character.DECIMAL_DIGIT_NUMBER]);
+      categories.put("nl", typeRanges[Character.LETTER_NUMBER]);
+      categories.put("no", typeRanges[Character.OTHER_NUMBER]);
+      categories.put("zs", typeRanges[Character.SPACE_SEPARATOR]);
+      categories.put("zl", typeRanges[Character.LINE_SEPARATOR]);
+      categories.put("zp", typeRanges[Character.PARAGRAPH_SEPARATOR]);
+      categories.put("cc", typeRanges[Character.CONTROL]);
+      categories.put("cf", typeRanges[Character.FORMAT]);
+      categories.put("co", typeRanges[Character.PRIVATE_USE]);
+      categories.put("cs", typeRanges[Character.SURROGATE]);
+      categories.put("pd", typeRanges[Character.DASH_PUNCTUATION]);
+      categories.put("ps", typeRanges[Character.START_PUNCTUATION]);
+      categories.put("pe", typeRanges[Character.END_PUNCTUATION]);
+      categories.put("pc", typeRanges[Character.CONNECTOR_PUNCTUATION]);
+      categories.put("po", typeRanges[Character.OTHER_PUNCTUATION]);
+      categories.put("sm", typeRanges[Character.MATH_SYMBOL]);
+      categories.put("sc", typeRanges[Character.CURRENCY_SYMBOL]);
+      categories.put("sk", typeRanges[Character.MODIFIER_SYMBOL]);
+      categories.put("so", typeRanges[Character.OTHER_SYMBOL]);
+      categories.put("pi", typeRanges[Character.INITIAL_QUOTE_PUNCTUATION]);
+      categories.put("pf", typeRanges[Character.FINAL_QUOTE_PUNCTUATION]);
+
+      ImmutableRangeSet<Integer> letter = unionOf(
+          typeRanges, Character.UPPERCASE_LETTER, Character.LOWERCASE_LETTER,
+          Character.TITLECASE_LETTER, Character.MODIFIER_LETTER, Character.OTHER_LETTER);
+      categories.put("l", letter);
+      categories.put("letter", letter);
+
+      ImmutableRangeSet<Integer> mark = unionOf(
+          typeRanges, Character.NON_SPACING_MARK, Character.ENCLOSING_MARK,
+          Character.COMBINING_SPACING_MARK);
+      categories.put("m", mark);
+      categories.put("mark", mark);
+
+      ImmutableRangeSet<Integer> number = unionOf(
+          typeRanges, Character.DECIMAL_DIGIT_NUMBER, Character.LETTER_NUMBER,
+          Character.OTHER_NUMBER);
+      categories.put("n", number);
+      categories.put("number", number);
+
+      ImmutableRangeSet<Integer> separator = unionOf(
+          typeRanges, Character.SPACE_SEPARATOR, Character.LINE_SEPARATOR,
+          Character.PARAGRAPH_SEPARATOR);
+      categories.put("z", separator);
+      categories.put("separator", separator);
+
+      ImmutableRangeSet<Integer> other = unionOf(
+          typeRanges, Character.UNASSIGNED, Character.CONTROL, Character.FORMAT,
+          Character.PRIVATE_USE, Character.SURROGATE);
+      categories.put("c", other);
+      categories.put("other", other);
+
+      ImmutableRangeSet<Integer> punctuation = unionOf(
+          typeRanges, Character.DASH_PUNCTUATION, Character.START_PUNCTUATION,
+          Character.END_PUNCTUATION, Character.CONNECTOR_PUNCTUATION, Character.OTHER_PUNCTUATION,
+          Character.INITIAL_QUOTE_PUNCTUATION, Character.FINAL_QUOTE_PUNCTUATION);
+      categories.put("p", punctuation);
+      categories.put("punctuation", punctuation);
+
+      ImmutableRangeSet<Integer> symbol = unionOf(
+          typeRanges, Character.MATH_SYMBOL, Character.CURRENCY_SYMBOL, Character.MODIFIER_SYMBOL,
+          Character.OTHER_SYMBOL);
+      categories.put("s", symbol);
+      categories.put("symbol", symbol);
+
+      CATEGORIES = Collections.unmodifiableMap(categories);
+
+      Map<String, ImmutableRangeSet<Integer>> binaryProps = new HashMap<>();
+      binaryProps.put("alphabetic", alphaBuilder.build());
+      binaryProps.put("ideographic", ideoBuilder.build());
+      binaryProps.put("letter", letter);
+      binaryProps.put("titlecase", typeRanges[Character.TITLECASE_LETTER]);
+      binaryProps.put("digit", digitBuilder.build());
+      binaryProps.put("lower", typeRanges[Character.LOWERCASE_LETTER]);
+      binaryProps.put("lowercase", typeRanges[Character.LOWERCASE_LETTER]);
+      binaryProps.put("upper", typeRanges[Character.UPPERCASE_LETTER]);
+      binaryProps.put("uppercase", typeRanges[Character.UPPERCASE_LETTER]);
+      binaryProps.put("whitespace", wsBuilder.build());
+      binaryProps.put("white_space", wsBuilder.build());
+      binaryProps.put("punctuation", punctuation);
+      BINARY_PROPERTIES = Collections.unmodifiableMap(binaryProps);
+
       BLOCK_RANGES = Collections.unmodifiableMap(blockMap);
+    }
+
+    private static ImmutableRangeSet<Integer> unionOf(
+        ImmutableRangeSet<Integer>[] typeRanges, int... types) {
+      RangeSet<Integer> tree = TreeRangeSet.create();
+      for (int t : types) {
+        tree.addAll(typeRanges[t]);
+      }
+      return ImmutableRangeSet.copyOf(tree);
     }
 
     static ImmutableRangeSet<Integer> resolve(String name) {
@@ -400,14 +519,31 @@ final class CharRanges {
         }
       }
       if (name.length() >= 3 && (name.startsWith("Is") || name.startsWith("is"))) {
-        ImmutableRangeSet<Integer> script = resolveScript(name.substring(2));
+        String sub = name.substring(2);
+        ImmutableRangeSet<Integer> prop = resolveBinaryProperty(sub);
+        if (prop != null) {
+          return prop;
+        }
+        ImmutableRangeSet<Integer> script = resolveScript(sub);
         if (script != null) {
           return script;
+        }
+        ImmutableRangeSet<Integer> cat = resolveCategory(sub);
+        if (cat != null) {
+          return cat;
+        }
+        ImmutableRangeSet<Integer> block = resolveBlock(sub);
+        if (block != null) {
+          return block;
         }
       }
       ImmutableRangeSet<Integer> cat = resolveCategory(name);
       if (cat != null) {
         return cat;
+      }
+      ImmutableRangeSet<Integer> prop = resolveBinaryProperty(name);
+      if (prop != null) {
+        return prop;
       }
       ImmutableRangeSet<Integer> block = resolveBlock(name);
       if (block != null) {
@@ -417,13 +553,11 @@ final class CharRanges {
     }
 
     private static ImmutableRangeSet<Integer> resolveCategory(String cat) {
-      return switch (Ascii.toLowerCase(cat)) {
-        case "l", "letter" -> UNICODE_LETTER;
-        case "lu" -> UNICODE_UPPER;
-        case "ll" -> UNICODE_LOWER;
-        case "nd" -> UNICODE_DECIMAL_DIGIT;
-        default -> null;
-      };
+      return CATEGORIES.get(Ascii.toLowerCase(cat));
+    }
+
+    private static ImmutableRangeSet<Integer> resolveBinaryProperty(String prop) {
+      return BINARY_PROPERTIES.get(Ascii.toLowerCase(prop));
     }
 
     private static ImmutableRangeSet<Integer> resolveBlock(String blockName) {

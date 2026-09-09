@@ -304,11 +304,6 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("[\\cA]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
   }
 
-  @Test public void of_escapedLiteralMixedWithPredefinedCharClasses() {
-    assertThat(RegexPattern.of("\\j\\d\\w"))
-        .isEqualTo(sequence(new Literal("j"), PredefinedCharClass.DIGIT, PredefinedCharClass.WORD));
-  }
-
   @Test public void of_predefinedCharClass(@TestParameter PredefinedCharClass predefinedCharClass) {
     assertThat(RegexPattern.of(predefinedCharClass.toString())).isEqualTo(predefinedCharClass);
   }
