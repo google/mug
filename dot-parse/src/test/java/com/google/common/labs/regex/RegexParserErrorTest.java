@@ -1188,4 +1188,39 @@ public final class RegexParserErrorTest {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\j\\d\\w"));
     assertThat(e).hasMessageThat().contains("at 1:2");
   }
+
+  @Test public void characterClass_nonWordBoundary_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\B]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void characterClass_beginningOfInput_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\A]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void characterClass_endOfPreviousMatch_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\G]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void characterClass_endOfInputExcludingFinalTerminator_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\Z]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void characterClass_endOfInput_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\z]"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void hexEscape_singleHexDigit_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\x4"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
+
+  @Test public void octalEscape_invalidOctalDigit_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\08"));
+    assertThat(e).hasMessageThat().contains("at 1:3");
+  }
 }
