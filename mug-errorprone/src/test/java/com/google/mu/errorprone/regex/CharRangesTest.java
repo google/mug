@@ -5,6 +5,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
+import com.google.common.labs.regex.RegexPattern.PosixCharClass;
+import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -299,6 +301,292 @@ public final class CharRangesTest {
     assertThat(lb.contains(0x2028)).isTrue();
     assertThat(lb.contains(0x2029)).isTrue();
     assertThat(lb.contains((int) ' ')).isFalse();
+  }
+
+  @Test public void from_horizontalWhitespace_containsAllHorizontalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> hws = CharRanges.from(PredefinedCharClass.HORIZONTAL_WHITESPACE);
+    assertThat(hws.contains((int) ' ')).isTrue();
+    assertThat(hws.contains((int) '\t')).isTrue();
+    assertThat(hws.contains(0x00A0)).isTrue();
+    assertThat(hws.contains(0x1680)).isTrue();
+    assertThat(hws.contains(0x180E)).isTrue();
+    assertThat(hws.contains(0x2000)).isTrue();
+    assertThat(hws.contains(0x2005)).isTrue();
+    assertThat(hws.contains(0x200A)).isTrue();
+    assertThat(hws.contains(0x202F)).isTrue();
+    assertThat(hws.contains(0x205F)).isTrue();
+    assertThat(hws.contains(0x3000)).isTrue();
+  }
+
+  @Test public void from_horizontalWhitespace_excludesNonHorizontalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> hws = CharRanges.from(PredefinedCharClass.HORIZONTAL_WHITESPACE);
+    assertThat(hws.contains(0x1FFF)).isFalse();
+    assertThat(hws.contains(0x200B)).isFalse();
+    assertThat(hws.contains(0x180D)).isFalse();
+    assertThat(hws.contains(0x180F)).isFalse();
+    assertThat(hws.contains(0x202E)).isFalse();
+    assertThat(hws.contains(0x2030)).isFalse();
+    assertThat(hws.contains(0x205E)).isFalse();
+    assertThat(hws.contains(0x2060)).isFalse();
+    assertThat(hws.contains(0x2FFF)).isFalse();
+    assertThat(hws.contains(0x3001)).isFalse();
+    assertThat(hws.contains((int) '\n')).isFalse();
+    assertThat(hws.contains((int) '\r')).isFalse();
+    assertThat(hws.contains((int) 'a')).isFalse();
+    assertThat(hws.contains((int) '0')).isFalse();
+  }
+
+  @Test public void from_nonHorizontalWhitespace_excludesHorizontalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonHws =
+        CharRanges.from(PredefinedCharClass.NON_HORIZONTAL_WHITESPACE);
+    assertThat(nonHws.contains((int) ' ')).isFalse();
+    assertThat(nonHws.contains((int) '\t')).isFalse();
+    assertThat(nonHws.contains(0x00A0)).isFalse();
+    assertThat(nonHws.contains(0x1680)).isFalse();
+    assertThat(nonHws.contains(0x180E)).isFalse();
+    assertThat(nonHws.contains(0x2000)).isFalse();
+    assertThat(nonHws.contains(0x2005)).isFalse();
+    assertThat(nonHws.contains(0x200A)).isFalse();
+    assertThat(nonHws.contains(0x202F)).isFalse();
+    assertThat(nonHws.contains(0x205F)).isFalse();
+    assertThat(nonHws.contains(0x3000)).isFalse();
+  }
+
+  @Test public void from_nonHorizontalWhitespace_containsNonHorizontalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonHws =
+        CharRanges.from(PredefinedCharClass.NON_HORIZONTAL_WHITESPACE);
+    assertThat(nonHws.contains(0x1FFF)).isTrue();
+    assertThat(nonHws.contains(0x200B)).isTrue();
+    assertThat(nonHws.contains((int) '\n')).isTrue();
+    assertThat(nonHws.contains((int) '\r')).isTrue();
+    assertThat(nonHws.contains((int) 'a')).isTrue();
+    assertThat(nonHws.contains((int) '0')).isTrue();
+  }
+
+  @Test public void from_verticalWhitespace_containsAllVerticalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> vws = CharRanges.from(PredefinedCharClass.VERTICAL_WHITESPACE);
+    assertThat(vws.contains((int) '\n')).isTrue();
+    assertThat(vws.contains(0x0B)).isTrue();
+    assertThat(vws.contains((int) '\f')).isTrue();
+    assertThat(vws.contains((int) '\r')).isTrue();
+    assertThat(vws.contains(0x85)).isTrue();
+    assertThat(vws.contains(0x2028)).isTrue();
+    assertThat(vws.contains(0x2029)).isTrue();
+  }
+
+  @Test public void from_verticalWhitespace_excludesNonVerticalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> vws = CharRanges.from(PredefinedCharClass.VERTICAL_WHITESPACE);
+    assertThat(vws.contains(0x2027)).isFalse();
+    assertThat(vws.contains(0x202A)).isFalse();
+    assertThat(vws.contains(0x84)).isFalse();
+    assertThat(vws.contains(0x86)).isFalse();
+    assertThat(vws.contains((int) ' ')).isFalse();
+    assertThat(vws.contains((int) '\t')).isFalse();
+    assertThat(vws.contains((int) 'a')).isFalse();
+    assertThat(vws.contains((int) '0')).isFalse();
+  }
+
+  @Test public void from_nonVerticalWhitespace_excludesVerticalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonVws =
+        CharRanges.from(PredefinedCharClass.NON_VERTICAL_WHITESPACE);
+    assertThat(nonVws.contains((int) '\n')).isFalse();
+    assertThat(nonVws.contains(0x0B)).isFalse();
+    assertThat(nonVws.contains((int) '\f')).isFalse();
+    assertThat(nonVws.contains((int) '\r')).isFalse();
+    assertThat(nonVws.contains(0x85)).isFalse();
+    assertThat(nonVws.contains(0x2028)).isFalse();
+    assertThat(nonVws.contains(0x2029)).isFalse();
+  }
+
+  @Test public void from_nonVerticalWhitespace_containsNonVerticalWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonVws =
+        CharRanges.from(PredefinedCharClass.NON_VERTICAL_WHITESPACE);
+    assertThat(nonVws.contains((int) ' ')).isTrue();
+    assertThat(nonVws.contains((int) '\t')).isTrue();
+    assertThat(nonVws.contains(0x2027)).isTrue();
+    assertThat(nonVws.contains(0x202A)).isTrue();
+    assertThat(nonVws.contains(0x84)).isTrue();
+    assertThat(nonVws.contains(0x86)).isTrue();
+    assertThat(nonVws.contains((int) 'a')).isTrue();
+    assertThat(nonVws.contains((int) '0')).isTrue();
+  }
+
+  @Test public void from_nonDigit_excludesDigits() {
+    ImmutableRangeSet<Integer> nonDigit = CharRanges.from(PredefinedCharClass.NON_DIGIT);
+    assertThat(nonDigit.contains((int) '0')).isFalse();
+    assertThat(nonDigit.contains((int) '5')).isFalse();
+    assertThat(nonDigit.contains((int) '9')).isFalse();
+  }
+
+  @Test public void from_nonDigit_containsNonDigits() {
+    ImmutableRangeSet<Integer> nonDigit = CharRanges.from(PredefinedCharClass.NON_DIGIT);
+    assertThat(nonDigit.contains((int) '/')).isTrue();
+    assertThat(nonDigit.contains((int) ':')).isTrue();
+    assertThat(nonDigit.contains((int) 'a')).isTrue();
+    assertThat(nonDigit.contains((int) ' ')).isTrue();
+  }
+
+  @Test public void from_nonWord_excludesWordCharacters() {
+    ImmutableRangeSet<Integer> nonWord = CharRanges.from(PredefinedCharClass.NON_WORD);
+    assertThat(nonWord.contains((int) 'a')).isFalse();
+    assertThat(nonWord.contains((int) 'z')).isFalse();
+    assertThat(nonWord.contains((int) 'A')).isFalse();
+    assertThat(nonWord.contains((int) 'Z')).isFalse();
+    assertThat(nonWord.contains((int) '0')).isFalse();
+    assertThat(nonWord.contains((int) '9')).isFalse();
+    assertThat(nonWord.contains((int) '_')).isFalse();
+  }
+
+  @Test public void from_nonWord_containsNonWordCharacters() {
+    ImmutableRangeSet<Integer> nonWord = CharRanges.from(PredefinedCharClass.NON_WORD);
+    assertThat(nonWord.contains((int) ' ')).isTrue();
+    assertThat(nonWord.contains((int) '-')).isTrue();
+    assertThat(nonWord.contains((int) '!')).isTrue();
+    assertThat(nonWord.contains((int) '@')).isTrue();
+    assertThat(nonWord.contains((int) '[')).isTrue();
+  }
+
+  @Test public void from_nonWhitespace_excludesWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonWs = CharRanges.from(PredefinedCharClass.NON_WHITESPACE);
+    assertThat(nonWs.contains((int) ' ')).isFalse();
+    assertThat(nonWs.contains((int) '\t')).isFalse();
+    assertThat(nonWs.contains((int) '\n')).isFalse();
+    assertThat(nonWs.contains((int) '\r')).isFalse();
+    assertThat(nonWs.contains(0x85)).isFalse();
+    assertThat(nonWs.contains(0x2028)).isFalse();
+    assertThat(nonWs.contains(0x2029)).isFalse();
+  }
+
+  @Test public void from_nonWhitespace_containsNonWhitespaceCharacters() {
+    ImmutableRangeSet<Integer> nonWs = CharRanges.from(PredefinedCharClass.NON_WHITESPACE);
+    assertThat(nonWs.contains((int) 'a')).isTrue();
+    assertThat(nonWs.contains((int) '0')).isTrue();
+    assertThat(nonWs.contains((int) '-')).isTrue();
+    assertThat(nonWs.contains(0x84)).isTrue();
+    assertThat(nonWs.contains(0x86)).isTrue();
+    assertThat(nonWs.contains(0x2027)).isTrue();
+    assertThat(nonWs.contains(0x202A)).isTrue();
+  }
+
+  @Test public void from_extendedGraphemeCluster_matchesAny() {
+    ImmutableRangeSet<Integer> x = CharRanges.from(PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER);
+    assertThat(x).isEqualTo(CharRanges.ANY);
+  }
+
+  @Test public void from_posixUpper_containsUpperAlpha() {
+    ImmutableRangeSet<Integer> upper = CharRanges.from(PosixCharClass.UPPER);
+    assertThat(upper.contains((int) 'A')).isTrue();
+    assertThat(upper.contains((int) 'Z')).isTrue();
+    assertThat(upper.contains((int) 'a')).isFalse();
+    assertThat(upper.contains((int) '@')).isFalse();
+    assertThat(upper.contains((int) '[')).isFalse();
+  }
+
+  @Test public void from_posixAscii_containsAscii() {
+    ImmutableRangeSet<Integer> ascii = CharRanges.from(PosixCharClass.ASCII);
+    assertThat(ascii.contains(0)).isTrue();
+    assertThat(ascii.contains(0x7F)).isTrue();
+    assertThat(ascii.contains(0x80)).isFalse();
+  }
+
+  @Test public void from_posixAlpha_containsAlpha() {
+    ImmutableRangeSet<Integer> alpha = CharRanges.from(PosixCharClass.ALPHA);
+    assertThat(alpha.contains((int) 'a')).isTrue();
+    assertThat(alpha.contains((int) 'z')).isTrue();
+    assertThat(alpha.contains((int) 'A')).isTrue();
+    assertThat(alpha.contains((int) 'Z')).isTrue();
+    assertThat(alpha.contains((int) '0')).isFalse();
+    assertThat(alpha.contains((int) '_')).isFalse();
+  }
+
+  @Test public void from_posixDigit_contains0And9() {
+    ImmutableRangeSet<Integer> digit = CharRanges.from(PosixCharClass.DIGIT);
+    assertThat(digit.contains((int) '0')).isTrue();
+    assertThat(digit.contains((int) '9')).isTrue();
+    assertThat(digit.contains((int) '/')).isFalse();
+    assertThat(digit.contains((int) ':')).isFalse();
+  }
+
+  @Test public void from_posixAlnum_containsAlphaAndDigit() {
+    ImmutableRangeSet<Integer> alnum = CharRanges.from(PosixCharClass.ALNUM);
+    assertThat(alnum.contains((int) 'a')).isTrue();
+    assertThat(alnum.contains((int) 'Z')).isTrue();
+    assertThat(alnum.contains((int) '0')).isTrue();
+    assertThat(alnum.contains((int) '9')).isTrue();
+    assertThat(alnum.contains((int) '_')).isFalse();
+    assertThat(alnum.contains((int) '!')).isFalse();
+  }
+
+  @Test public void from_posixPunct_containsPunctuation() {
+    ImmutableRangeSet<Integer> punct = CharRanges.from(PosixCharClass.PUNCT);
+    assertThat(punct.contains((int) '!')).isTrue();
+    assertThat(punct.contains((int) '/')).isTrue();
+    assertThat(punct.contains((int) ':')).isTrue();
+    assertThat(punct.contains((int) '@')).isTrue();
+    assertThat(punct.contains((int) '[')).isTrue();
+    assertThat(punct.contains((int) '`')).isTrue();
+    assertThat(punct.contains((int) '{')).isTrue();
+    assertThat(punct.contains((int) '~')).isTrue();
+    assertThat(punct.contains((int) 'a')).isFalse();
+    assertThat(punct.contains((int) '0')).isFalse();
+    assertThat(punct.contains((int) ' ')).isFalse();
+  }
+
+  @Test public void from_posixGraph_containsVisibleCharacters() {
+    ImmutableRangeSet<Integer> graph = CharRanges.from(PosixCharClass.GRAPH);
+    assertThat(graph.contains(0x21)).isTrue();
+    assertThat(graph.contains(0x7E)).isTrue();
+    assertThat(graph.contains((int) ' ')).isFalse();
+    assertThat(graph.contains(0x7F)).isFalse();
+  }
+
+  @Test public void from_posixPrint_containsPrintableCharacters() {
+    ImmutableRangeSet<Integer> print = CharRanges.from(PosixCharClass.PRINT);
+    assertThat(print.contains((int) ' ')).isTrue();
+    assertThat(print.contains(0x7E)).isTrue();
+    assertThat(print.contains(0x1F)).isFalse();
+    assertThat(print.contains(0x7F)).isFalse();
+  }
+
+  @Test public void from_posixBlank_containsSpaceAndTab() {
+    ImmutableRangeSet<Integer> blank = CharRanges.from(PosixCharClass.BLANK);
+    assertThat(blank.contains((int) ' ')).isTrue();
+    assertThat(blank.contains((int) '\t')).isTrue();
+    assertThat(blank.contains((int) '\n')).isFalse();
+    assertThat(blank.contains(0xA0)).isFalse();
+    assertThat(blank.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_posixCntrl_containsControlCharacters() {
+    ImmutableRangeSet<Integer> cntrl = CharRanges.from(PosixCharClass.CNTRL);
+    assertThat(cntrl.contains(0)).isTrue();
+    assertThat(cntrl.contains(0x1F)).isTrue();
+    assertThat(cntrl.contains(0x7F)).isTrue();
+    assertThat(cntrl.contains((int) ' ')).isFalse();
+    assertThat(cntrl.contains(0x7E)).isFalse();
+  }
+
+  @Test public void from_posixXdigit_containsHexDigits() {
+    ImmutableRangeSet<Integer> xdigit = CharRanges.from(PosixCharClass.XDIGIT);
+    assertThat(xdigit.contains((int) '0')).isTrue();
+    assertThat(xdigit.contains((int) '9')).isTrue();
+    assertThat(xdigit.contains((int) 'a')).isTrue();
+    assertThat(xdigit.contains((int) 'f')).isTrue();
+    assertThat(xdigit.contains((int) 'A')).isTrue();
+    assertThat(xdigit.contains((int) 'F')).isTrue();
+    assertThat(xdigit.contains((int) 'g')).isFalse();
+    assertThat(xdigit.contains((int) 'G')).isFalse();
+    assertThat(xdigit.contains((int) ':')).isFalse();
+    assertThat(xdigit.contains((int) '/')).isFalse();
+  }
+
+  @Test public void from_posixSpace_containsWhitespace() {
+    ImmutableRangeSet<Integer> space = CharRanges.from(PosixCharClass.SPACE);
+    assertThat(space.contains((int) ' ')).isTrue();
+    assertThat(space.contains((int) '\t')).isTrue();
+    assertThat(space.contains((int) '\n')).isTrue();
+    assertThat(space.contains((int) '\r')).isTrue();
+    assertThat(space.contains((int) 'a')).isFalse();
   }
 
   private static ImmutableRangeSet<Integer> fromPattern(String regex) {

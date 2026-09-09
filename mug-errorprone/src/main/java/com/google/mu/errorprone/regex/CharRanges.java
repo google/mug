@@ -237,6 +237,7 @@ final class CharRanges {
 
   private static final ImmutableRangeSet<Integer> H_WHITESPACE =
       ImmutableRangeSet.<Integer>builder()
+          .add(only(' '))
           .add(only('\t'))
           .add(only(0xA0))
           .add(only(0x1680))
