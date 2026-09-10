@@ -499,7 +499,6 @@ public final class MoreStreams {
    * @since 4.9
    */
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
-    requireNonNull(stream);
     requireNonNull(sideEffect);
     return StreamSupport.stream(
         () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false)

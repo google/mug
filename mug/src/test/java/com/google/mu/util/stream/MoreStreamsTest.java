@@ -73,6 +73,18 @@ public class MoreStreamsTest {
         .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
   }
 
+  @Test public void generate_closesConsumedFanoutStreams() {
+    List<String> closed = new ArrayList<>();
+    assertThat(MoreStreams.generate(
+            1,
+            i -> i == 1
+                ? Stream.of(2, 3).onClose(() -> closed.add("fanout"))
+                : Stream.empty())
+        .collect(toList()))
+        .containsExactly(1, 2, 3).inOrder();
+    assertThat(closed).containsExactly("fanout");
+  }
+
   @Test public void generateInfiniteStreamWithGuavaIterablesLimit() throws Exception {
     Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
     assertThat(Iterables.limit(MoreStreams.iterateOnce(generated), 5))
@@ -253,6 +265,30 @@ public class MoreStreamsTest {
     assertThat(list).isEmpty();
     assertThat(stream.skip(1).limit(1)).containsExactly(3);
     assertThat(list).containsExactly(1, 3).inOrder();;
+  }
+
+  @Test public void withSideEffect_closesInputWithoutTraversal() {
+    List<String> closed = new ArrayList<>();
+    List<Integer> seen = new ArrayList<>();
+    Stream<Integer> stream = MoreStreams.withSideEffect(
+        Stream.of(1, 2).onClose(() -> closed.add("input")), seen::add);
+    assertThat(closed).isEmpty();
+    stream.close();
+    stream.close();
+    assertThat(closed).containsExactly("input");
+    assertThat(seen).isEmpty();
+  }
+
+  @Test public void withSideEffect_closesInputAfterShortCircuit() {
+    List<String> closed = new ArrayList<>();
+    List<Integer> seen = new ArrayList<>();
+    try (Stream<Integer> stream = MoreStreams.withSideEffect(
+        Stream.of(1, 2).onClose(() -> closed.add("input")), seen::add)) {
+      assertThat(stream.limit(1).collect(toList())).containsExactly(1);
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
+    assertThat(seen).containsExactly(1);
   }
 
   @Test public void withSideEffect_lateBinding() {
