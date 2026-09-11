@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.common.labs.regex.RegexPattern;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
@@ -52,6 +53,7 @@ final class Regexes {
           alternation.alternatives().forEach(Regexes::checkSupportedFeatures);
       case RegexPattern.Group group -> checkSupportedFeatures(group.content());
       case RegexPattern.Quantified quantified -> checkSupportedFeatures(quantified.element());
+      case RegexPattern.ModifierDirective directive -> {}
       case RegexPattern.Literal literal -> {}
       case RegexPattern.PredefinedCharClass predefined -> {}
       case RegexPattern.CharacterSet characterSet -> {}
@@ -81,23 +83,36 @@ final class Regexes {
           }
           yield Set.copyOf(result);
         }
-        case RegexPattern.Alternation alternation -> alternation.alternatives().stream()
-            .flatMap(alternative -> prefixesOf(alternative).stream())
-            .collect(toPrefixSet());
+        case RegexPattern.Alternation alternation -> {
+          List<RegexPattern> alternatives = alternation.alternatives();
+          // A standalone directive changes flags for the alternatives following the one it appears
+          // in, which are analyzed without it. Give up rather than prune on a stale prefix.
+          if (alternatives.subList(0, alternatives.size() - 1).stream()
+              .anyMatch(PrefixAnalyzer::changesModifierFlags)) {
+            yield EMPTY_PREFIX;
+          }
+          yield alternatives.stream()
+              .flatMap(alternative -> prefixesOf(alternative).stream())
+              .collect(toPrefixSet());
+        }
         case RegexPattern.Group group -> {
           PrefixAnalyzer analyzer = this;
           if (group instanceof RegexPattern.Group.NonCapturing nonCapturing) {
-            if (nonCapturing.disabledModifierFlags()
+            if (nonCapturing
+                .disabledModifierFlags()
                 .contains(RegexPattern.ModifierFlag.CASE_INSENSITIVE)) {
               analyzer = analyzer.forLiteral(CaseSensitivity.CASE_SENSITIVE);
-            } else if (nonCapturing.enabledModifierFlags()
+            } else if (nonCapturing
+                .enabledModifierFlags()
                 .contains(RegexPattern.ModifierFlag.CASE_INSENSITIVE)) {
               analyzer = analyzer.forLiteral(CaseSensitivity.CASE_INSENSITIVE);
             }
-            if (nonCapturing.disabledModifierFlags()
+            if (nonCapturing
+                .disabledModifierFlags()
                 .contains(RegexPattern.ModifierFlag.UNICODE_CHARACTER_CLASS)) {
               analyzer = analyzer.usingAsciiCharClass();
-            } else if (nonCapturing.enabledModifierFlags()
+            } else if (nonCapturing
+                .enabledModifierFlags()
                 .contains(RegexPattern.ModifierFlag.UNICODE_CHARACTER_CLASS)) {
               analyzer = analyzer.usingUnicodeCharClass();
             }
@@ -116,8 +131,21 @@ final class Regexes {
         case RegexPattern.CharacterProperty.Negated negated -> EMPTY_PREFIX;
         case RegexPattern.Anchor anchor -> EMPTY_PREFIX;
         case RegexPattern.Lookaround lookaround -> EMPTY_PREFIX;
+        // A directive changes flags for everything that follows, which isn't tracked here.
+        case RegexPattern.ModifierDirective directive -> EMPTY_PREFIX;
         case RegexPattern.Backreference backreference -> EMPTY_PREFIX;
       };
+    }
+
+    /**
+     * Returns true if {@code pattern} includes a standalone modifier directive at the top level,
+     * that is, not scoped inside a group.
+     */
+    private static boolean changesModifierFlags(RegexPattern pattern) {
+      if (pattern instanceof RegexPattern.Sequence sequence) {
+        return sequence.elements().stream().anyMatch(PrefixAnalyzer::changesModifierFlags);
+      }
+      return pattern instanceof RegexPattern.ModifierDirective;
     }
 
     private Set<String> charsOf(RegexPattern.CharSetElement element) {

@@ -841,7 +841,7 @@ public final class Parsers {
    *     Suffix::apply);
    * }</pre>
    */
-  public static class Suffix {
+  public static final class Suffix {
     /**
      * Returns a parser that matches zero or more occurrences of the {@code prefix} string before
      * {@code suffix} and applies the {@code prefixFunction} iteratively for each matched prefix.

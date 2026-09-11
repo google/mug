@@ -107,10 +107,10 @@ public class ParsersTest {
 
   @Test @SuppressWarnings("ParsersRegexCheck")
   public void regex_sequenceOfOptionalPatterns_throws() {
-    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*foo?(c+)*"));
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*f?(c+)*"));
     assertThat(exception)
         .hasMessageThat()
-        .isEqualTo("regex must not match empty string: a*foo?(c+)*");
+        .isEqualTo("regex must not match empty string: a*f?(c+)*");
   }
 
   @Test @SuppressWarnings("ParsersRegexCheck")

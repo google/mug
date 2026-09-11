@@ -713,9 +713,9 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:6: expecting <)>, encountered:
-                 (abc
-                     ^
+            at 1:10: expecting <)>, encountered:
+                (?x) (abc
+                         ^
             """);
   }
 
@@ -725,9 +725,9 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:6: expecting <]>, encountered:
-                 [abc
-                     ^
+            at 1:10: expecting <]>, encountered:
+                (?x) [abc
+                         ^
             """);
   }
 

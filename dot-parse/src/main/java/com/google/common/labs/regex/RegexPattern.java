@@ -15,9 +15,6 @@
 package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
-import static com.google.mu.util.Substring.after;
-import static com.google.mu.util.Substring.all;
-import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -25,8 +22,6 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.annotations.ParametersMustMatchByName;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -71,7 +66,6 @@ public sealed interface RegexPattern {
   Metadata metadata();
 
   /** Returns a {@link Sequence} of the given elements. */
-  @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
     return new Sequence(List.of(elements));
   }
@@ -110,7 +104,6 @@ public sealed interface RegexPattern {
   }
 
   /** Returns an {@link Alternation} of the given alternatives. */
-  @SafeVarargs
   static Alternation alternation(RegexPattern... alternatives) {
     return new Alternation(List.of(alternatives));
   }
@@ -122,7 +115,6 @@ public sealed interface RegexPattern {
   }
 
   /** Returns a {@link CharacterSet} of the given elements. */
-  @SafeVarargs
   static CharacterSet.AnyOf anyOf(CharSetElement... elements) {
     return anyOf(List.of(elements));
   }
@@ -133,7 +125,6 @@ public sealed interface RegexPattern {
   }
 
   /** Returns a negated {@link CharacterSet} of the given elements. */
-  @SafeVarargs
   static CharacterSet.NoneOf noneOf(CharSetElement... elements) {
     return noneOf(List.of(elements));
   }
@@ -144,7 +135,6 @@ public sealed interface RegexPattern {
   }
 
   /** Returns a character set intersection of the given character sets. */
-  @SafeVarargs
   static CharacterSet.Intersection intersection(CharacterSet... operands) {
     return intersection(List.of(operands));
   }
@@ -225,8 +215,8 @@ public sealed interface RegexPattern {
 
     @Override public Metadata metadata() {
       return new Metadata(
-          alternatives.stream().mapToInt(p -> p.metadata().minSize()).min().orElse(0),
-          alternatives.stream().mapToInt(p -> p.metadata().maxSize()).max().orElse(0));
+          alternatives.stream().mapToInt(p -> p.metadata().minSize()).min().getAsInt(),
+          alternatives.stream().mapToInt(p -> p.metadata().maxSize()).max().getAsInt());
     }
 
     @Override public String toString() {
@@ -310,11 +300,12 @@ public sealed interface RegexPattern {
     static Quantifier repeated(int min, int max) {
       checkArgument(min >= 0, "min must be non-negative");
       checkArgument(max >= min, "max must be at least min");
-      if (min == 0) {
-        return atMost(max);
-      }
+      // Unbounded first: {0,} is `*`, not {0,Integer.MAX_VALUE}.
       if (max == Integer.MAX_VALUE) {
         return atLeast(min);
+      }
+      if (min == 0) {
+        return atMost(max);
       }
       return new Limited(min, max, false, false);
     }
@@ -471,24 +462,8 @@ public sealed interface RegexPattern {
       }
 
       @Override public String toString() {
-        if (content instanceof Literal lit && lit.value().isEmpty() && hasModifierFlags()) {
-          return "(?" + formatFlags() + ")";
-        }
-        return "(?" + formatFlags() + ":" + content + ")";
-      }
-
-      private boolean hasModifierFlags() {
-        return !enabledModifierFlags.isEmpty() || !disabledModifierFlags.isEmpty();
-      }
-
-      private String formatFlags() {
-        String enabledStr = enabledModifierFlags.stream().map(Object::toString).collect(joining());
-        if (disabledModifierFlags.isEmpty()) {
-          return enabledStr;
-        }
-        String disabledStr =
-            disabledModifierFlags.stream().map(Object::toString).collect(joining());
-        return enabledStr + "-" + disabledStr;
+        return "(?" + formatFlags(enabledModifierFlags, disabledModifierFlags) + ":" + content
+            + ")";
       }
     }
 
@@ -507,11 +482,39 @@ public sealed interface RegexPattern {
     }
   }
 
+  /**
+   * A standalone modifier directive, like {@code (?i)} or {@code (?is-m)}, which turns flags on or
+   * off for the remainder of the enclosing group. Unlike {@code (?i:)}, whose flags are scoped to
+   * the (empty) group content, a directive affects everything that follows it.
+   */
+  record ModifierDirective(
+      List<ModifierFlag> enabledModifierFlags, List<ModifierFlag> disabledModifierFlags)
+      implements RegexPattern {
+    public ModifierDirective {
+      enabledModifierFlags = List.copyOf(enabledModifierFlags);
+      disabledModifierFlags = List.copyOf(disabledModifierFlags);
+    }
+
+    @Override public Metadata metadata() {
+      return new Metadata(/* minSize= */ 0, /* maxSize= */ 0);
+    }
+
+    @Override public String toString() {
+      return "(?" + formatFlags(enabledModifierFlags, disabledModifierFlags) + ")";
+    }
+  }
+
+  private static String formatFlags(
+      List<ModifierFlag> enabledModifierFlags, List<ModifierFlag> disabledModifierFlags) {
+    String enabled = enabledModifierFlags.stream().map(Object::toString).collect(joining());
+    if (disabledModifierFlags.isEmpty()) {
+      return enabled;
+    }
+    return enabled + "-" + disabledModifierFlags.stream().map(Object::toString).collect(joining());
+  }
+
   /** Represents a literal string to be matched. */
   record Literal(String value) implements RegexPattern {
-    private static final Substring.RepeatingPattern ESCAPED_CHARS =
-        all(CharPredicate.anyOf(".[]{}()*+-?^$|\\\n\r\t\f"));
-
     @Override public Metadata metadata() {
       return new Metadata(/* minSize= */ value.length(), /* maxSize= */ value.length());
     }
@@ -526,7 +529,25 @@ public sealed interface RegexPattern {
               case '\r' -> sb.append("\\r");
               case '\t' -> sb.append("\\t");
               case '\f' -> sb.append("\\f");
-              case '.', '[', ']', '{', '}', '(', ')', '*', '+', '-', '?', '^', '$', '|', '\\' ->
+              // ' ' and '#' are only special under free spacing, but escaping them unconditionally
+              // keeps the rendering correct regardless of the flags in effect.
+              case '.',
+                  '[',
+                  ']',
+                  '{',
+                  '}',
+                  '(',
+                  ')',
+                  '*',
+                  '+',
+                  '-',
+                  '?',
+                  '^',
+                  '$',
+                  '|',
+                  '\\',
+                  ' ',
+                  '#' ->
                   sb.append('\\').append((char) cp);
               default -> {
                 if (cp < 0x20 || cp == 0x7F) {
@@ -547,6 +568,15 @@ public sealed interface RegexPattern {
       return new Metadata(/* minSize= */ 0, /* maxSize= */ Integer.MAX_VALUE);
     }
 
+    /**
+     * A backreference to a capturing group by number, like {@code \1}.
+     *
+     * <p>Digits are consumed greedily, so {@code (a)\10} parses as group 10. {@link
+     * java.util.regex.Pattern} instead consumes digits only while the number does not exceed the
+     * count of capturing groups seen so far, reading the same input as group 1 followed by a
+     * literal {@code 0}. Resolving a backreference against the groups actually present is left to
+     * the caller.
+     */
     record Numbered(int groupNumber) implements Backreference {
       public Numbered {
         checkArgument(groupNumber > 0, "group number must be positive: %s", groupNumber);
@@ -630,10 +660,6 @@ public sealed interface RegexPattern {
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
-      @Override public String elementString() {
-        return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
-      }
-
       @Override public String toString() {
         return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
       }
@@ -651,11 +677,6 @@ public sealed interface RegexPattern {
       }
 
       @Override public String toString() {
-        if (operands.get(0) instanceof NoneOf noneOf) {
-          return "[^" + noneOf.elements().stream().map(Object::toString).collect(joining()) + "&&"
-              + operands.stream().skip(1).map(CharacterSet::elementString).collect(joining("&&"))
-              + "]";
-        }
         return "[" + elementString() + "]";
       }
     }
@@ -676,8 +697,10 @@ public sealed interface RegexPattern {
         case '\r' -> "\\r";
         case '\t' -> "\\t";
         case '\f' -> "\\f";
-        // Characters that are special inside character classes.
-        case '[', ']', '\\', '^', '&', '-' -> "\\" + (char) codePoint;
+        // Characters that are special inside character classes. ' ' and '#' are only special under
+        // free spacing, but escaping them unconditionally keeps the rendering correct regardless of
+        // the flags in effect.
+        case '[', ']', '\\', '^', '&', '-', ' ', '#' -> "\\" + (char) codePoint;
         default -> {
           if (codePoint < 0x20 || codePoint == 0x7F) {
             yield String.format("\\u%04X", codePoint);
@@ -693,6 +716,8 @@ public sealed interface RegexPattern {
     public CharRange {
       checkArgument(Character.isValidCodePoint(start), "not a valid start code point: %s", start);
       checkArgument(Character.isValidCodePoint(end), "not a valid end code point: %s", end);
+      checkArgument(
+          start <= end, "invalid range %s-%s", Character.toString(start), Character.toString(end));
     }
 
     public CharRange(char start, char end) {
@@ -854,15 +879,16 @@ public sealed interface RegexPattern {
   /**
    * Parses the given regular expression string and returns its {@link RegexPattern} representation.
    *
+   * <p>Validation is syntactic. Constraints that depend on the pattern as a whole are not enforced,
+   * so unlike {@link java.util.regex.Pattern} this accepts duplicate group names, a {@code
+   * \k<name>} that names no group, and a backreference to a group that is defined later or not at
+   * all. Callers that need those guarantees should check the parsed tree.
+   *
    * @throws Parser.ParseException if the regex pattern is malformed
    * @throws IllegalArgumentException if the regex pattern is invalid
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    Parser<RegexPattern>.OrEmpty parser = RegexParsers.PARSER.orElse(new Literal(""));
-    return after(prefix("(?x)"))
-        .from(regex)
-        .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
-        .orElseGet(() -> parser.parse(regex));
+    return RegexParsers.PARSER.orElse(new Literal("")).parse(regex);
   }
 }

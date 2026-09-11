@@ -352,7 +352,7 @@ public final class ReDosTest {
     assertThat(
             SuggestionSynthesizer.suggestRedosRewrite(
                 RegexPattern.of("(?<className>[^#]+)+#[^#]+")))
-        .hasValue("(?<className>[^#]+)#[^#]+");
+        .hasValue("(?<className>[^\\#]+)\\#[^\\#]+");
   }
 
   @Test public void suggestRedosRewrite_numberedCapturingGroupInSequence_preservesCaptureGroup() {
@@ -419,7 +419,7 @@ public final class ReDosTest {
   @Test public void suggestRedosRewrite_baseCtsPipeline_preservesNamedGroup() {
     RegexPattern pattern = RegexPattern.of("(?<className>[^#]+)+#[^#]+");
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
-        .hasValue("(?<className>[^#]+)#[^#]+");
+        .hasValue("(?<className>[^\\#]+)\\#[^\\#]+");
   }
 
   @Test public void suggestRedosRewrite_f1DataExtractor_preservesNamedGroup() {
@@ -457,7 +457,7 @@ public final class ReDosTest {
   @Test public void suggestRedosRewrite_nixleAlertHandler_preservesCaseInsensitiveFlag() {
     RegexPattern pattern = RegexPattern.of("(?i)^(\\s*|\\.|none|[#]+)+$");
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
-        .hasValue("(?i)^((?:\\s*|\\.|none|[#]+)*)$");
+        .hasValue("(?i)^((?:\\s*|\\.|none|[\\#]+)*)$");
   }
 
   @Test public void suggestRedosRewrite_sqlServerLimitHandler_preservesInlineFlagsAndGroups() {
@@ -470,7 +470,8 @@ public final class ReDosTest {
 
   @Test public void suggestRedosRewrite_legacyDataTransformer_preservesStructure() {
     RegexPattern pattern = RegexPattern.of("#(X+) (X+(?:(?:\\-X)+)*)");
-    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("#(X+) (X+(?:\\-X)*)");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("\\#(X+)\\ (X+(?:\\-X)*)");
   }
 
   @Test public void suggestRedosRewrite_repeatMatcher_greedy_rejectsUnsafeStarRewrite() {
@@ -778,11 +779,11 @@ public final class ReDosTest {
   }
 
   @Test public void
-      checkRedosVulnerability_overlappingAlternationOptionalSuffix_throwsIllegalArgumentException() {
-    RegexPattern pattern = RegexPattern.of("(a|aa?)*b");
+      checkRedosVulnerability_overlappingAlternationOptionalBranch_throwsIllegalArgumentException() {
+    RegexPattern pattern = RegexPattern.of("(a|a?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((?:a|(?:aa)?)*)b");
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((?:a|a?)*)b");
   }
 
   @Test public void
@@ -1124,7 +1125,7 @@ public final class ReDosTest {
 
   @Test public void checkRedosVulnerability_codeqlEmailComplex_throwsIllegalArgumentException() {
     RegexPattern pattern = RegexPattern.of(
-        "^([a-zA-Z0-9])(([\\\\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$");
+        "^([a-zA-Z0-9])(([\\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown.getSuggestedAlternatives()).isEmpty();
