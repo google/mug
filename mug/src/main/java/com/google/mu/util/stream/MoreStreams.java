@@ -494,13 +494,15 @@ public final class MoreStreams {
    * are expected to be stateless, and should not cause or depend on side effects, because even for
    * ordered, sequential streams, only the order of output is defined, not the order of evaluation.
    *
+   * <p>Closing the returned stream also closes {@code stream}.
+   *
    * @since 4.9
    */
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
-    requireNonNull(stream);
     requireNonNull(sideEffect);
     return StreamSupport.stream(
-        () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false);
+        () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false)
+        .onClose(stream::close);
   }
 
   private static <T> Spliterator<T> withSideEffect(
