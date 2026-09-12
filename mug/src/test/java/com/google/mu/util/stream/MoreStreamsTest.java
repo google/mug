@@ -368,6 +368,25 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
+  @Test public void consume_closeWithoutConsumingRemainder() {
+    List<String> closed = new ArrayList<>();
+    Stream<Integer> input = Stream.of(1, 2, 3).onClose(() -> closed.add("input"));
+    try (Stream<Integer> remaining = MoreStreams.consume(input, 1, x -> {})) {
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
+  }
+
+  @Test public void consume_closeAfterConsumingAllElements() {
+    List<String> closed = new ArrayList<>();
+    Stream<Integer> input = Stream.of(1, 2, 3).onClose(() -> closed.add("input"));
+    try (Stream<Integer> remaining = MoreStreams.consume(input, 3, x -> {})) {
+      assertThat(remaining).isEmpty();
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
+  }
+
   @Test public void consume_streamReferenceNoLongerUsable() {
     Stream<Integer> stream = Stream.of(1, 2, 3);
     Stream<Integer> remaining =
