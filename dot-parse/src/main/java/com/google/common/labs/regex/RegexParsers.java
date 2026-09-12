@@ -69,11 +69,11 @@ import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -299,9 +299,10 @@ final class RegexParsers {
                 .orElse(Quantifier::repeated),
             Suffix::apply)
         .between("{", "}");
+    Parser<UnaryOperator<Quantifier>> modifier = anyOf(
+        one('?').thenReturn(Quantifier::reluctant), one('+').thenReturn(Quantifier::possessive));
     return anyOf(question, star, plus, range)
-        .optionallyFollowedBy("?", Quantifier::reluctant)
-        .optionallyFollowedBy("+", Quantifier::possessive);
+        .optionallyFollowedBy(modifier, (q, mod) -> mod.apply(q));
   }
 
   /** Creates a {@code {min,max}} quantifier, reporting an invalid range as a parse error. */
@@ -358,20 +359,30 @@ final class RegexParsers {
         negativeCharacterProperty());
     Parser<CharSetElement> element = anyOf(charClassOrProperty, charClass);
     // A `\Q...\E` quote contributes its chars to the class body as if they were written out, so
-    // both it and a single char are just runs of code points here.
-    Parser<int[]> charRun = anyOf(
-        quotedText().map(quoted -> quoted.codePoints().toArray()),
-        rangeChar.map(c -> new int[] {c}));
-    Parser<List<CharSetElement>> chars = sequence(
-            charRun,
-            suffix(one('-').then(charRun), RegexParsers::charsThroughRange)
-                .orElse(RegexParsers::literalChars),
-            Suffix::apply)
-        // A class has no single code point to close a range with, so `[a-\d]` is an error, as in
-        // `java.util.regex`. Rejecting it here also rules out reading the `-` as a literal member,
-        // which is what the range suffix above falls back to. A nested class is not a class here:
-        // Java reads `[a-[b]]` as plain members.
-        .notFollowedBy(one('-').then(charClassOrProperty), "character class as a range end");
+    // both it and a single char are just runs of code points here. A plain char and a plain range
+    // get their own alternatives to keep the common case off the run representation.
+    Parser<int[]> quotedRun = quotedText().map(quoted -> quoted.codePoints().toArray());
+    Parser<int[]> rangeEnd = anyOf(rangeChar.map(c -> new int[] {c}), quotedRun);
+    // A class has no single code point to open a range with, so `[a-\d]` is an error, as in
+    // `java.util.regex`. Rejecting it here also rules out reading the `-` as a literal member,
+    // which is what the optional range suffix below falls back to. The check sits on the char
+    // that would open the range, so a `-` that follows a closed range stays literal and
+    // `[a-z-\d]` remains legal. A nested class is not a class here: Java reads `[a-[b]]` as
+    // plain members.
+    Parser<Integer> rangeStart = rangeChar.notFollowedBy(
+        one('-').then(charClassOrProperty), "character class as a range end");
+    Parser<int[]> quotedStart = quotedRun.notFollowedBy(
+        one('-').then(charClassOrProperty), "character class as a range end");
+    Parser<List<CharSetElement>> chars = anyOf(
+        sequence(
+            rangeStart, one('-').then(rangeEnd).orElse(null),
+            (from, to) ->
+                to == null
+                    ? List.<CharSetElement>of(new LiteralChar(from))
+                    : charsThroughRange(from, to)),
+        sequence(
+            quotedStart, one('-').then(rangeEnd).orElse(null),
+            (from, to) -> to == null ? literalChars(from) : charsThroughRange(from, to)));
     var elements =
         sequence(
                 one(']')
@@ -379,7 +390,7 @@ final class RegexParsers {
                     .optionallyFollowedBy(
                         one('-').then(literalChar), (unused, to) -> charRange(']', to))
                     .orElse(null),
-                anyOf(element.map(List::of), chars).zeroOrMore(flatMapping(List::stream, toList())),
+                anyOf(chars, element.map(List::of)).zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading == null ? rest : prepend(leading, rest))
             .notEmpty();
     Parser<CharacterSet> characterSet =
@@ -402,7 +413,31 @@ final class RegexParsers {
 
   /** Returns the code points of a char run, each a literal member of a char class. */
   private static List<CharSetElement> literalChars(int[] codePoints) {
-    return stream(codePoints).<CharSetElement>mapToObj(LiteralChar::new).toList();
+    if (codePoints.length == 1) {
+      return List.of(new LiteralChar(codePoints[0]));
+    }
+    List<CharSetElement> elements = new ArrayList<>(codePoints.length);
+    for (int codePoint : codePoints) {
+      elements.add(new LiteralChar(codePoint));
+    }
+    return elements;
+  }
+
+  /** Returns the members of {@code from-to}, where the range starts at a single code point. */
+  private static List<CharSetElement> charsThroughRange(int from, int[] to) {
+    if (to.length == 0) {
+      return List.of(new LiteralChar(from), new LiteralChar('-'));
+    }
+    CharRange range = charRange(from, to[0]);
+    if (to.length == 1) {
+      return List.of(range);
+    }
+    List<CharSetElement> elements = new ArrayList<>(to.length);
+    elements.add(range);
+    for (int i = 1; i < to.length; i++) {
+      elements.add(new LiteralChar(to[i]));
+    }
+    return elements;
   }
 
   /**
@@ -414,15 +449,24 @@ final class RegexParsers {
    */
   private static List<CharSetElement> charsThroughRange(int[] from, int[] to) {
     if (from.length == 0 || to.length == 0) {
-      List<CharSetElement> elements = new ArrayList<>(literalChars(from));
+      List<CharSetElement> elements = new ArrayList<>(from.length + to.length + 1);
+      elements.addAll(literalChars(from));
       elements.add(new LiteralChar('-'));
       elements.addAll(literalChars(to));
       return elements;
     }
+    CharRange range = charRange(from[from.length - 1], to[0]);
+    if (from.length == 1 && to.length == 1) {
+      return List.of(range);
+    }
     List<CharSetElement> elements = new ArrayList<>(from.length + to.length - 1);
-    elements.addAll(literalChars(Arrays.copyOf(from, from.length - 1)));
-    elements.add(charRange(from[from.length - 1], to[0]));
-    elements.addAll(literalChars(Arrays.copyOfRange(to, 1, to.length)));
+    for (int i = 0; i < from.length - 1; i++) {
+      elements.add(new LiteralChar(from[i]));
+    }
+    elements.add(range);
+    for (int i = 1; i < to.length; i++) {
+      elements.add(new LiteralChar(to[i]));
+    }
     return elements;
   }
 

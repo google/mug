@@ -928,6 +928,22 @@ public final class RegexPatternConformanceTest {
     assertThat(e).hasMessageThat().contains("at 1:3: unexpected `character class as a range end`");
   }
 
+  @Test public void of_quotedCharPredefinedClassAsRangeEnd_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\Qa\\E-\\d]"));
+    assertThat(e).hasMessageThat().contains("at 1:7: unexpected `character class as a range end`");
+  }
+
+  @Test public void of_quotedCharPropertyAsRangeEnd_rejected() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> RegexPattern.of("[\\Qa\\E-\\p{L}]"));
+    assertThat(e).hasMessageThat().contains("at 1:7: unexpected `character class as a range end`");
+  }
+
+  @Test public void of_quotedTextPredefinedClassAsRangeEnd_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\Qabc\\E-\\d]"));
+    assertThat(e).hasMessageThat().contains("at 1:9: unexpected `character class as a range end`");
+  }
+
   @Test public void of_predefinedClassAsRangeStart_accepted() {
     assertThat(RegexPattern.of("[\\d-a]"))
         .isEqualTo(
@@ -939,6 +955,25 @@ public final class RegexPatternConformanceTest {
   @Test public void of_nestedClassAfterHyphen_accepted() {
     assertThat(RegexPattern.of("[a-[b]]"))
         .isEqualTo(anyOf(new LiteralChar('a'), new LiteralChar('-'), anyOf(new LiteralChar('b'))));
+  }
+
+  /** A `-` that follows a closed range is a literal member, so no range opens after it. */
+  @Test public void of_predefinedClassAfterClosedRange_accepted() {
+    assertThat(RegexPattern.of("[a-z-\\d]"))
+        .isEqualTo(
+            anyOf(
+                new CharRange('a', 'z'), new LiteralChar('-'),
+                RegexPattern.PredefinedCharClass.DIGIT));
+  }
+
+  @Test public void of_propertyAfterClosedRange_accepted() {
+    assertThat(RegexPattern.of("[a-z-\\p{L}]"))
+        .isEqualTo(anyOf(new CharRange('a', 'z'), new LiteralChar('-'), new UnicodeProperty("L")));
+  }
+
+  /** The reference behavior: the class binds to nothing, it is just another member. */
+  @Test public void of_predefinedClassAfterClosedRange_javaAccepts() {
+    assertThat(Pattern.compile("[a-z-\\d]").matcher("-").matches()).isTrue();
   }
 
   @Test public void of_plainRange_stillAccepted() {

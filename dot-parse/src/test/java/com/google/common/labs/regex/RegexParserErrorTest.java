@@ -898,6 +898,42 @@ public final class RegexParserErrorTest {
             """);
   }
 
+  @Test public void quantifier_stackedPlusAfterReluctantStar() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a*?+"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:
+                a*?+
+                   ^
+            """);
+  }
+
+  @Test public void quantifier_stackedPlusAfterReluctantPlus() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a+?+"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:
+                a+?+
+                   ^
+            """);
+  }
+
+  @Test public void quantifier_stackedPlusAfterReluctantQuestion() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a??+"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:
+                a??+
+                   ^
+            """);
+  }
+
   @Test public void quantifier_stackedStarAfterGroupPlus() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a)+*"));
     assertThat(e)
