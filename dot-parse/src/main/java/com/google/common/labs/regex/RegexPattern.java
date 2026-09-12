@@ -186,8 +186,34 @@ public sealed interface RegexPattern {
   /** Represents a sequence of regex patterns that must match consecutively. */
   record Sequence(List<RegexPattern> elements) implements RegexPattern {
     public Sequence {
-      elements = List.copyOf(elements);
+      elements = flatten(elements);
       checkArgument(elements.size() > 0, "elements cannot be empty");
+    }
+
+    private static List<RegexPattern> flatten(List<RegexPattern> elements) {
+      boolean hasNested = false;
+      for (RegexPattern element : elements) {
+        if (element instanceof Sequence) {
+          hasNested = true;
+          break;
+        }
+      }
+      if (!hasNested) {
+        return List.copyOf(elements);
+      }
+      List<RegexPattern> flattened = new ArrayList<>(elements.size() + 4);
+      addFlattened(flattened, elements);
+      return List.copyOf(flattened);
+    }
+
+    private static void addFlattened(List<RegexPattern> target, List<RegexPattern> elements) {
+      for (RegexPattern element : elements) {
+        if (element instanceof Sequence seq) {
+          addFlattened(target, seq.elements());
+        } else {
+          target.add(element);
+        }
+      }
     }
 
     @Override public Metadata metadata() {
@@ -579,7 +605,8 @@ public sealed interface RegexPattern {
                   '#' ->
                   sb.append('\\').append((char) cp);
               default -> {
-                if (cp < 0x20 || cp == 0x7F) {
+                if (cp < 0x20 || cp == 0x7F
+                    || (cp >= Character.MIN_SURROGATE && cp <= Character.MAX_SURROGATE)) {
                   sb.append(String.format("\\u%04X", cp));
                 } else {
                   sb.appendCodePoint(cp);
@@ -600,11 +627,10 @@ public sealed interface RegexPattern {
     /**
      * A backreference to a capturing group by number, like {@code \1}.
      *
-     * <p>Digits are consumed greedily, so {@code (a)\10} parses as group 10. {@link
-     * java.util.regex.Pattern} instead consumes digits only while the number does not exceed the
-     * count of capturing groups seen so far, reading the same input as group 1 followed by a
-     * literal {@code 0}. Resolving a backreference against the groups actually present is left to
-     * the caller.
+     * <p>When parsed via {@link RegexPattern#of}, digits are consumed only while the number does
+     * not exceed the count of capturing groups seen so far (the first digit is always consumed),
+     * matching {@link java.util.regex.Pattern} semantics. Any remaining digits become literal
+     * characters.
      */
     record Numbered(int groupNumber) implements Backreference {
       public Numbered {
@@ -731,7 +757,8 @@ public sealed interface RegexPattern {
         // the flags in effect.
         case '[', ']', '\\', '^', '&', '-', ' ', '#' -> "\\" + (char) codePoint;
         default -> {
-          if (codePoint < 0x20 || codePoint == 0x7F) {
+          if (codePoint < 0x20 || codePoint == 0x7F
+              || (codePoint >= Character.MIN_SURROGATE && codePoint <= Character.MAX_SURROGATE)) {
             yield String.format("\\u%04X", codePoint);
           }
           yield Character.toString(codePoint);
@@ -918,6 +945,151 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    return RegexParsers.TOP_LEVEL.orElse(new Literal("")).parse(regex);
+    RegexPattern parsed = RegexParsers.TOP_LEVEL.orElse(new Literal("")).parse(regex);
+    return hasMultiDigitBackreference(regex) ? resolveBackreferences(parsed) : parsed;
+  }
+
+  private static boolean hasMultiDigitBackreference(String regex) {
+    int index = 0;
+    while ((index = regex.indexOf('\\', index)) >= 0) {
+      if (index + 2 < regex.length()) {
+        char c1 = regex.charAt(index + 1);
+        char c2 = regex.charAt(index + 2);
+        if (c1 >= '1' && c1 <= '9' && c2 >= '0' && c2 <= '9') {
+          return true;
+        }
+      }
+      index++;
+    }
+    return false;
+  }
+
+  private static RegexPattern resolveBackreferences(RegexPattern root) {
+    class Resolver {
+      private int groupCount = 0;
+
+      RegexPattern resolve(RegexPattern pattern) {
+        if (pattern instanceof Group.Capturing group) {
+          groupCount++;
+          RegexPattern newContent = resolve(group.content());
+          return newContent == group.content() ? group : new Group.Capturing(newContent);
+        }
+        if (pattern instanceof Group.Named group) {
+          groupCount++;
+          RegexPattern newContent = resolve(group.content());
+          return newContent == group.content() ? group : new Group.Named(group.name(), newContent);
+        }
+        if (pattern instanceof Group.NonCapturing group) {
+          RegexPattern newContent = resolve(group.content());
+          return newContent == group.content()
+              ? group
+              : new Group.NonCapturing(
+                  newContent, group.enabledModifierFlags(), group.disabledModifierFlags());
+        }
+        if (pattern instanceof Group.Atomic group) {
+          RegexPattern newContent = resolve(group.content());
+          return newContent == group.content() ? group : new Group.Atomic(newContent);
+        }
+        if (pattern instanceof Lookaround.Lookahead look) {
+          RegexPattern newTarget = resolve(look.target());
+          return newTarget == look.target() ? look : new Lookaround.Lookahead(newTarget);
+        }
+        if (pattern instanceof Lookaround.Lookbehind look) {
+          RegexPattern newTarget = resolve(look.target());
+          return newTarget == look.target() ? look : new Lookaround.Lookbehind(newTarget);
+        }
+        if (pattern instanceof Lookaround.NegativeLookahead look) {
+          RegexPattern newTarget = resolve(look.target());
+          return newTarget == look.target() ? look : new Lookaround.NegativeLookahead(newTarget);
+        }
+        if (pattern instanceof Lookaround.NegativeLookbehind look) {
+          RegexPattern newTarget = resolve(look.target());
+          return newTarget == look.target() ? look : new Lookaround.NegativeLookbehind(newTarget);
+        }
+        if (pattern instanceof Alternation alt) {
+          List<RegexPattern> newAlts = null;
+          List<RegexPattern> alts = alt.alternatives();
+          for (int i = 0; i < alts.size(); i++) {
+            RegexPattern original = alts.get(i);
+            RegexPattern resolved = resolve(original);
+            if (resolved != original && newAlts == null) {
+              newAlts = new ArrayList<>(alts.subList(0, i));
+            }
+            if (newAlts != null) {
+              newAlts.add(resolved);
+            }
+          }
+          return newAlts == null ? alt : new Alternation(newAlts);
+        }
+        if (pattern instanceof Sequence seq) {
+          List<RegexPattern> newElements = null;
+          List<RegexPattern> elements = seq.elements();
+          for (int i = 0; i < elements.size(); i++) {
+            RegexPattern original = elements.get(i);
+            RegexPattern resolved = resolve(original);
+            if (resolved != original && newElements == null) {
+              newElements = new ArrayList<>(elements.subList(0, i));
+            }
+            if (newElements != null) {
+              newElements.add(resolved);
+            }
+          }
+          return newElements == null ? seq : new Sequence(newElements);
+        }
+        if (pattern instanceof Quantified q) {
+          if (q.element() instanceof Backreference.Numbered numbered) {
+            RegexPattern split = splitNumbered(numbered, q.quantifier());
+            if (split != null) {
+              return split;
+            }
+          }
+          RegexPattern newTarget = resolve(q.element());
+          return newTarget == q.element() ? q : new Quantified(newTarget, q.quantifier());
+        }
+        if (pattern instanceof Backreference.Numbered numbered) {
+          RegexPattern split = splitNumbered(numbered, null);
+          return split != null ? split : numbered;
+        }
+        return pattern;
+      }
+
+      private RegexPattern splitNumbered(Backreference.Numbered numbered, Quantifier quantifier) {
+        int num = numbered.groupNumber();
+        if (num <= groupCount || num < 10) {
+          return null;
+        }
+        String digits = Integer.toString(num);
+        int bestPrefixLength = 1;
+        for (int len = 2; len <= digits.length(); len++) {
+          int prefixVal = Integer.parseInt(digits.substring(0, len));
+          if (prefixVal <= groupCount) {
+            bestPrefixLength = len;
+          } else {
+            break;
+          }
+        }
+        if (bestPrefixLength == digits.length()) {
+          return null;
+        }
+        int groupNum = Integer.parseInt(digits.substring(0, bestPrefixLength));
+        String trailingDigits = digits.substring(bestPrefixLength);
+        Backreference.Numbered ref = new Backreference.Numbered(groupNum);
+        if (quantifier == null) {
+          return new Sequence(List.of(ref, new Literal(trailingDigits)));
+        }
+        if (trailingDigits.length() == 1) {
+          return new Sequence(
+              List.of(ref, new Quantified(new Literal(trailingDigits), quantifier)));
+        }
+        String prefixOfDigits = trailingDigits.substring(0, trailingDigits.length() - 1);
+        String lastDigit = trailingDigits.substring(trailingDigits.length() - 1);
+        return new Sequence(
+            List.of(
+                ref,
+                new Literal(prefixOfDigits),
+                new Quantified(new Literal(lastDigit), quantifier)));
+      }
+    }
+    return new Resolver().resolve(root);
   }
 }

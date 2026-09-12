@@ -407,15 +407,63 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Finding 9: backreference digits use maximal munch. java.util.regex instead stops at the
-  // highest group seen so far, so `(a)\10` is group 1 followed by a literal `0` there. Reproducing
-  // that needs parse-order state this grammar doesn't carry; the divergence is documented on
-  // Backreference.Numbered and pinned here.
+  // Finding 9: backreference digits consume up to the count of capturing groups seen so far.
+  // java.util.regex stops at the highest group seen so far, so `(a)\10` is group 1 followed by a
+  // literal `0`.
   // ---------------------------------------------------------------------------------------------
 
-  @Test public void of_backreferenceDigitsBeyondGroupCount_usesMaximalMunch() {
+  @Test public void of_backreferenceDigitsBeyondGroupCount_stopsAtHighestGroupSeen() {
     assertThat(RegexPattern.of("(a)\\10"))
-        .isEqualTo(sequence(new Group.Capturing(new Literal("a")), new Backreference.Numbered(10)));
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(new Literal("a")),
+                new Backreference.Numbered(1),
+                new Literal("0")));
+  }
+
+  @Test public void of_backreferenceDigitsBeyondGroupCount_quantified() {
+    assertThat(RegexPattern.of("(a)\\12*"))
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(new Literal("a")),
+                new Backreference.Numbered(1),
+                new Quantified(new Literal("2"), repeated())));
+  }
+
+  @Test public void of_backreferenceDigitsWithinGroupCount_keptAsNumbered() {
+    StringBuilder pattern = new StringBuilder();
+    for (int i = 1; i <= 12; i++) {
+      pattern.append("(").append((char) ('a' + i - 1)).append(")");
+    }
+    pattern.append("\\12");
+    RegexPattern parsed = RegexPattern.of(pattern.toString());
+    assertThat(parsed).isInstanceOf(RegexPattern.Sequence.class);
+    RegexPattern.Sequence seq = (RegexPattern.Sequence) parsed;
+    assertThat(seq.elements().get(12)).isEqualTo(new Backreference.Numbered(12));
+  }
+
+  @Test public void of_backreferenceWithZeroGroups_takesFirstDigit() {
+    assertThat(RegexPattern.of("\\12"))
+        .isEqualTo(sequence(new Backreference.Numbered(1), new Literal("2")));
+  }
+
+  @Test public void of_backreferenceWithMultipleTrailingDigits_quantified() {
+    assertThat(RegexPattern.of("(a)\\123*"))
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(new Literal("a")),
+                new Backreference.Numbered(1),
+                new Literal("2"),
+                new Quantified(new Literal("3"), repeated())));
+  }
+
+  @Test public void of_backreferenceAfterNamedGroup_countsNamedGroup() {
+    assertThat(RegexPattern.of("(?<g>a)\\10"))
+        .isEqualTo(
+            sequence(
+                new Group.Named("g", new Literal("a")),
+                new Backreference.Numbered(1),
+                new Literal("0")));
   }
 
   // ---------------------------------------------------------------------------------------------

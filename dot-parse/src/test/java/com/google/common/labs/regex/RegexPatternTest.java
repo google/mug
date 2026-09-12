@@ -1857,6 +1857,33 @@ public final class RegexPatternTest {
     assertThat(new LiteralChar(0x1B).toString()).isEqualTo("\\u001B");
   }
 
+  @Test public void literal_unpairedSurrogate_toStringEscaped() {
+    assertThat(new Literal("\uD83D").toString()).isEqualTo("\\uD83D");
+  }
+
+  @Test public void literalChar_unpairedSurrogate_toStringEscaped() {
+    assertThat(new LiteralChar(0xD83D).toString()).isEqualTo("\\uD83D");
+  }
+
+  @Test public void sequence_nestedSequence_flattened() {
+    Sequence seq =
+        (Sequence) sequence(new Literal("a"), sequence(new Literal("b"), new Literal("c")));
+    assertThat(seq.elements())
+        .containsExactly(new Literal("a"), new Literal("b"), new Literal("c"))
+        .inOrder();
+  }
+
+  @Test public void
+      sequence_nestedSequenceWithDirectiveAndAlternation_toStringParenthesizesAlternation() {
+    RegexPattern seq = sequence(
+        new Literal("x"),
+        sequence(
+            new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+            alternation(new Literal("a"), new Literal("b"))),
+        new Literal("y"));
+    assertThat(seq.toString()).isEqualTo("x(?i)(?:a|b)y");
+  }
+
   /** A leading {@code (?x)} is a directive followed by the rest of the pattern it applies to. */
   private static RegexPattern freeSpacing(RegexPattern rest) {
     return Stream.of(FREE_SPACING, rest).collect(inSequence());
