@@ -54,6 +54,10 @@ public class RegexesTest {
     assertThat(prefixes("a|\\w")).containsExactly("");
   }
 
+  @Test public void prefixesOf_alternation_prefixFree() {
+    assertThat(prefixes("a|ab")).containsExactly("a");
+  }
+
   @Test public void prefixesOf_group() {
     assertThat(prefixes("(abc)")).containsExactly("abc");
     assertThat(prefixes("(?:abc)")).containsExactly("abc");

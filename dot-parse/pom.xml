@@ -56,7 +56,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>com.google.common.labs.regex</Automatic-Module-Name>
+              <Automatic-Module-Name>com.google.common.labs.parse</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

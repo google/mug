@@ -40,7 +40,7 @@ import java.util.function.UnaryOperator;
  * Parser<Integer> calculator = new OperatorTable<Integer>()
  *     .leftAssociative("+", (l, r) -> l + r, 10)
  *     .leftAssociative("-", (l, r) -> l - r, 10)
- *     .leftAssociative("*", (l, r) -> l * r), 20)
+ *     .leftAssociative("*", (l, r) -> l * r, 20)
  *     .rightAssociative("^", (l, r) -> pow(l, r), 30)
  *     .prefix("-", n -> -n, 40)
  *     .postfix("++", n -> n + 1, 40)

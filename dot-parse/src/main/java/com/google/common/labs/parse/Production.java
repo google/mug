@@ -98,7 +98,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
 
   /**
    * Returns a production rule that matches {@code this} pattern enclosed between {@code prefix} and
-   * {@code suffix},* both allowed to be empty.
+   * {@code suffix}, both allowed to be empty.
    *
    * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are re-declared to
    * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.

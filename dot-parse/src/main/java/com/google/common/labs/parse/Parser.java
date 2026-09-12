@@ -990,7 +990,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.7
    */
   public static Error fail(String message) {
-    throw new ParseError(requireNonNullElse(message, ""));
+    return new ParseError(requireNonNullElse(message, ""));
   }
 
   /** Returns a parser that applies this parser at least once, greedily. */

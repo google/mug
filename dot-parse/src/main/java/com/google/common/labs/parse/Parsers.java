@@ -118,6 +118,10 @@ public final class Parsers {
    * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
    * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
    * as per the JSON standard.
+   *
+   * <p>Per {@link Double#parseDouble(String)}, values that overflow the range of {@code double}
+   * evaluate to {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY}, and values
+   * that underflow evaluate to {@code 0.0}.
    */
   public static final Parser<Double> SIGNED_DOUBLE = literally(
           one('-').optional(), UNSIGNED_DECIMAL,
@@ -294,7 +298,7 @@ public final class Parsers {
     },
     WEEK("w") {
       @Override Duration of(long n) {
-        return Duration.ofDays(n * 7);
+        return Duration.ofDays(Math.multiplyExact(n, 7));
       }
 
       @Override long nanos() {
@@ -317,7 +321,7 @@ public final class Parsers {
         throw new ArithmeticException("Double value " + d + " out of range.");
       }
       long n = (long) d;
-      return of(n).plusNanos((long) ((d - n) * nanos()));
+      return of(n).plusNanos(Math.round((d - n) * nanos()));
     }
 
     @Override public String toString() {
@@ -386,10 +390,11 @@ public final class Parsers {
    * href="https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS">OWASP
    * ReDoS Attack Reference</a> for a detailed analysis of this issue.
    *
-   * <p>To avoid ReDoS and keep parsing execution linear and safe, prefer the declarative,
-   * backtracking-free {@link Parser} combinator API (using methods like {@link Parser#followedBy
-   * followedBy()}, {@link Parser#sequence sequence()}, {@link Parser#anyOf anyOf()}, etc.) and only
-   * use {@code regex} on trusted input (such as a config file, command line tool etc).
+   * <p>To avoid ReDoS and keep parsing execution linear and safe, prefer the declarative {@link
+   * Parser} combinator API (using methods like {@link Parser#followedBy followedBy()}, {@link
+   * Parser#sequence sequence()}, {@link Parser#followedByZeroOrMore followedByZeroOrMore()}, etc.)
+   * whose repetitions are possessive and never unconsume matched characters, and only use {@code
+   * regex} on trusted input (such as a config file, command line tool etc).
    *
    * <p>The pattern must be a compile-time constant, must not match the empty string, and must not
    * contain anchors (like {@code ^}, {@code $}), lookarounds (like {@code (?=...)}), or
@@ -922,7 +927,7 @@ public final class Parsers {
       return operand;
     }
 
-    Suffix() {}
+    private Suffix() {}
   }
 
   private Parsers() {}

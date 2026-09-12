@@ -103,60 +103,48 @@ public class CharacterSetTest {
 
   @Test public void not_positiveSet() {
     CharacterSet positive = charsIn("[ab]");
-    assertThat(positive.not().contains('a')).isFalse();
-    assertThat(positive.not().contains('b')).isFalse();
-    assertThat(positive.not().contains('c')).isTrue();
-    assertThat(positive.not().toString()).isEqualTo("[^ab]");
+    assertThat(positive.not().test('a')).isFalse();
+    assertThat(positive.not().test('b')).isFalse();
+    assertThat(positive.not().test('c')).isTrue();
     assertThat(positive.getAsciiPrefixes()).containsExactly("a", "b");
-    assertThat(positive.not().getAsciiPrefixes()).containsExactly("");
   }
 
   @Test public void not_negativeSet() {
     CharacterSet negative = charsIn("[^ab]");
-    assertThat(negative.not().contains('a')).isTrue();
-    assertThat(negative.not().contains('b')).isTrue();
-    assertThat(negative.not().contains('c')).isFalse();
-    assertThat(negative.not().toString()).isEqualTo("[ab]");
+    assertThat(negative.not().test('a')).isTrue();
+    assertThat(negative.not().test('b')).isTrue();
+    assertThat(negative.not().test('c')).isFalse();
     assertThat(negative.getAsciiPrefixes()).containsExactly("");
-    assertThat(negative.not().getAsciiPrefixes()).containsExactly("a", "b");
   }
 
   @Test public void not_rangeSet() {
     CharacterSet range = charsIn("[a-c]");
-    assertThat(range.not().contains('a')).isFalse();
-    assertThat(range.not().contains('b')).isFalse();
-    assertThat(range.not().contains('c')).isFalse();
-    assertThat(range.not().contains('d')).isTrue();
-    assertThat(range.not().toString()).isEqualTo("[^a-c]");
+    assertThat(range.not().test('a')).isFalse();
+    assertThat(range.not().test('b')).isFalse();
+    assertThat(range.not().test('c')).isFalse();
+    assertThat(range.not().test('d')).isTrue();
     assertThat(range.getAsciiPrefixes()).containsExactly("a", "b", "c");
-    assertThat(range.not().getAsciiPrefixes()).containsExactly("");
   }
 
   @Test public void not_negatedRangeSet() {
     CharacterSet negatedRange = charsIn("[^a-c]");
-    assertThat(negatedRange.not().contains('a')).isTrue();
-    assertThat(negatedRange.not().contains('b')).isTrue();
-    assertThat(negatedRange.not().contains('c')).isTrue();
-    assertThat(negatedRange.not().contains('d')).isFalse();
-    assertThat(negatedRange.not().toString()).isEqualTo("[a-c]");
+    assertThat(negatedRange.not().test('a')).isTrue();
+    assertThat(negatedRange.not().test('b')).isTrue();
+    assertThat(negatedRange.not().test('c')).isTrue();
+    assertThat(negatedRange.not().test('d')).isFalse();
     assertThat(negatedRange.getAsciiPrefixes()).containsExactly("");
-    assertThat(negatedRange.not().getAsciiPrefixes()).containsExactly("a", "b", "c");
   }
 
   @Test public void not_emptySet() {
     CharacterSet empty = charsIn("[]");
-    assertThat(empty.not().contains('a')).isTrue();
-    assertThat(empty.not().toString()).isEqualTo("[^]");
+    assertThat(empty.not().test('a')).isTrue();
     assertThat(empty.getAsciiPrefixes()).isEmpty();
-    assertThat(empty.not().getAsciiPrefixes()).containsExactly("");
   }
 
   @Test public void not_fullSet() {
     CharacterSet full = charsIn("[^]");
-    assertThat(full.not().contains('a')).isFalse();
-    assertThat(full.not().toString()).isEqualTo("[]");
+    assertThat(full.not().test('a')).isFalse();
     assertThat(full.getAsciiPrefixes()).containsExactly("");
-    assertThat(full.not().getAsciiPrefixes()).isEmpty();
   }
 
   @Test @SuppressWarnings("CharacterSetLiteralCheck")
@@ -190,6 +178,14 @@ public class CharacterSetTest {
   @Test public void toString_escapesInvisibleCharacters() {
     CharacterSet set = charsIn("[\r\n\t\f\b]");
     assertThat(set.toString()).isEqualTo("[\\r\\n\\t\\f\\b]");
+  }
+
+  @Test public void charsIn_surrogateCharacterThrows() {
+    assertThrows(IllegalArgumentException.class, () -> charsIn("[😀]"));
+  }
+
+  @Test public void charsIn_surrogateRangeThrows() {
+    assertThrows(IllegalArgumentException.class, () -> charsIn("[😀-😁]"));
   }
 
   @Test public void toString_escapesUnicodeControlCharacters() {

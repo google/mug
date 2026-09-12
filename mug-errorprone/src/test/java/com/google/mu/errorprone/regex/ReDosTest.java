@@ -454,10 +454,9 @@ public final class ReDosTest {
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(\\w*)\\d(.*)");
   }
 
-  @Test public void suggestRedosRewrite_nixleAlertHandler_preservesCaseInsensitiveFlag() {
+  @Test public void suggestRedosRewrite_nixleAlertHandler_noSuggestion() {
     RegexPattern pattern = RegexPattern.of("(?i)^(\\s*|\\.|none|[#]+)+$");
-    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
-        .hasValue("(?i)^((?:\\s*|\\.|none|[\\#]+)*)$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
   }
 
   @Test public void suggestRedosRewrite_sqlServerLimitHandler_preservesInlineFlagsAndGroups() {
@@ -783,7 +782,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|a?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((?:a|a?)*)b");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void

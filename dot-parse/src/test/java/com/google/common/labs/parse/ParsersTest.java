@@ -529,6 +529,10 @@ public class ParsersTest {
         .isEqualTo(Duration.ofHours(1).plus(Duration.ofMinutes(2).plusSeconds(30)));
   }
 
+  @Test public void duration_fractionalSecondsPrecision() {
+    assertThat(Parsers.DURATION.parse("2.3s")).isEqualTo(Duration.ofSeconds(2, 300_000_000));
+  }
+
   @Test public void duration_fractionalNotLastSegmentThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5h2m"));
     assertThat(e)
@@ -596,6 +600,12 @@ public class ParsersTest {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
     assertThat(e).hasMessageThat().contains("duration out of range: 9223372036854775807d");
+  }
+
+  @Test public void duration_overflowWeeksMultiplicationThrows() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> Parsers.DURATION.parse("7905747460161236407w"));
+    assertThat(e).hasMessageThat().contains("duration out of range: 7905747460161236407w");
   }
 
   @Test public void duration_overflowAccumulationThrows() {

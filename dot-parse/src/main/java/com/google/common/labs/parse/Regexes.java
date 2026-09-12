@@ -81,7 +81,7 @@ final class Regexes {
             // once we reach a never-empty pattern, chars after it don't matter
             if (element.metadata().minSize() > 0) break;
           }
-          yield Set.copyOf(result);
+          yield Utils.toPrefixFreeSet(result.stream());
         }
         case RegexPattern.Alternation alternation -> {
           List<RegexPattern> alternatives = alternation.alternatives();
@@ -210,8 +210,7 @@ final class Regexes {
   }
 
   private static Collector<String, ?, Set<String>> toPrefixSet() {
-    return collectingAndThen(
-        toUnmodifiableSet(), union -> union.contains("") ? EMPTY_PREFIX : union);
+    return collectingAndThen(toUnmodifiableSet(), set -> Utils.toPrefixFreeSet(set.stream()));
   }
 
   private Regexes() {}
