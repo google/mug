@@ -1034,7 +1034,7 @@ public sealed interface RegexPattern {
               newElements.add(resolved);
             }
           }
-          return newElements == null ? seq : new Sequence(newElements);
+          return newElements == null ? seq : newElements.stream().collect(inSequence());
         }
         if (pattern instanceof Quantified q) {
           if (q.element() instanceof Backreference.Numbered numbered) {
@@ -1067,9 +1067,6 @@ public sealed interface RegexPattern {
           } else {
             break;
           }
-        }
-        if (bestPrefixLength == digits.length()) {
-          return null;
         }
         int groupNum = Integer.parseInt(digits.substring(0, bestPrefixLength));
         String trailingDigits = digits.substring(bestPrefixLength);

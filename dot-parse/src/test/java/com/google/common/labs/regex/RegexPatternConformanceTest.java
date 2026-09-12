@@ -466,6 +466,15 @@ public final class RegexPatternConformanceTest {
                 new Literal("0")));
   }
 
+  @Test public void of_backreferenceSplit_mergesAdjacentTrailingLiterals() {
+    assertThat(RegexPattern.of("(a)\\12b"))
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(new Literal("a")),
+                new Backreference.Numbered(1),
+                new Literal("2b")));
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Finding 8c: constraints that depend on the pattern as a whole are not enforced. This is
   // documented on RegexPattern.of and pinned here.
