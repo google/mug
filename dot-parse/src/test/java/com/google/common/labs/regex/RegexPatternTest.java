@@ -1070,6 +1070,15 @@ public final class RegexPatternTest {
         .isEqualTo(freeSpacing(new Quantified(new Literal("a"), Quantifier.atLeast(2))));
   }
 
+  @Test public void of_freeSpacingMode_quantifier_atMost_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)a{ , 3 }"))
+        .isEqualTo(freeSpacing(new Quantified(new Literal("a"), Quantifier.atMost(3))));
+  }
+
+  @Test public void of_freeSpacingMode_property_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)\\p{ L }")).isEqualTo(freeSpacing(new UnicodeProperty("L")));
+  }
+
   @Test public void of_nestedFreeSpacingMode_enabled() {
     assertThat(RegexPattern.of("a(?x: b c )d"))
         .isEqualTo(

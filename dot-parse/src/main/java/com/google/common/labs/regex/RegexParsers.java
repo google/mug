@@ -288,16 +288,15 @@ final class RegexParsers {
     Parser<Quantifier> question = one('?').thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = one('*').thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = one('+').thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> range =
-    // `{n}`, `{n,m}` and `{n,}` are three different quantifiers: an absent max can't be
-    // spelled as Integer.MAX_VALUE, which is a repetition count a pattern can ask for.
-    sequence(
-            number,
-            anyOf(
-                    suffix(one(',').then(number), RegexParsers::repetitionRange),
-                    Suffix.<Integer, Quantifier>suffix(",", Quantifier::atLeast))
-                .orElse(Quantifier::repeated),
-            Suffix::apply)
+    Parser<Quantifier> range = anyOf(
+            sequence(
+                number,
+                anyOf(
+                        suffix(one(',').then(number), RegexParsers::repetitionRange),
+                        Suffix.<Integer, Quantifier>suffix(",", Quantifier::atLeast))
+                    .orElse(Quantifier::repeated),
+                Suffix::apply),
+            one(',').then(number).map(Quantifier::atMost))
         .between("{", "}");
     Parser<UnaryOperator<Quantifier>> modifier = anyOf(
         one('?').thenReturn(Quantifier::reluctant), one('+').thenReturn(Quantifier::possessive));
@@ -413,9 +412,6 @@ final class RegexParsers {
 
   /** Returns the code points of a char run, each a literal member of a char class. */
   private static List<CharSetElement> literalChars(int[] codePoints) {
-    if (codePoints.length == 1) {
-      return List.of(new LiteralChar(codePoints[0]));
-    }
     List<CharSetElement> elements = new ArrayList<>(codePoints.length);
     for (int codePoint : codePoints) {
       elements.add(new LiteralChar(codePoint));
@@ -425,19 +421,7 @@ final class RegexParsers {
 
   /** Returns the members of {@code from-to}, where the range starts at a single code point. */
   private static List<CharSetElement> charsThroughRange(int from, int[] to) {
-    if (to.length == 0) {
-      return List.of(new LiteralChar(from), new LiteralChar('-'));
-    }
-    CharRange range = charRange(from, to[0]);
-    if (to.length == 1) {
-      return List.of(range);
-    }
-    List<CharSetElement> elements = new ArrayList<>(to.length);
-    elements.add(range);
-    for (int i = 1; i < to.length; i++) {
-      elements.add(new LiteralChar(to[i]));
-    }
-    return elements;
+    return charsThroughRange(new int[] {from}, to);
   }
 
   /**

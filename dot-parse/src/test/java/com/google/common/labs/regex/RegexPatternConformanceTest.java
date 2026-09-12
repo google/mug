@@ -1034,9 +1034,9 @@ public final class RegexPatternConformanceTest {
   // preceding atom with a bound Java never agreed to.
   // ---------------------------------------------------------------------------------------------
 
-  @Test public void of_openEndedRepetition_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a{,3}"));
-    assertThat(e).hasMessageThat().contains("at 1:3: unexpected `repetition count`");
+  @Test public void of_openEndedRepetition_accepted() {
+    assertThat(RegexPattern.of("a{,3}"))
+        .isEqualTo(new Quantified(new Literal("a"), RegexPattern.Quantifier.atMost(3)));
   }
 
   @Test public void of_openEndedRepetitionAtPatternStart_rejected() {
@@ -1044,9 +1044,11 @@ public final class RegexPatternConformanceTest {
     assertThat(e).hasMessageThat().contains("at 1:2: unexpected `repetition count`");
   }
 
-  @Test public void of_openEndedRepetitionAfterGroup_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(abc){,4}"));
-    assertThat(e).hasMessageThat().contains("at 1:7: unexpected `repetition count`");
+  @Test public void of_openEndedRepetitionAfterGroup_accepted() {
+    assertThat(RegexPattern.of("(abc){,4}"))
+        .isEqualTo(
+            new Quantified(
+                new Group.Capturing(new Literal("abc")), RegexPattern.Quantifier.atMost(4)));
   }
 
   @Test public void of_boundedRepetition_stillAccepted() {
