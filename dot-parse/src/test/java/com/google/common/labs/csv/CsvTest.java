@@ -569,6 +569,35 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a|b", "c\"d", "e\nf", "g h"));
   }
 
+  @Test public void join_withWhitespaceDelimiter_roundTrips() {
+    for (char delimiter : new char[] {'\t', ' '}) {
+      Csv csv = CSV.withDelimiter(delimiter);
+      for (List<String> fields : List.of(
+          List.of("a\"b", "second"),
+          List.of("a\"b", "c\"d"),
+          List.of("a\"b", "", ""),
+          List.of("", "", "a\"b"),
+          List.of("a\"b", "", "c\"d"))) {
+        String encoded = csv.join(fields);
+        assertThat(csv.parseToLists(encoded)).containsExactly(fields);
+        assertThat(csv.parseToLists(new StringReader(encoded))).containsExactly(fields);
+      }
+    }
+  }
+
+  @Test public void whitespaceDelimiter_preservesOtherPadding() {
+    Csv tabs = CSV.withDelimiter('\t');
+    String tabSeparated = " \"a\" \t \"b\" ";
+    assertThat(tabs.parseToLists(tabSeparated)).containsExactly(List.of("a", "b"));
+    assertThat(tabs.parseToLists(new StringReader(tabSeparated)))
+        .containsExactly(List.of("a", "b"));
+    Csv spaces = CSV.withDelimiter(' ');
+    String spaceSeparated = "\t\"a\"\t \t\"b\"\t";
+    assertThat(spaces.parseToLists(spaceSeparated)).containsExactly(List.of("a", "b"));
+    assertThat(spaces.parseToLists(new StringReader(spaceSeparated)))
+        .containsExactly(List.of("a", "b"));
+  }
+
   @Test public void usedAsCollector() {
     assertThat(Stream.of(1, "two,3", 4).collect(CSV.joining())).isEqualTo("1,\"two,3\",4");
   }

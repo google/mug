@@ -66,7 +66,8 @@ import java.util.stream.Stream;
  * List<Map<String, String>> rows = CSV.parseToMaps(input).toList();
  * }</pre>
  *
- * <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored.
+ * <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored,
+ * unless the whitespace character is the configured delimiter.
  *
  * <p>Also starting from v9.5, to write to CSV format, use the {@link #join(Collection)} method to
  * join to CSV format:
@@ -106,15 +107,12 @@ import java.util.stream.Stream;
 @Immutable
 public final class Csv {
   private static final CharPredicate UNRESERVED_CHAR = noneOf("\"\r\n");
-  private static final Parser<?>.OrEmpty IGNORED_WHITESPACES = zeroOrMore("[ \t]");
   private static final Parser<?> NEW_LINE = anyOf("\n", "\r\n", "\r");
   private static final Parser<?> COMMENT = one('#').followedBy(zeroOrMore("[^\n]"));
   private static final Parser<String> QUOTED =
       anyOf(consecutive(isNot('"'), "quoted"), string("\"\"").thenReturn("\""))
           .zeroOrMore(Collectors.joining())
-          .between("\"", "\"")
-          // RFC doesn't allow spaces around quotes, but no ambiguity, no harm, why not?
-          .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
+          .between("\"", "\"");
 
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
@@ -132,9 +130,11 @@ public final class Csv {
     this.delim = delim;
     this.allowsComments = allowsComments;
     this.regularChar = UNRESERVED_CHAR.and(isNot(delim)).precomputeForAscii();
+    Parser<?>.OrEmpty padding =
+        zeroOrMore(CharPredicate.anyOf(" \t").and(isNot(delim)), "whitespace");
     this.line = anyOf(
         NEW_LINE.thenReturn(List.of()), // empty line => [], not [""]
-        QUOTED.or(consecutive(regularChar, "unquoted field"))
+        QUOTED.between(padding, padding).or(consecutive(regularChar, "unquoted field"))
             .orElse("")
             .delimitedBy(String.valueOf(delim))
             .notEmpty()
