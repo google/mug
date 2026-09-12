@@ -237,7 +237,13 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Finding 5: free spacing is honored only for a literal `(?x)` prefix.
+  // Finding 5: free spacing is only supported at the start of the pattern.
+  //
+  // java.util.regex lets a standalone `(?x)` turn free spacing on anywhere, for the rest of the
+  // enclosing group. Mug honors it only as the first thing in the pattern and rejects it anywhere
+  // else; RegexParsers.standaloneDirective() explains why, and `(?x:...)` expresses the same thing
+  // with its scope spelled out. A `_divergence` test asserts what Mug does where it knowingly
+  // differs from java.util.regex, so it passing is working as intended.
   // ---------------------------------------------------------------------------------------------
 
   @Test public void of_freeSpacingCombinedWithCaseInsensitive_ignoresWhitespace() {
@@ -250,25 +256,33 @@ public final class RegexPatternConformanceTest {
         .isEqualTo(new Metadata(/* minSize= */ 2, /* maxSize= */ 2));
   }
 
-  @Test public void of_freeSpacingFlagAfterLeadingLiteral_ignoresWhitespace() {
-    assertThat(RegexPattern.of("a(?x) b c").metadata())
-        .isEqualTo(new Metadata(/* minSize= */ 3, /* maxSize= */ 3));
-  }
-
   @Test public void of_freeSpacingWithTrailingWhitespace_ignoresWhitespace() {
     assertThat(RegexPattern.of("(?ix) a b ").metadata())
         .isEqualTo(new Metadata(/* minSize= */ 2, /* maxSize= */ 2));
   }
 
-  @Test public void of_freeSpacingFlagInAlternationBranch_appliesToLaterBranches() {
-    // java.util.regex: `(?x)` runs to the end of the enclosing group, crossing `|`.
-    String rendered = RegexPattern.of("a|(?x) b|c d").toString();
-    assertThat(Pattern.compile(rendered).matcher("cd").matches()).isTrue();
+  /** The reference behavior: java.util.regex honors `(?x)` after a literal. */
+  @Test public void of_freeSpacingFlagAfterLeadingLiteral_javaIgnoresWhitespace() {
+    assertThat(Pattern.compile("a(?x) b c").matcher("abc").matches()).isTrue();
   }
 
-  @Test public void of_freeSpacingFlagInAlternationBranch_laterBranchIgnoresSpace() {
-    String rendered = RegexPattern.of("a|(?x) b|c d").toString();
-    assertThat(Pattern.compile(rendered).matcher("c d").matches()).isFalse();
+  @Test public void of_freeSpacingFlagAfterLeadingLiteral_rejected_divergence() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?x) b c"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("at 1:5: free spacing flag (x) is only supported at the start of the pattern");
+  }
+
+  /** The reference behavior: `(?x)` runs to the end of the enclosing group, crossing `|`. */
+  @Test public void of_freeSpacingFlagInAlternationBranch_javaAppliesToLaterBranches() {
+    assertThat(Pattern.compile("a|(?x) b|c d").matcher("cd").matches()).isTrue();
+  }
+
+  @Test public void of_freeSpacingFlagInAlternationBranch_rejected_divergence() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a|(?x) b|c d"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("at 1:6: free spacing flag (x) is only supported at the start of the pattern");
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -456,8 +470,8 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Finding 12: a standalone directive parses the rest of the enclosing group as its own subtree,
-  // so later alternatives end up nested under the branch the directive appears in.
+  // Finding 12: a standalone directive is a zero-width node, emitted as a sibling of the elements
+  // it applies to, so it leaves the binding of `|` alone.
   // ---------------------------------------------------------------------------------------------
 
   @Test public void of_directiveAfterLeadingLiteral_keepsAlternationStructure() {
@@ -480,13 +494,8 @@ public final class RegexPatternConformanceTest {
     assertThat(RegexPattern.of("x(?i)a|b").toString()).isEqualTo("x(?i)a|b");
   }
 
-  @Test public void of_freeSpacingDirectiveAfterLeadingLiteral_laterAlternativeIgnoresSpace() {
-    assertThat(RegexPattern.of("x(?x) a b|c d").metadata())
-        .isEqualTo(new Metadata(/* minSize= */ 2, /* maxSize= */ 3));
-  }
-
   // ---------------------------------------------------------------------------------------------
-  // Finding 14: flag scope does not survive the alternation lift.
+  // Finding 14: a directive's flags are not recorded as reaching the alternatives after it.
   //
   // What diverges: for `x(?i)a|b`, java.util.regex compiles flags sequentially to the end of the
   // enclosing group, so the `i` reaches `b` and the pattern matches "B". Mug parses `b` into a
@@ -494,18 +503,12 @@ public final class RegexPatternConformanceTest {
   // case sensitive `b`. Only the recorded scope differs; the parse and the rendering both agree
   // with java.util.regex.
   //
-  // Why it cannot be fixed in the tree: a standalone directive swallows the rest of the enclosing
-  // group, meaning it parses that rest as its own operand so everything after it nests inside its
-  // subtree, `|` and all. RegexParsers.groupOrLookaround defines this and explains why `(?x)`
-  // leaves no alternative: free spacing is lexical, so the rest has to be a parser to wrap rather
-  // than a sibling to fix up later. RegexParsers.liftSwallowedAlternatives()
-  // then has to pull the later branches back out, because leaving them nested reads as `x` gating
-  // `b`, which changes which strings match. But being a sibling of the sequence that holds the
-  // directive is exactly what `|` binding requires, and it is also exactly what puts the branch
-  // outside the directive's subtree. Treating semantic directives differently from lexical ones
-  // would not avoid it either, since `(?ix)` puts both kinds in a single directive. Annotating the
-  // lifted branches with the active flags would express the scope, at the cost of no longer
-  // rendering back to the source.
+  // Why it cannot be fixed in the tree: the directive is zero-width, so it lands inside the branch
+  // it was written in, and the later branches are siblings of that branch rather than of the
+  // directive. Nesting them under the directive instead is the only way a tree can say that the
+  // flags reach them, and that is exactly the shape `|` forbids: it would read as `x` gating `b`,
+  // which changes which strings match. Annotating the later branches with the active flags would
+  // express the scope, at the cost of no longer rendering back to the source.
   //
   // Why the divergence is acceptable:
   //   - Nothing is erased. The directive is still in the tree, at the top level of the preceding
@@ -519,11 +522,7 @@ public final class RegexPatternConformanceTest {
   //     group. Scoped `(?i:...)` groups, and a leading `(?i)` with no alternation, are both right.
   //
   // A `_divergence` test asserts what Mug does where it knowingly differs from java.util.regex, so
-  // it passing is working as intended. Finding 9 is the other one.
-  //
-  // Free spacing is unaffected, because `(?x)` is applied while tokenizing rather than read back
-  // off the tree; of_freeSpacingDirectiveAfterLeadingLiteral_laterAlternativeIgnoresSpace covers
-  // that side.
+  // it passing is working as intended. Findings 5 and 9 are the others.
   // ---------------------------------------------------------------------------------------------
 
   /** The reference behavior: java.util.regex carries the flag across the `|`. */

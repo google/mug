@@ -35,6 +35,18 @@ abstract class CharInput {
   /** Reads the character at {@code index}. */
   abstract char charAt(int index);
 
+  /**
+   * Reads the character at {@code index}, or returns -1 if {@code index} is at or past EOF.
+   *
+   * <p>Equivalent to {@code isEof(index) ? -1 : charAt(index)} but reaches the underlying input
+   * once instead of twice. {@code char} is unsigned, so a real character always widens into {@code
+   * [0, 65535]} and can never be confused with the -1 sentinel. This mirrors the convention of
+   * {@link java.io.Reader#read()}.
+   */
+  int charAtOrEof(int index) {
+    return isEof(index) ? -1 : charAt(index);
+  }
+
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
 
@@ -53,7 +65,8 @@ abstract class CharInput {
   }
 
   final boolean startsWith(CharPredicate predicate, int index) {
-    return isInRange(index) && predicate.test(charAt(index));
+    int c = charAtOrEof(index);
+    return c >= 0 && predicate.test((char) c);
   }
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
@@ -93,6 +106,10 @@ abstract class CharInput {
     return new CharInput() {
       @Override char charAt(int index) {
         return text.charAt(index);
+      }
+
+      @Override int charAtOrEof(int index) {
+        return index < text.length() ? text.charAt(index) : -1;
       }
 
       @Override int indexOf(String str, int fromIndex) {
@@ -164,6 +181,12 @@ abstract class CharInput {
       @Override char charAt(int index) {
         ensureCharCount(index + 1);
         return chars.charAt(toPhysicalIndex(index));
+      }
+
+      @Override int charAtOrEof(int index) {
+        ensureCharCount(index + 1);
+        int p = toPhysicalIndex(index);
+        return p < chars.length() ? chars.charAt(p) : -1;
       }
 
       @Override int indexOf(String str, int fromIndex) {

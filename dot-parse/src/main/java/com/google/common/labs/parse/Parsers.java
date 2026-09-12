@@ -70,8 +70,9 @@ public final class Parsers {
   public static final Parser<String> UNSIGNED_INTEGER =
       new Scanner("integer") {
         @Override int scan(CharInput input, final int from) {
-          if (input.isEof(from)) return from;
-          char c = input.charAt(from);
+          int read = input.charAtOrEof(from);
+          if (read < 0) return from;
+          char c = (char) read;
           int index = from + 1;
           if (c >= '1' && c <= '9') {
             return input.skipWhile(CharacterSet.DECIMAL, index);

@@ -889,6 +889,6 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    return RegexParsers.PARSER.orElse(new Literal("")).parse(regex);
+    return RegexParsers.TOP_LEVEL.orElse(new Literal("")).parse(regex);
   }
 }

@@ -612,6 +612,62 @@ public final class RegexParserErrorTest {
             """);
   }
 
+  @Test public void modifierDirective_freeSpacingEnabledAfterLiteral_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?x) b"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: free spacing flag (x) is only supported at the start of the pattern; \
+            use (?x:...) to scope it
+
+                a(?x) b
+                    ^
+            """);
+  }
+
+  @Test public void modifierDirective_freeSpacingDisabledAfterLiteral_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?-x)b"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: free spacing flag (x) is only supported at the start of the pattern; \
+            use (?x:...) to scope it
+
+                a(?-x)b
+                     ^
+            """);
+  }
+
+  @Test public void modifierDirective_freeSpacingMixedWithCaseInsensitive_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?ix) b"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: free spacing flag (x) is only supported at the start of the pattern; \
+            use (?x:...) to scope it
+
+                a(?ix) b
+                     ^
+            """);
+  }
+
+  @Test public void modifierDirective_freeSpacingInsideGroup_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("((?x) a b)"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: free spacing flag (x) is only supported at the start of the pattern; \
+            use (?x:...) to scope it
+
+                ((?x) a b)
+                    ^
+            """);
+  }
+
   @Test public void group_unknownConstruct() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?*abc)"));
     assertThat(e)
@@ -863,6 +919,30 @@ public final class RegexParserErrorTest {
             at 1:4: unexpected `repetition count`:
                 a*{2}
                    ^
+            """);
+  }
+
+  @Test public void quantifier_afterStandaloneModifierDirective() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?i)*"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: unexpected `quantifier`:
+                a(?i)*
+                     ^
+            """);
+  }
+
+  @Test public void quantifier_repetitionAfterStandaloneModifierDirective() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?i){2}"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: unexpected `quantifier`:
+                a(?i){2}
+                     ^
             """);
   }
 

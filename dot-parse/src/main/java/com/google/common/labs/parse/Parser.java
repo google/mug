@@ -157,12 +157,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
           ErrorContext context) {
         start = skipIfAny(preskipper, input, start);
-        if (input.isEof(start)) {
+        int c = input.charAtOrEof(start);
+        if (c < 0) {
           return context.expecting(name, start);
         }
-        char c = input.charAt(start);
-        return matcher.test(c)
-            ? new MatchResult.Success<>(start, start + 1, c)
+        return matcher.test((char) c)
+            ? new MatchResult.Success<>(start, start + 1, (char) c)
             : context.expecting(name, start);
       }
 
@@ -607,10 +607,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               ErrorContext context) {
             StringBuilder builder = new StringBuilder();
             for (int index = start, depth = 1; ; ) {
-              if (input.isEof(index)) {
+              int read = input.charAtOrEof(index);
+              if (read < 0) {
                 return context.expecting(suffix, index); // Unclosed block
               }
-              char c = input.charAt(index++);
+              char c = (char) read;
+              index++;
               if (c == after) {
                 if (--depth == 0) {
                   return new MatchResult.Success<>(start, index, builder.toString());
