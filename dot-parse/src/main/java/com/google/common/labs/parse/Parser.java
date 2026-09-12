@@ -41,6 +41,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.ErrorContext.ErrorTracker;
 import com.google.common.labs.parse.Parsers.Suffix;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.function.CheckedIntConsumer;
@@ -989,6 +990,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @param message the error message to be reported as part of the parse failure.
    * @since 10.7
    */
+  @CheckReturnValue
   public static Error fail(String message) {
     return new ParseError(requireNonNullElse(message, ""));
   }

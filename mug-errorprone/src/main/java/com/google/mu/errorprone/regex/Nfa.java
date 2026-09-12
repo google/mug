@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.RegexPatternUtils.Flags;
 import com.google.mu.util.graph.ShortestPath;
 import com.google.mu.util.graph.Walker;
 import com.google.mu.util.stream.BiStream;
@@ -29,6 +30,7 @@ final class Nfa {
   final Set<Integer> anchorStates = new HashSet<>();
   private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   private final Deque<RegexPattern.Quantified> quantifierStack = new ArrayDeque<>();
+  private Flags flags = Flags.NONE;
   int startState;
   int acceptState;
 
@@ -63,6 +65,7 @@ final class Nfa {
 
   private void addCharTransition(
       int from, ImmutableRangeSet<Integer> chars, int to, RegexPattern astNode) {
+    chars = flags.fold(chars);
     if (chars.isEmpty()) {
       return;
     }
@@ -95,6 +98,7 @@ final class Nfa {
       case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up), up);
       case RegexPattern.Sequence seq -> compileSequence(seq.elements());
       case RegexPattern.Alternation alt -> compileAlternation(alt.alternatives());
+      case RegexPattern.Group.NonCapturing g -> compileScoped(g);
       case RegexPattern.Group group -> compile(group.content());
       case RegexPattern.Quantified q -> compileQuantified(q);
       case RegexPattern.Anchor anchor -> compileAnchor();
@@ -102,6 +106,17 @@ final class Nfa {
     };
     nodeToStartState.put(pattern, f.start);
     return f;
+  }
+
+  /** Compiles {@code (?flags:...)}, whose flags apply to its content only. */
+  private Fragment compileScoped(RegexPattern.Group.NonCapturing group) {
+    Flags outer = flags;
+    flags = outer.updated(group.enabledModifierFlags(), group.disabledModifierFlags());
+    try {
+      return compile(group.content());
+    } finally {
+      flags = outer;
+    }
   }
 
   private Fragment compileAnchor() {
@@ -136,10 +151,16 @@ final class Nfa {
   }
 
   private Fragment compileSequence(List<RegexPattern> elements) {
+    Flags outer = flags;
     List<Fragment> fragments = new ArrayList<>();
     for (RegexPattern elem : elements) {
+      // A standalone `(?i)` applies to the elements after it, up to the enclosing group.
+      if (elem instanceof RegexPattern.ModifierDirective directive) {
+        flags = flags.updated(directive.enabledModifierFlags(), directive.disabledModifierFlags());
+      }
       fragments.add(compile(elem));
     }
+    flags = outer;
     for (int i = 0; i < fragments.size() - 1; i++) {
       addEpsilon(fragments.get(i).accept, fragments.get(i + 1).start);
     }
@@ -317,18 +338,19 @@ final class Nfa {
     if (from == to) {
       return "";
     }
-    record Step(int state, char charConsumed) {}
+    /** {@code codePoint} is -1 for an epsilon step, which consumes nothing. */
+    record Step(int state, int codePoint) {}
 
     return ShortestPath.shortestPathsFrom(
-            new Step(from, '\0'),
+            new Step(from, -1),
             (Step step) -> {
               BiStream.Builder<Step, Double> builder = BiStream.builder();
               for (int next : states.get(step.state()).epsilonTransitions) {
-                builder.add(new Step(next, '\0'), 0.0);
+                builder.add(new Step(next, -1), 0.0);
               }
               for (CharTransition t : charTransitions) {
                 if (t.source() == step.state()) {
-                  builder.add(new Step(t.target(), (char) CharRanges.sampleChar(t.chars())), 1.0);
+                  builder.add(new Step(t.target(), CharRanges.sampleChar(t.chars())), 1.0);
                 }
               }
               return builder.build();
@@ -337,9 +359,9 @@ final class Nfa {
         .findFirst()
         .map(path -> path.stream()
             .keys()
-            .map(Step::charConsumed)
-            .filter(c -> c != '\0')
-            .map(Object::toString)
+            .mapToInt(Step::codePoint)
+            .filter(codePoint -> codePoint >= 0)
+            .mapToObj(Character::toString)
             .collect(joining()))
         .orElse("");
   }

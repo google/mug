@@ -154,6 +154,52 @@ public final class CharRangesTest {
     assertThat(CharRanges.intersection(CharRanges.EMPTY, fromPattern("[a-z]")).isEmpty()).isTrue();
   }
 
+  @Test public void caseFolded_asciiLowercaseRange_addsUppercaseCounterparts() {
+    ImmutableRangeSet<Integer> folded = CharRanges.caseFolded(fromPattern("[a-c]"), false);
+    assertThat(folded.asRanges())
+        .containsExactly(
+            closedOpen((int) 'A', (int) 'C' + 1), closedOpen((int) 'a', (int) 'c' + 1));
+  }
+
+  @Test public void caseFolded_asciiUppercaseRange_addsLowercaseCounterparts() {
+    ImmutableRangeSet<Integer> folded = CharRanges.caseFolded(fromPattern("[X-Z]"), false);
+    assertThat(folded.asRanges())
+        .containsExactly(
+            closedOpen((int) 'X', (int) 'Z' + 1), closedOpen((int) 'x', (int) 'z' + 1));
+  }
+
+  @Test public void caseFolded_digitsOnly_unchanged() {
+    ImmutableRangeSet<Integer> digits = fromPattern("[0-9]");
+    assertThat(CharRanges.caseFolded(digits, false)).isEqualTo(digits);
+  }
+
+  @Test public void caseFolded_empty_returnsEmpty() {
+    assertThat(CharRanges.caseFolded(CharRanges.EMPTY, false).isEmpty()).isTrue();
+  }
+
+  @Test public void caseFolded_asciiOnly_doesNotFoldKelvinSign() {
+    // U+212A KELVIN SIGN lowercases to 'k', but `(?i)` alone is ASCII-only.
+    assertThat(CharRanges.caseFolded(CharRanges.of('k'), false).contains(0x212A)).isFalse();
+  }
+
+  @Test public void caseFolded_unicodeCase_foldsKelvinSignToLowercaseK() {
+    assertThat(CharRanges.caseFolded(CharRanges.of(0x212A), true).contains((int) 'k')).isTrue();
+  }
+
+  @Test public void caseFolded_asciiOnly_doesNotFoldLatin1Letter() {
+    // U+00E9 é uppercases to U+00C9, but only under `(?u)`.
+    assertThat(CharRanges.caseFolded(CharRanges.of(0x00E9), false).contains(0x00C9)).isFalse();
+  }
+
+  @Test public void caseFolded_unicodeCase_foldsLatin1Letter() {
+    assertThat(CharRanges.caseFolded(CharRanges.of(0x00E9), true).contains(0x00C9)).isTrue();
+  }
+
+  @Test public void caseFolded_unicodeCase_digitsUnchanged() {
+    ImmutableRangeSet<Integer> digits = fromPattern("[0-9]");
+    assertThat(CharRanges.caseFolded(digits, true)).isEqualTo(digits);
+  }
+
   @Test public void from_unicodePropertyNd_containsDigit() {
     ImmutableRangeSet<Integer> ranges = fromPattern("[\\p{Nd}]");
     assertThat(ranges.contains((int) '0')).isTrue();

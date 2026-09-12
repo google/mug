@@ -316,6 +316,55 @@ public final class ReDosTest {
     assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
+  @Test public void checkPolynomialBacktracking_caseInsensitiveDirective_detectsOverlap() {
+    RegexPattern pattern = RegexPattern.of("(?i)a+A+b");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("contains consecutive overlapping quantifiers on /a+/ and /A+/");
+  }
+
+  @Test public void checkPolynomialBacktracking_caseInsensitiveGroup_detectsOverlap() {
+    RegexPattern pattern = RegexPattern.of("(?i:[a-z])+[A-Z]+b");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat().contains("polynomial backtracking (PDA)");
+  }
+
+  @Test public void checkPolynomialBacktracking_caseInsensitiveInsideGroup_detectsOverlap() {
+    RegexPattern pattern = RegexPattern.of("(?i)(a+A+b)");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat().contains("polynomial backtracking (PDA)");
+  }
+
+  @Test public void checkPolynomialBacktracking_caseSensitive_noOverlap() {
+    ReDos.checkPolynomialBacktracking(RegexPattern.of("a+A+b"));
+  }
+
+  @Test public void checkPolynomialBacktracking_caseInsensitivityDisabledInGroup_noOverlap() {
+    // Both operands opt out of the enclosing `(?i)`, so `A` and `a` stay disjoint.
+    ReDos.checkPolynomialBacktracking(RegexPattern.of("(?i)(?-i:A+)(?-i:a+)b"));
+  }
+
+  @Test public void checkPolynomialBacktracking_caseInsensitivityScopedToGroup_noOverlap() {
+    // The directive dies with its group, so `A+` and `a+` after it stay disjoint.
+    ReDos.checkPolynomialBacktracking(RegexPattern.of("((?i)x)+A+a+b"));
+  }
+
+  @Test public void checkPolynomialBacktracking_asciiCaseFoldingOnly_noOverlapWithKelvinSign() {
+    // U+212A KELVIN SIGN only folds to `k` under (?u).
+    ReDos.checkPolynomialBacktracking(RegexPattern.of("(?i)k+\u212a+b"));
+  }
+
+  @Test public void checkPolynomialBacktracking_unicodeCaseFolding_detectsKelvinSignOverlap() {
+    RegexPattern pattern = RegexPattern.of("(?iu)k+\u212a+b");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat().contains("polynomial backtracking (PDA)");
+  }
+
   @Test public void
       checkRedosVulnerability_prefixGatedNestedQuantifier_attackPayloadIncludesPrefix() {
     RegexPattern pattern = RegexPattern.of("prefix_(a+)+");
@@ -1282,6 +1331,20 @@ public final class ReDosTest {
     assertThat(thrown.getAttackPayload()).isEqualTo("0".repeat(30) + "!");
   }
 
+  @Test public void checkPolynomialBacktracking_supplementaryPlanePump_payloadUsesCodePoint() {
+    RegexPattern pattern = RegexPattern.of("[\\x{10000}-\\x{10FFFF}]+[\\x{10000}-\\x{10FFFF}]+b");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).contains(Character.toString(0x10000));
+  }
+
+  @Test public void checkPolynomialBacktracking_supplementaryPlanePump_payloadHasNoNulChar() {
+    RegexPattern pattern = RegexPattern.of("[\\x{10000}-\\x{10FFFF}]+[\\x{10000}-\\x{10FFFF}]+b");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).doesNotContain("\u0000");
+  }
+
   @Test public void
       checkPolynomialBacktracking_throwsVulnerableRegexExceptionWithStructuredDetails() {
     RegexPattern pattern = RegexPattern.of("\\d+\\w+");
@@ -2139,7 +2202,7 @@ public final class ReDosTest {
   }
 
   @Test public void checkRedosVulnerability_largeQuantifiedSubPattern_doesNotExhaustMemory() {
-    RegexPattern pattern = RegexPattern.of("((a+{92275707})+)+");
+    RegexPattern pattern = RegexPattern.of("((a{92275707})+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown.getAttackPayload()).isNotNull();

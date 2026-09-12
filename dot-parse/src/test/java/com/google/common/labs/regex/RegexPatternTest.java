@@ -557,6 +557,14 @@ public final class RegexPatternTest {
                 new RegexPattern.LiteralChar('c')));
   }
 
+  @Test public void of_characterSet_leadingHyphenStartsRange() {
+    assertThat(RegexPattern.of("[--z]")).isEqualTo(anyOf(new CharRange('-', 'z')));
+  }
+
+  @Test public void of_characterSet_hyphenEndsRange() {
+    assertThat(RegexPattern.of("[!--]")).isEqualTo(anyOf(new CharRange('!', '-')));
+  }
+
   @Test public void of_characterSet_escapedSpecialChars() {
     assertThat(RegexPattern.of("[\\[\\]\\-\\^\\&]"))
         .isEqualTo(
@@ -846,6 +854,14 @@ public final class RegexPatternTest {
         .isEqualTo(freeSpacing(sequence(new Literal("a"), new Group.Capturing(new Literal("b")))));
     assertThat(RegexPattern.of("(?x)a#comment\nb")).isEqualTo(freeSpacing(new Literal("ab")));
     assertThat(RegexPattern.of("(?x)a#comment b")).isEqualTo(freeSpacing(new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_emptyCommentIgnored() {
+    assertThat(RegexPattern.of("(?x)a#\nb")).isEqualTo(freeSpacing(new Literal("ab")));
+  }
+
+  @Test public void of_freeSpacingMode_emptyCommentAtStart() {
+    assertThat(RegexPattern.of("(?x)#\nab")).isEqualTo(freeSpacing(new Literal("ab")));
   }
 
   @Test public void of_freeSpacingMode_escapedSpaceInCharClass_singleChar() {

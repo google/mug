@@ -28,6 +28,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+import static com.google.common.labs.parse.Parsers.Suffix.suffix;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.LINEBREAK;
@@ -48,6 +49,7 @@ import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.common.labs.regex.RegexPattern.Alternation;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Backreference;
@@ -72,7 +74,6 @@ import com.google.mu.util.Substring;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -136,8 +137,8 @@ final class RegexParsers {
   /** Whitespace is ignored under free spacing mode, and {@code #} starts a comment. */
   private static final CharPredicate FREE_SPACING_CHAR = is('#').or(Character::isWhitespace);
 
-  private static final Parser<?> FREE_SPACES = anyOf(
-      consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
+  private static final Parser<?> FREE_SPACES =
+      anyOf(consecutive(Character::isWhitespace, "whitespace"), one('#').then(zeroOrMore("[^\n]")));
   static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
   /** The last char that isn't a low surrogate starts the last code point. */
@@ -147,35 +148,39 @@ final class RegexParsers {
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<Quantifier> quantifier = quantifier();
     Parser<RegexPattern> atomic = anyOf(
-        define(RegexParsers::charClass),
-        positiveCharacterProperty(),
-        negativeCharacterProperty(),
-        groupOrLookaround(regex),
-        anyOf(PredefinedCharClass.values()),
-        ANCHOR,
-        literally(
-            string("\\")
-                .then(
-                    sequence(one("[1-9]"), digits().optional())
-                        .source()
-                        .map(s -> new Backreference.Numbered(parseNumber(s, 10))))),
-        string("\\k").then(word().between("<", ">")).map(Backreference.Named::new),
+        quantifiable(define(RegexParsers::charClass), quantifier),
+        quantifiable(positiveCharacterProperty(), quantifier),
+        quantifiable(negativeCharacterProperty(), quantifier),
+        quantifiable(groupOrLookaround(regex), quantifier),
+        quantifiable(anyOf(PredefinedCharClass.values()), quantifier),
+        quantifiable(ANCHOR, quantifier),
+        quantifiable(
+            literally(
+                string("\\")
+                    .then(
+                        sequence(one("[1-9]"), digits().optional())
+                            .source()
+                            .map(s -> new Backreference.Numbered(parseNumber(s, 10))))),
+            quantifier),
+        quantifiable(
+            string("\\k").then(word().between("<", ">")).map(Backreference.Named::new), quantifier),
         literalRun(quotedText(), quantifier),
         // free spacing chars are left to the next alternative, which free spacing mode can skip
         literalRun(
             consecutive(noneOf(".[]{}()*+?^$|\\").and(FREE_SPACING_CHAR.not()), "literal char"),
             quantifier),
         literalRun(consecutive(FREE_SPACING_CHAR, "whitespace or #"), quantifier),
-        anyOf(
-                ESCAPED,
-                // only the trailing `]` closes the specifier, so this is the set {`}`, `]`}
-                one("[}]]").map(String::valueOf),
-                // `{` is a literal only when it doesn't start a repetition count. Otherwise a
-                // malformed quantifier like `a{3,2}` would silently parse as a literal.
-                one('{').notFollowedBy(digits(), "repetition count").map(String::valueOf))
-            .map(Literal::new));
+        quantifiable(
+            anyOf(
+                    ESCAPED,
+                    // only the trailing `]` closes the specifier, so this is the set {`}`, `]`}
+                    one("[}]]").map(String::valueOf),
+                    // `{` is a literal only when it doesn't start a repetition count. Otherwise a
+                    // malformed quantifier like `a{3,2}` would silently parse as a literal.
+                    one('{').notFollowedBy(digits(), "repetition count").map(String::valueOf))
+                .map(Literal::new),
+            quantifier));
     return atomic
-        .followedByZeroOrMore(quantifier)
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
         .delimitedBy("|", asAlternatives())
@@ -184,38 +189,68 @@ final class RegexParsers {
   }
 
   /**
-   * Collects the alternatives of a subpattern.
+   * Collects the alternatives of a subpattern, undoing any swallowing along the way.
    *
-   * <p>A standalone {@code (?i)} directive applies to the rest of the enclosing group, so it parses
-   * that rest, including any later alternative, as its own subtree. Those alternatives are lifted
-   * back here so that {@code x(?i)a|b} stays an alternation of {@code x(?i)a} and {@code b}, not
-   * {@code x} followed by {@code (?i)} and {@code (a|b)}.
+   * <p>A standalone directive swallows the rest of the enclosing group, later alternatives
+   * included; {@link #groupOrLookaround} defines the term and explains why the parse has to work
+   * that way. The swallowed alternatives are lifted back out here so that {@code x(?i)a|b} stays an
+   * alternation of {@code x(?i)a} and {@code b}, not {@code x} followed by {@code (?i)} and {@code
+   * (a|b)}.
    */
   private static Collector<RegexPattern, ?, RegexPattern> asAlternatives() {
     return collectingAndThen(
-        toList(), alternatives -> lifted(alternatives).stream().collect(asAlternation()));
+        toList(),
+        alternatives -> liftSwallowedAlternatives(alternatives).stream().collect(asAlternation()));
   }
 
   /**
-   * Only the last alternative can have swallowed what follows it, and it can only have parsed it
-   * into a trailing {@link Alternation}, because every other way to nest an alternation goes
-   * through a {@link Group} or a {@link Lookaround}.
+   * Undoes the swallowing described on {@link #groupOrLookaround}, restoring the {@code |}
+   * precedence that it flattened.
+   *
+   * <p>Only the last alternative can have swallowed what follows it, since swallowing consumes
+   * everything to the end of the group and leaves no input for a later alternative to come from.
+   * And it can only have parsed what it swallowed into a trailing {@link Alternation}, because
+   * every other way to nest an alternation goes through a {@link Group} or a {@link Lookaround}. So
+   * a bare {@code Alternation} as the last element of the last alternative's {@link Sequence} is
+   * unambiguously swallowed, and nothing else is.
+   *
+   * <p>This restores the structure but not the flag scope. The branches moved out here are no
+   * longer under the directive, so a {@link ModifierDirective} in the tail of one branch reads as
+   * not applying to the branches after it, while {@code java.util.regex} compiles flags
+   * sequentially to the end of the enclosing group and does apply them there. No tree shape can
+   * have both, because the branches have to be siblings for {@code |} to bind correctly. A consumer
+   * that needs the flags must carry a directive still active at the end of one branch into the
+   * following ones. Pinned by Finding 14 in {@code RegexPatternConformanceTest}.
    */
-  private static List<RegexPattern> lifted(List<RegexPattern> alternatives) {
-    RegexPattern last = alternatives.get(alternatives.size() - 1);
+  private static List<RegexPattern> liftSwallowedAlternatives(List<RegexPattern> alternatives) {
+    RegexPattern last = alternatives.getLast();
     if (!(last instanceof Sequence sequence
-        && sequence.elements().get(sequence.elements().size() - 1)
-            instanceof Alternation swallowed)) {
+        && sequence.elements().getLast() instanceof Alternation swallowed)) {
       return alternatives;
     }
     List<RegexPattern> beforeSwallowed =
         sequence.elements().subList(0, sequence.elements().size() - 1);
     List<RegexPattern> result = new ArrayList<>(alternatives.subList(0, alternatives.size() - 1));
+    // The swallowing stopped at the first `|` it found, so only the first swallowed branch was
+    // ever part of this alternative: in `x(?i)a|b`, `a` belongs after `x(?i)` but `b` does not.
+    // That branch rejoins the prefix, and the ones after it were always siblings, so they are
+    // appended flat.
     result.add(
-        Stream.concat(beforeSwallowed.stream(), Stream.of(swallowed.alternatives().get(0)))
+        Stream.concat(beforeSwallowed.stream(), Stream.of(swallowed.alternatives().getFirst()))
             .collect(inSequence()));
     result.addAll(swallowed.alternatives().subList(1, swallowed.alternatives().size()));
     return result;
+  }
+
+  /**
+   * Returns {@code atom} with at most one quantifier bound to it. A second quantifier is a dangling
+   * metacharacter, as in {@code a+*}, not a quantifier of a quantifier.
+   */
+  private static Parser<RegexPattern> quantifiable(
+      Parser<? extends RegexPattern> atom, Parser<Quantifier> quantifier) {
+    @SuppressWarnings("unchecked")
+    Parser<RegexPattern> widened = (Parser<RegexPattern>) atom;
+    return widened.optionallyFollowedBy(quantifier, Quantified::new);
   }
 
   /**
@@ -225,13 +260,9 @@ final class RegexParsers {
    */
   private static Parser<RegexPattern> literalRun(
       Parser<String> text, Parser<Quantifier> quantifier) {
-    return sequence(text, quantifier.optional(), RegexParsers::literalRun);
-  }
-
-  private static RegexPattern literalRun(String literal, Optional<Quantifier> quantifier) {
-    return quantifier
-        .map(q -> quantifyLastCodePoint(literal, q))
-        .orElseGet(() -> new Literal(literal));
+    return sequence(
+        text, suffix(quantifier, RegexParsers::quantifyLastCodePoint).orElse(Literal::new),
+        Suffix::apply);
   }
 
   private static RegexPattern quantifyLastCodePoint(String literal, Quantifier quantifier) {
@@ -310,13 +341,15 @@ final class RegexParsers {
         one("[^-&\\][]").map(c -> (int) c),
         ESCAPED.map(s -> s.codePointAt(0)),
         one('&').notFollowedBy("&").map(c -> (int) c));
+    // `-` is a literal only where it can't form a range. It's legal at either end of one, so
+    // `[--z]` is U+002D through `z`, and `[!--]` is `!` through U+002D.
+    Parser<Integer> rangeChar = anyOf(literalChar, one('-').map(c -> (int) c));
     Parser<CharSetElement> element = anyOf(
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
         sequence(
-            literalChar, one('-').then(literalChar).orElse(null),
+            rangeChar, one('-').then(rangeChar).orElse(null),
             (c1, c2) -> c2 == null ? new LiteralChar(c1) : charRange(c1, c2)),
-        one('-').map(LiteralChar::new),
         positiveCharacterProperty(),
         negativeCharacterProperty(),
         charClass);
@@ -384,11 +417,26 @@ final class RegexParsers {
           Parser<RegexPattern> scopedGroup =
               applyingFreeSpacing(groupContent.between(":", ")"), enabled, disabled)
                   .map(scoped -> new Group.NonCapturing(scoped, enabled, disabled));
-          // A standalone `(?i)` applies to the rest of the enclosing group, so the rest has to be
-          // parsed under the flags, crossing `|` into the later alternatives.
+          // A standalone directive applies to the rest of the enclosing group, so the rest is
+          // parsed as the directive's operand instead of being emitted as a sibling node. Call
+          // this swallowing: everything after `(?i)` up to the end of the group, `|` included,
+          // lands inside the directive's subtree rather than beside it. `x(?i)a|b` parses as one
+          // alternative, Sequence[x, (?i), Alternation[a, b]], instead of the two that `|` calls
+          // for.
+          //
+          // `(?x)` is what forces it. Free spacing is lexical, so whether a space is a token has
+          // to be decided while the rest is tokenized, and cannot be patched up afterwards. That
+          // means the rest has to be available here as a parser to wrap, which is precisely what
+          // makes it an operand. It has to extend across `|` because the flags reach the later
+          // alternatives too. Semantic flags like `(?i)` would not need an operand, but `(?ix)`
+          // combines both kinds in one directive, so every standalone directive takes this path.
+          //
+          // Swallowing is therefore a parsing device, not the intended tree shape. The `|`
+          // precedence it flattens is put back by asAlternatives(), which undoes the nesting while
+          // keeping the tokenization the operand bought.
           Parser<RegexPattern> restOfGroup = one(')').then(groupContent);
           Parser<RegexPattern> directive = applyingFreeSpacing(restOfGroup, enabled, disabled)
-              .map(rest -> directiveThen(rest, enabled, disabled));
+              .map(rest -> directiveThen(enabled, disabled, rest));
           return anyOf(scopedGroup, trailingFreeSpacesSkipped(directive, enabled));
         });
     return one('(').then( // spaces allowed after (, under free spacing mode
@@ -434,7 +482,7 @@ final class RegexParsers {
    * into the surrounding sequence.
    */
   private static RegexPattern directiveThen(
-      RegexPattern rest, List<ModifierFlag> enabled, List<ModifierFlag> disabled) {
+      List<ModifierFlag> enabled, List<ModifierFlag> disabled, RegexPattern rest) {
     ModifierDirective directive = new ModifierDirective(enabled, disabled);
     return rest.equals(new Literal("")) ? directive : RegexPattern.sequence(directive, rest);
   }

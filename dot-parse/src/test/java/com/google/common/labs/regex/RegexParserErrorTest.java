@@ -59,6 +59,19 @@ public final class RegexParserErrorTest {
             """);
   }
 
+  @Test public void characterClass_descendingRangeEndingInHyphen() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a--]"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: invalid range a--
+
+                [a--]
+                 ^
+            """);
+  }
+
   @Test public void characterClass_empty_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[]"));
     assertThat(e)
@@ -814,6 +827,42 @@ public final class RegexParserErrorTest {
             at 1:3: expecting <EOF>, encountered:
                 a|+
                   ^
+            """);
+  }
+
+  @Test public void quantifier_stackedStarAfterPlus() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a+*"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <EOF>, encountered:
+                a+*
+                  ^
+            """);
+  }
+
+  @Test public void quantifier_stackedStarAfterGroupPlus() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a)+*"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <EOF>, encountered:
+                (a)+*
+                    ^
+            """);
+  }
+
+  @Test public void quantifier_stackedRepetitionAfterStar() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a*{2}"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: unexpected `repetition count`:
+                a*{2}
+                   ^
             """);
   }
 

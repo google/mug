@@ -21,6 +21,11 @@ final class CharRanges {
   static final ImmutableRangeSet<Integer> EMPTY = ImmutableRangeSet.of();
   static final ImmutableRangeSet<Integer> ANY =
       ImmutableRangeSet.of(closedOpen(0, MAX_CODE_POINT + 1));
+  private static final ImmutableRangeSet<Integer> ASCII_LETTERS =
+      ImmutableRangeSet.<Integer>builder()
+          .add(closedOpen((int) 'A', 'Z' + 1))
+          .add(closedOpen((int) 'a', 'z' + 1))
+          .build();
 
   static ImmutableRangeSet<Integer> of(int codePoint) {
     return ImmutableRangeSet.of(only(codePoint));
@@ -47,6 +52,41 @@ final class CharRanges {
     return ImmutableRangeSet.copyOf(tree);
   }
 
+  /**
+   * Returns {@code ranges} closed under the case folding that {@code (?i)} performs: ASCII only,
+   * unless {@code (?u)} is also in effect, in which case the Unicode simple case mappings apply.
+   */
+  static ImmutableRangeSet<Integer> caseFolded(RangeSet<Integer> ranges, boolean unicodeCase) {
+    ImmutableRangeSet<Integer> cased =
+        intersection(ranges, unicodeCase ? UnicodeCased.CODE_POINTS : ASCII_LETTERS);
+    if (cased.isEmpty()) {
+      return ImmutableRangeSet.copyOf(ranges);
+    }
+    RangeSet<Integer> folded = TreeRangeSet.create(ranges);
+    for (Range<Integer> r : cased.asRanges()) {
+      for (int cp = r.lowerEndpoint(); cp < r.upperEndpoint(); cp++) {
+        folded.add(only(Character.toUpperCase(cp)));
+        folded.add(only(Character.toLowerCase(cp)));
+      }
+    }
+    return ImmutableRangeSet.copyOf(folded);
+  }
+
+  /** Holder so that the code point scan only runs for the patterns that ask for {@code (?u)}. */
+  private static final class UnicodeCased {
+    static final ImmutableRangeSet<Integer> CODE_POINTS = scan();
+
+    private static ImmutableRangeSet<Integer> scan() {
+      RangeSet<Integer> tree = TreeRangeSet.create();
+      for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
+        if (Character.toUpperCase(cp) != cp || Character.toLowerCase(cp) != cp) {
+          tree.add(only(cp));
+        }
+      }
+      return ImmutableRangeSet.copyOf(tree);
+    }
+  }
+
   static int sampleChar(RangeSet<Integer> ranges) {
     if (ranges.contains((int) 'a')) {
       return 'a';
@@ -64,8 +104,7 @@ final class CharRanges {
   static ImmutableRangeSet<Integer> from(RegexPattern.CharSetElement element) {
     return switch (element) {
       case RegexPattern.LiteralChar lc -> of(lc.codePoint());
-      case RegexPattern.CharRange cr ->
-          cr.start() > cr.end() ? EMPTY : ImmutableRangeSet.of(range(cr.start(), cr.end()));
+      case RegexPattern.CharRange cr -> ImmutableRangeSet.of(range(cr.start(), cr.end()));
       case RegexPattern.PredefinedCharClass pcc -> from(pcc);
       case RegexPattern.PosixCharClass pcc -> from(pcc);
       case RegexPattern.CharacterProperty.Negated neg -> complement(from(neg.property()));

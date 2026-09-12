@@ -10,6 +10,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.labs.parse.Parser.ParseException;
+import com.google.common.labs.regex.RegexPattern.Alternation;
 import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -361,6 +362,33 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
+  // Finding 13: a quantifier binds to an atom at most once. java.util.regex rejects `a+*` the same
+  // way, but accepts a trailing repetition count and then discards it: `a*{2}` matches whatever
+  // `a*` matches, not `(?:a*){2}`. Rather than model that, the grammar rejects the whole shape.
+  // ---------------------------------------------------------------------------------------------
+
+  @Test public void of_starAfterPlus_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a+*"));
+    assertThat(e).hasMessageThat().contains("at 1:3:");
+  }
+
+  @Test public void of_repetitionCountAfterStar_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a*{2}"));
+    assertThat(e).hasMessageThat().contains("at 1:4:");
+  }
+
+  @Test public void of_reluctantQuantifier_stillAccepted() {
+    assertThat(RegexPattern.of("a+?"))
+        .isEqualTo(
+            new Quantified(new Literal("a"), RegexPattern.Quantifier.atLeast(1).reluctant()));
+  }
+
+  @Test public void of_possessiveQuantifier_stillAccepted() {
+    assertThat(RegexPattern.of("a*+"))
+        .isEqualTo(new Quantified(new Literal("a"), repeated().possessive()));
+  }
+
+  // ---------------------------------------------------------------------------------------------
   // Finding 9: backreference digits use maximal munch. java.util.regex instead stops at the
   // highest group seen so far, so `(a)\10` is group 1 followed by a literal `0` there. Reproducing
   // that needs parse-order state this grammar doesn't carry; the divergence is documented on
@@ -455,5 +483,57 @@ public final class RegexPatternConformanceTest {
   @Test public void of_freeSpacingDirectiveAfterLeadingLiteral_laterAlternativeIgnoresSpace() {
     assertThat(RegexPattern.of("x(?x) a b|c d").metadata())
         .isEqualTo(new Metadata(/* minSize= */ 2, /* maxSize= */ 3));
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Finding 14: flag scope does not survive the alternation lift.
+  //
+  // What diverges: for `x(?i)a|b`, java.util.regex compiles flags sequentially to the end of the
+  // enclosing group, so the `i` reaches `b` and the pattern matches "B". Mug parses `b` into a
+  // plain sibling branch that carries no flags, so a consumer reading the tree on its own sees a
+  // case sensitive `b`. Only the recorded scope differs; the parse and the rendering both agree
+  // with java.util.regex.
+  //
+  // Why it cannot be fixed in the tree: a standalone directive swallows the rest of the enclosing
+  // group, meaning it parses that rest as its own operand so everything after it nests inside its
+  // subtree, `|` and all. RegexParsers.groupOrLookaround defines this and explains why `(?x)`
+  // leaves no alternative: free spacing is lexical, so the rest has to be a parser to wrap rather
+  // than a sibling to fix up later. RegexParsers.liftSwallowedAlternatives()
+  // then has to pull the later branches back out, because leaving them nested reads as `x` gating
+  // `b`, which changes which strings match. But being a sibling of the sequence that holds the
+  // directive is exactly what `|` binding requires, and it is also exactly what puts the branch
+  // outside the directive's subtree. Treating semantic directives differently from lexical ones
+  // would not avoid it either, since `(?ix)` puts both kinds in a single directive. Annotating the
+  // lifted branches with the active flags would express the scope, at the cost of no longer
+  // rendering back to the source.
+  //
+  // Why the divergence is acceptable:
+  //   - Nothing is erased. The directive is still in the tree, at the top level of the preceding
+  //     branch, so a consumer that needs the flags can scan branches left to right and carry a
+  //     still-active directive forward. This is a representation choice, not data loss.
+  //   - Rendering is unaffected, as of_directiveAfterLeadingLiteral_roundTrips shows, so anything
+  //     that parses and re-renders never observes the difference.
+  //   - The alternative is worse. The nested shape misstates which strings match, which affects
+  //     every consumer, whereas under-recorded flag scope only affects flag sensitive ones.
+  //   - The blast radius is narrow: it takes a standalone directive plus a later `|` in the same
+  //     group. Scoped `(?i:...)` groups, and a leading `(?i)` with no alternation, are both right.
+  //
+  // A `_divergence` test asserts what Mug does where it knowingly differs from java.util.regex, so
+  // it passing is working as intended. Finding 9 is the other one.
+  //
+  // Free spacing is unaffected, because `(?x)` is applied while tokenizing rather than read back
+  // off the tree; of_freeSpacingDirectiveAfterLeadingLiteral_laterAlternativeIgnoresSpace covers
+  // that side.
+  // ---------------------------------------------------------------------------------------------
+
+  /** The reference behavior: java.util.regex carries the flag across the `|`. */
+  @Test public void of_directiveBeforeAlternation_javaAppliesFlagsToLaterAlternative() {
+    assertThat(Pattern.compile("x(?i)a|b").matcher("B").matches()).isTrue();
+  }
+
+  /** What Mug records instead: the lifted branch is a bare literal, with no flags attached. */
+  @Test public void of_directiveBeforeAlternation_laterAlternativeCarriesNoFlags_divergence() {
+    Alternation alternation = (Alternation) RegexPattern.of("x(?i)a|b");
+    assertThat(alternation.alternatives().getLast()).isEqualTo(new Literal("b"));
   }
 }
