@@ -263,6 +263,21 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testGroupConsecutiveIf_distinctWithCollector() {
+    assertThat(biStream(Stream.of("a", "b", "a"))
+        .groupConsecutiveIf(String::equals, toList())
+        .distinct())
+        .containsExactly(asList("a"), asList("b"))
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutiveIf_distinctWithReducer() {
+    assertThat(BiStream.of(1, 10, 2, 10)
+        .groupConsecutiveIf(Integer::equals, Integer::sum)
+        .distinct())
+        .containsExactly(10);
+  }
+
   /** Groups not by equal key, but by proximity. */
   @Test public void testGroupConsecutive_proximityGrouping_withReducer() {
     // Make sure nulls are grouped properly

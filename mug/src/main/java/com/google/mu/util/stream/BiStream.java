@@ -1998,7 +1998,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(newRun);
     requireNonNull(groupAccumulator);
     requireNonNull(groupFinisher);
-    final int characteristics = Spliterator.ORDERED | Spliterator.DISTINCT;
+    final int characteristics = Spliterator.ORDERED;
 
     class Runner extends AbstractSpliterator<R> implements BiConsumer<K, V> {
       private final BiIterator<K, V> iterator = iterator();
