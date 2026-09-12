@@ -25,7 +25,6 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.parse.Parsers.Suffix.suffix;
@@ -45,6 +44,7 @@ import static java.util.Arrays.stream;
 import static java.util.Comparator.comparingInt;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.flatMapping;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.labs.parse.Parser;
@@ -69,6 +69,7 @@ import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +99,9 @@ final class RegexParsers {
       string("\\0").then(OCTAL).map(Character::toString),
       string("\\c")
           .then(one(ANY, "control char"))
-          .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
+          // java.util.regex XORs the character as written; it does not upper-case it first, so
+          // `\ca` is '!' (0x61 ^ 64), not U+0001.
+          .map(c -> Character.toString(c ^ 64)),
       string("\\x").then(CODE_POINT).map(Character::toString),
       string("\\N")
           .then(
@@ -131,11 +134,38 @@ final class RegexParsers {
       .map(RegexParsers::anchor)
       .collect(Parser.or());
 
-  /** Whitespace is ignored under free spacing mode, and {@code #} starts a comment. */
-  private static final CharPredicate FREE_SPACING_CHAR = is('#').or(Character::isWhitespace);
+  /**
+   * A capturing group name: a Latin letter followed by Latin letters and digits, which is what
+   * {@code java.util.regex} accepts. It's {@code literally} so free spacing can't hide a space in
+   * the middle of a name.
+   */
+  private static final Parser<String> GROUP_NAME =
+      literally(one("[a-zA-Z]"), zeroOrMore("[a-zA-Z0-9]")).source().as("group name");
 
-  private static final Parser<?> FREE_SPACES =
-      anyOf(consecutive(Character::isWhitespace, "whitespace"), one('#').then(zeroOrMore("[^\n]")));
+  /** Any whitespace, which is wider than the set free spacing mode skips. */
+  private static final CharPredicate WHITESPACE = Character::isWhitespace;
+
+  /**
+   * The characters free spacing mode skips, which are the six that {@code Pattern.isSpace()}
+   * accepts. {@code Character::isWhitespace} would be wider: it also covers the information
+   * separators U+001C..U+001F and the Unicode space separators, all of which {@code
+   * java.util.regex} reads as literal text.
+   */
+  private static final CharPredicate FREE_SPACE = CharPredicate.anyOf(" \t\n\u000B\f\r");
+
+  /**
+   * The characters a {@code #} comment may contain, that is anything but a line terminator as
+   * {@code Pattern.isLineSeparator()} defines it (with {@code UNIX_LINES} off). Of the five
+   * terminators only {@code \n} and {@code \r} are also free spaces; the other three end the
+   * comment and then stay in the pattern as literal characters.
+   */
+  private static final CharPredicate COMMENT_CHAR = noneOf("\n\r\u0085\u2028\u2029");
+
+  /** Free spaces are ignored under free spacing mode, and {@code #} starts a comment. */
+  private static final CharPredicate FREE_SPACING_CHAR = is('#').or(FREE_SPACE);
+
+  private static final Parser<?> FREE_SPACES = anyOf(
+      consecutive(FREE_SPACE, "whitespace"), one('#').then(zeroOrMore(COMMENT_CHAR, "comment")));
   private static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
   /**
@@ -180,22 +210,28 @@ final class RegexParsers {
                             .map(s -> new Backreference.Numbered(parseNumber(s, 10))))),
             quantifier),
         quantifiable(
-            string("\\k").then(word().between("<", ">")).map(Backreference.Named::new), quantifier),
+            string("\\k").then(GROUP_NAME.between("<", ">")).map(Backreference.Named::new),
+            quantifier),
         literalRun(quotedText(), quantifier),
         // free spacing chars are left to the next alternative, which free spacing mode can skip
         literalRun(
             consecutive(noneOf(".[]{}()*+?^$|\\").and(FREE_SPACING_CHAR.not()), "literal char"),
             quantifier),
         literalRun(consecutive(FREE_SPACING_CHAR, "whitespace or #"), quantifier),
-        quantifiable(
+        // a run, not a single atom: two hex escapes can spell one supplementary code point, and a
+        // trailing quantifier must apply to that code point, not to the low surrogate alone.
+        literalRun(
             anyOf(
                     ESCAPED,
                     // only the trailing `]` closes the specifier, so this is the set {`}`, `]`}
                     one("[}]]").map(String::valueOf),
-                    // `{` is a literal only when it doesn't start a repetition count. Otherwise a
-                    // malformed quantifier like `a{3,2}` would silently parse as a literal.
-                    one('{').notFollowedBy(digits(), "repetition count").map(String::valueOf))
-                .map(Literal::new),
+                    // `{` is a literal only when it doesn't look like a repetition count.
+                    // Otherwise a malformed quantifier like `a{3,2}`, or `a{,2}` which Java has no
+                    // spelling for, would silently parse as a literal.
+                    one('{')
+                        .notFollowedBy(anyOf(digits(), one(',').then(digits())), "repetition count")
+                        .map(String::valueOf))
+                .atLeastOnce(joining()),
             quantifier));
     return atomic
         .atLeastOnce(inSequence())
@@ -252,23 +288,29 @@ final class RegexParsers {
     Parser<Quantifier> question = one('?').thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = one('*').thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = one('+').thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> range = anyOf(
-            number
-                .map(Quantifier::repeated)
-                .optionallyFollowedBy(
-                    one(',').then(number.orElse(Integer.MAX_VALUE)),
-                    (q, max) -> {
-                      try {
-                        return Quantifier.repeated(q.min(), max);
-                      } catch (IllegalArgumentException e) {
-                        throw fail(e.getMessage());
-                      }
-                    }),
-            one(',').then(number).map(Quantifier::atMost))
+    Parser<Quantifier> range =
+    // `{n}`, `{n,m}` and `{n,}` are three different quantifiers: an absent max can't be
+    // spelled as Integer.MAX_VALUE, which is a repetition count a pattern can ask for.
+    sequence(
+            number,
+            anyOf(
+                    suffix(one(',').then(number), RegexParsers::repetitionRange),
+                    Suffix.<Integer, Quantifier>suffix(",", Quantifier::atLeast))
+                .orElse(Quantifier::repeated),
+            Suffix::apply)
         .between("{", "}");
     return anyOf(question, star, plus, range)
         .optionallyFollowedBy("?", Quantifier::reluctant)
         .optionallyFollowedBy("+", Quantifier::possessive);
+  }
+
+  /** Creates a {@code {min,max}} quantifier, reporting an invalid range as a parse error. */
+  private static Quantifier repetitionRange(int min, int max) {
+    try {
+      return Quantifier.repeated(min, max);
+    } catch (IllegalArgumentException e) {
+      throw fail(e.getMessage());
+    }
   }
 
   /**
@@ -285,7 +327,9 @@ final class RegexParsers {
 
   private static Parser<CharacterProperty> characterPropertySuffix() {
     Parser<String> name = anyOf(
-        consecutive("[^}\r\n]").as("property name").between("{", "}"),
+        // No property name java.util.regex knows has whitespace in it, so `\p{ L }` is an unknown
+        // name there. Under free spacing the whitespace is skipped before the name is read.
+        consecutive(noneOf("}\r\n").and(WHITESPACE.not()), "property name").between("{", "}"),
         one("[a-zA-Z]").as("category").map(String::valueOf));
     return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }
@@ -307,17 +351,27 @@ final class RegexParsers {
     // `-` is a literal only where it can't form a range. It's legal at either end of one, so
     // `[--z]` is U+002D through `z`, and `[!--]` is `!` through U+002D.
     Parser<Integer> rangeChar = anyOf(literalChar, one('-').map(c -> (int) c));
-    Parser<CharSetElement> element = anyOf(
+    Parser<CharSetElement> charClassOrProperty = anyOf(
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
-        sequence(
-            rangeChar, one('-').then(rangeChar).orElse(null),
-            (c1, c2) -> c2 == null ? new LiteralChar(c1) : charRange(c1, c2)),
         positiveCharacterProperty(),
-        negativeCharacterProperty(),
-        charClass);
-    Parser<List<LiteralChar>> quotedChars =
-        quotedText().map(s -> s.codePoints().mapToObj(LiteralChar::new).toList());
+        negativeCharacterProperty());
+    Parser<CharSetElement> element = anyOf(charClassOrProperty, charClass);
+    // A `\Q...\E` quote contributes its chars to the class body as if they were written out, so
+    // both it and a single char are just runs of code points here.
+    Parser<int[]> charRun = anyOf(
+        quotedText().map(quoted -> quoted.codePoints().toArray()),
+        rangeChar.map(c -> new int[] {c}));
+    Parser<List<CharSetElement>> chars = sequence(
+            charRun,
+            suffix(one('-').then(charRun), RegexParsers::charsThroughRange)
+                .orElse(RegexParsers::literalChars),
+            Suffix::apply)
+        // A class has no single code point to close a range with, so `[a-\d]` is an error, as in
+        // `java.util.regex`. Rejecting it here also rules out reading the `-` as a literal member,
+        // which is what the range suffix above falls back to. A nested class is not a class here:
+        // Java reads `[a-[b]]` as plain members.
+        .notFollowedBy(one('-').then(charClassOrProperty), "character class as a range end");
     var elements =
         sequence(
                 one(']')
@@ -325,8 +379,7 @@ final class RegexParsers {
                     .optionallyFollowedBy(
                         one('-').then(literalChar), (unused, to) -> charRange(']', to))
                     .orElse(null),
-                anyOf(quotedChars, element.map(List::of))
-                    .zeroOrMore(flatMapping(List::stream, toList())),
+                anyOf(element.map(List::of), chars).zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading == null ? rest : prepend(leading, rest))
             .notEmpty();
     Parser<CharacterSet> characterSet =
@@ -345,6 +398,32 @@ final class RegexParsers {
     } catch (IllegalArgumentException e) {
       throw fail(e.getMessage());
     }
+  }
+
+  /** Returns the code points of a char run, each a literal member of a char class. */
+  private static List<CharSetElement> literalChars(int[] codePoints) {
+    return stream(codePoints).<CharSetElement>mapToObj(LiteralChar::new).toList();
+  }
+
+  /**
+   * Returns the members of {@code from-to}, where each end is a run of code points. Only the last
+   * code point of {@code from} and the first of {@code to} bound the range; the rest are literal
+   * members, so {@code [\Qab\E-\Qzz\E]} is {@code a}, the range {@code b-z}, and {@code z}. An
+   * empty run leaves nothing to bound the range with, so {@code [a-\Q\E]} is {@code a} and a
+   * literal {@code -}, as in {@code java.util.regex}.
+   */
+  private static List<CharSetElement> charsThroughRange(int[] from, int[] to) {
+    if (from.length == 0 || to.length == 0) {
+      List<CharSetElement> elements = new ArrayList<>(literalChars(from));
+      elements.add(new LiteralChar('-'));
+      elements.addAll(literalChars(to));
+      return elements;
+    }
+    List<CharSetElement> elements = new ArrayList<>(from.length + to.length - 1);
+    elements.addAll(literalChars(Arrays.copyOf(from, from.length - 1)));
+    elements.add(charRange(from[from.length - 1], to[0]));
+    elements.addAll(literalChars(Arrays.copyOfRange(to, 1, to.length)));
+    return elements;
   }
 
   /**
@@ -391,7 +470,9 @@ final class RegexParsers {
             groupContent.between("?<=", ")").map(Lookaround.Lookbehind::new),
             groupContent.between("?<!", ")").map(Lookaround.NegativeLookbehind::new),
             groupContent.between("?>", ")").map(Group.Atomic::new),
-            sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
+            sequence(
+                    GROUP_NAME.between(anyOf("?<", "?P<"), one('>')), groupContent,
+                    Group.Named::new)
                 .followedBy(")"),
             literally(one('?').then(modifierFlags)).flatMap(identity()),
             groupContent.map(Group.Capturing::new).followedBy(")")));

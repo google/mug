@@ -202,7 +202,35 @@ public sealed interface RegexPattern {
     }
 
     @Override public String toString() {
-      return elements.stream().map(Object::toString).collect(joining());
+      StringBuilder builder = new StringBuilder();
+      boolean afterGroupNumber = false;
+      boolean directivesOnly = true;
+      for (int i = 0; i < elements.size(); i++) {
+        RegexPattern element = elements.get(i);
+        // `|` binds loosest, so a nested alternation has to be grouped to stay one element. The
+        // exception is a trailing alternation behind nothing but modifier directives: Java scopes
+        // their flags to the end of the enclosing group, so `(?i)a|b` needs no parentheses, and
+        // that is the shape a leading `(?i)` with a top-level `|` parses to.
+        boolean scopeSpanning = directivesOnly && i == elements.size() - 1;
+        String rendered =
+            element instanceof Alternation && !scopeSpanning
+                ? "(?:" + element + ")"
+                : element.toString();
+        // `\1` followed by `0` must not render as `\10`, which reads back as group 10. Only a
+        // directly adjacent sibling is considered; the parser never nests a Sequence in a Sequence.
+        if (afterGroupNumber && startsWithDigit(rendered)) {
+          builder.append("\\x3");
+        }
+        builder.append(rendered);
+        afterGroupNumber = element instanceof Backreference.Numbered;
+        directivesOnly &= element instanceof ModifierDirective;
+      }
+      return builder.toString();
+    }
+
+    /** True if {@code rendered} starts with an ASCII digit, which {@code \x3N} can escape. */
+    private static boolean startsWithDigit(String rendered) {
+      return rendered.length() > 0 && rendered.charAt(0) >= '0' && rendered.charAt(0) <= '9';
     }
   }
 
@@ -300,8 +328,9 @@ public sealed interface RegexPattern {
     static Quantifier repeated(int min, int max) {
       checkArgument(min >= 0, "min must be non-negative");
       checkArgument(max >= min, "max must be at least min");
-      // Unbounded first: {0,} is `*`, not {0,Integer.MAX_VALUE}.
-      if (max == Integer.MAX_VALUE) {
+      // Unbounded first: {0,} is `*`, not {0,Integer.MAX_VALUE}. But `{n}` is an exact count even
+      // when n happens to be Integer.MAX_VALUE, so the sentinel only applies above the min.
+      if (max == Integer.MAX_VALUE && max > min) {
         return atLeast(min);
       }
       if (min == 0) {

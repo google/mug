@@ -270,7 +270,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <word>, encountered:
+            at 1:4: expecting <group name>, encountered:
                 (?<>abc)
                    ^
             """);
@@ -294,7 +294,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <word>, encountered:
+            at 1:5: expecting <group name>, encountered:
                 (?P<>abc)
                     ^
             """);

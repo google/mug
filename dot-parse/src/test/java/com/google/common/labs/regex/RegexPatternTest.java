@@ -389,8 +389,6 @@ public final class RegexPatternTest {
             new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated(2, 2)));
     assertThat(RegexPattern.of("(abc){2,}"))
         .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.atLeast(2)));
-    assertThat(RegexPattern.of("(abc){,4}"))
-        .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.atMost(4)));
     assertThat(RegexPattern.of("(abc){2,4}"))
         .isEqualTo(
             new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated(2, 4)));
@@ -404,9 +402,6 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("abc{2,}"))
         .isEqualTo(
             sequence(new Literal("ab"), new Quantified(new Literal("c"), Quantifier.atLeast(2))));
-    assertThat(RegexPattern.of("abc{,4}"))
-        .isEqualTo(
-            sequence(new Literal("ab"), new Quantified(new Literal("c"), Quantifier.atMost(4))));
     assertThat(RegexPattern.of("abc{2,4}"))
         .isEqualTo(
             sequence(
@@ -1073,11 +1068,6 @@ public final class RegexPatternTest {
   @Test public void of_freeSpacingMode_quantifier_atLeast_spacesInsideBraces() {
     assertThat(RegexPattern.of("(?x)a{ 2 , }"))
         .isEqualTo(freeSpacing(new Quantified(new Literal("a"), Quantifier.atLeast(2))));
-  }
-
-  @Test public void of_freeSpacingMode_quantifier_atMost_spacesInsideBraces() {
-    assertThat(RegexPattern.of("(?x)a{ , 3 }"))
-        .isEqualTo(freeSpacing(new Quantified(new Literal("a"), Quantifier.atMost(3))));
   }
 
   @Test public void of_nestedFreeSpacingMode_enabled() {
@@ -1833,15 +1823,15 @@ public final class RegexPatternTest {
   }
 
   @Test public void of_escapedLiteral_controlLowercase() {
-    assertThat(RegexPattern.of("\\ca")).isEqualTo(new Literal("\u0001"));
+    assertThat(RegexPattern.of("\\ca")).isEqualTo(new Literal("!"));
   }
 
   @Test public void of_escapedLiteral_controlLowercase_z() {
-    assertThat(RegexPattern.of("\\cz")).isEqualTo(new Literal("\u001A"));
+    assertThat(RegexPattern.of("\\cz")).isEqualTo(new Literal(":"));
   }
 
   @Test public void of_charClass_withControlLowercase() {
-    assertThat(RegexPattern.of("[\\ca]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
+    assertThat(RegexPattern.of("[\\ca]")).isEqualTo(anyOf(new LiteralChar('!')));
   }
 
   @Test public void literal_toString_escapesControlCharacters() {
