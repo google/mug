@@ -6,7 +6,7 @@ Already, you can write intuitive code to call outgoing rpc, wait for the result,
 
 But sometimes when you serve a request, you need to invoke several outgoing rpcs, or read from db. Doing them sequentially results in longer request latency and you spend most of the time waiting.
 
-It makes sense to do these IO-bound operations concurrently. [JEP 453](https://openjdk.org/jeps/453) is still in preview. And the API as it is still feels a bit verbose. So we created a simpler API ([Fanout](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Fanout.html)). It focuses on the most common fanout use case where the [ShutDownOnFailure](https://docs.oracle.com/en/java/javase/20/docs/api/jdk.incubator.concurrent/jdk/incubator/concurrent/StructuredTaskScope.ShutdownOnFailure.html) stragegy is sufficient.
+It makes sense to do these IO-bound operations concurrently. [JEP 453](https://openjdk.org/jeps/453) is still in preview. And the API as it is still feels a bit verbose. So we created a simpler API ([Fanout](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Fanout.html)). It focuses on the most common fanout use case where the [ShutDownOnFailure](https://docs.oracle.com/en/java/javase/20/docs/api/jdk.incubator.concurrent/jdk/incubator/concurrent/StructuredTaskScope.ShutdownOnFailure.html) strategy is sufficient.
 
 For example if you need to concurrently read from db, and invoke a rpc to fetch some data:
 
