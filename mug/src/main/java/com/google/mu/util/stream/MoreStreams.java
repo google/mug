@@ -523,6 +523,7 @@ public final class MoreStreams {
    *
    * <p>Upon return, to-be-consumed (up to {@code n}) elements have been consumed.
    * The {@code stream} reference should no longer be used.
+   * Closing the returned stream will close {@code stream}.
    *
    * @throws IllegalArgumentException if {@code n} is negative;
    * @since 9.9.5
@@ -534,7 +535,7 @@ public final class MoreStreams {
     Spliterator<T> spliterator = stream.spliterator();
     requireNonNull(consumer);
     for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
-    return StreamSupport.stream(spliterator, /* parallel= */ false);
+    return StreamSupport.stream(spliterator, /* parallel= */ false).onClose(stream::close);
   }
 
   /**
