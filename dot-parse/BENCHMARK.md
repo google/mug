@@ -185,6 +185,45 @@ Throughput was measured in **operations per second** (higher is better):
 | **Valid Address List (with streaming consumer)** | **899,385 ± 15,396** | — |
 | **Mixed Address List** | **444,802 ± 7,105** | — |
 
+---
+
+## Regex AST Parsing (`RegexPattern.of` vs. `java.util.regex.Pattern.compile`)
+
+`RegexPattern.of()` parses a regular expression into an inspectable, immutable AST. `Pattern.compile()`
+parses the same text into a matcher program. The two produce different artifacts, so this is a
+throughput reference point rather than a like-for-like comparison; it is tracked here so that changes
+to the regex grammar can be trended over time.
+
+Throughput was measured in **operations per second** (higher is better). Ratio is
+`RegexPattern.of / Pattern.compile`.
+
+Snapshot: 2026-09-12, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 5×1s warmup, 10×1s measurement,
+1 fork, 2 rounds averaged; per-round ratios agreed within 2%.
+
+| Pattern | `RegexPattern.of` (ops/s) | `Pattern.compile` (ops/s) | Ratio |
+| :--- | ---: | ---: | :---: |
+| `simpleIdentifier` | 1,070,397 ± 6,147 | 14,872,751 ± 74,101 | 0.07x |
+| `nestedCharClass` | 443,590 ± 6,842 | 6,251,622 ± 93,998 | 0.07x |
+| `email` | 420,886 ± 1,572 | 7,024,712 ± 216,520 | 0.06x |
+| `url` | 339,737 ± 1,542 | 3,283,967 ± 33,364 | 0.10x |
+| `lookaroundCamelCase` | 240,285 ± 3,670 | 2,618,578 ± 59,252 | 0.09x |
+| `isoDateTime` | 155,522 ± 2,579 | 1,699,739 ± 8,683 | 0.09x |
+| `httpLog` | 102,360 ± 693 | 1,301,968 ± 11,434 | 0.08x |
+| `complexUrlNamedGroups` | 84,044 ± 661 | 1,497,169 ± 39,402 | 0.06x |
+| `semver` | 66,055 ± 726 | 1,281,863 ± 7,718 | 0.05x |
+| `ipv6` | 35,652 ± 448 | 418,891 ± 6,065 | 0.09x |
+| **Geometric mean** | | | **0.07x** |
+
+Reproduce with:
+
+```bash
+mvn -pl mug-benchmarks test-compile
+java -cp "dot-parse/target/classes:mug-benchmarks/target/test-classes:<deps>" \
+  org.openjdk.jmh.Main "RegexPatternBenchmark\..*" -wi 5 -w 1 -i 10 -r 1 -f 1
+```
+
+---
+
 ## StringIn vs. Keywords: Trie-Based Optimizations
 
 We compared the performance of matching one of many literal strings in a flat choice. In `cats-parse`, this is represented by the `Parser.stringIn` primitive. In `dot-parse`, this is represented by collecting individual string parsers using the `Parser.or()` collector.
