@@ -73,12 +73,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.IntFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
+  private static final CharPredicate BRACED_NAME_CHAR = noneOf("}\r\n");
+  private static final CharPredicate LATIN_LETTER = range('a', 'z').or(range('A', 'Z'));
+  private static final CharPredicate ALPHANUMERIC = LATIN_LETTER.or(range('0', '9'));
   private static final Parser<Integer> CODE_POINT =
       anyOf(consecutive("[0-9a-fA-F]").between("{", "}"), hexDigits(2))
           .map(hex -> parseNumber(hex, 16))
@@ -105,8 +109,7 @@ final class RegexParsers {
       string("\\x").then(CODE_POINT).map(Character::toString),
       string("\\N")
           .then(
-              consecutive("[^}\r\n]")
-                  .as("character name")
+              consecutive(BRACED_NAME_CHAR, "character name")
                   .between("{", "}")
                   .map(name -> {
                     try {
@@ -116,13 +119,7 @@ final class RegexParsers {
                     }
                   }))
           .map(Character::toString),
-      literally(
-              string("\\")
-                  .then(
-                      one(
-                          range('a', 'z').or(range('A', 'Z')).or(range('0', '9')).not(),
-                          "escaped char")))
-          .map(String::valueOf));
+      literally(string("\\").then(one(ALPHANUMERIC.not(), "escaped char"))).map(String::valueOf));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
@@ -140,7 +137,9 @@ final class RegexParsers {
    * the middle of a name.
    */
   private static final Parser<String> GROUP_NAME =
-      literally(one("[a-zA-Z]"), zeroOrMore("[a-zA-Z0-9]")).source().as("group name");
+      literally(one(LATIN_LETTER, "Latin letter"), zeroOrMore(ALPHANUMERIC, "alphanumeric"))
+          .source()
+          .as("group name");
 
   /** Any whitespace, which is wider than the set free spacing mode skips. */
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
@@ -326,7 +325,7 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterProperty> characterPropertySuffix() {
-    Parser<String> word = consecutive(noneOf("}\r\n").and(WHITESPACE.not()), "word");
+    Parser<String> word = consecutive(BRACED_NAME_CHAR.and(WHITESPACE.not()), "word");
     Parser<String> name = anyOf(
         // Java allows single interior spaces in property names (e.g. `\p{InBasic Latin}` or
         // `\p{block=Basic Latin}`), but rejects leading, trailing, and multiple consecutive spaces.
@@ -336,7 +335,7 @@ final class RegexParsers {
             .source()
             .as("property name")
             .between("{", "}"),
-        one("[a-zA-Z]").as("category").map(String::valueOf));
+        one(LATIN_LETTER, "category").map(String::valueOf));
     return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }
 
@@ -349,14 +348,10 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
-    Parser<Integer> literalChar = anyOf(
-        // only the trailing `]` closes the specifier, so this excludes `-`, `&`, `\`, `]` and `[`
-        one("[^-&\\][]").map(c -> (int) c),
-        ESCAPED.map(s -> s.codePointAt(0)),
-        one('&').notFollowedBy("&").map(c -> (int) c));
     // `-` is a literal only where it can't form a range. It's legal at either end of one, so
     // `[--z]` is U+002D through `z`, and `[!--]` is `!` through U+002D.
-    Parser<Integer> rangeChar = anyOf(literalChar, one('-').map(c -> (int) c));
+    Parser<int[]> rangeChar =
+        anyOf(literalChar(RegexParsers::toArray), one('-').thenReturn(toArray('-')));
     Parser<CharSetElement> charClassOrProperty = anyOf(
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
@@ -364,36 +359,33 @@ final class RegexParsers {
         negativeCharacterProperty());
     Parser<CharSetElement> element = anyOf(charClassOrProperty, charClass);
     // A `\Q...\E` quote contributes its chars to the class body as if they were written out, so
-    // both it and a single char are just runs of code points here. A plain char and a plain range
-    // get their own alternatives to keep the common case off the run representation.
+    // both it and a single char are just runs of code points here, and one form serves every
+    // member. Splitting the plain char out into its own alternative was 5-13% faster on
+    // class-heavy patterns back when `literalChar` produced a boxed `Integer` that a second
+    // layer mapped to `int[]`; with those two steps fused into `rangeChar`'s single lambda above,
+    // the single form measures 2.8-4.6% faster instead. Keeping the single form but fronting it
+    // with a `notFollowedBy("-")` plain char shortcut measured 19-20% slower, because most members
+    // of those patterns are ranges, which then pay for both.
     Parser<int[]> quotedRun = quotedText().map(quoted -> quoted.codePoints().toArray());
-    Parser<int[]> rangeEnd = anyOf(rangeChar.map(c -> new int[] {c}), quotedRun);
+    Parser<int[]> rangeStartOrEnd = anyOf(rangeChar, quotedRun);
     // A class has no single code point to open a range with, so `[a-\d]` is an error, as in
     // `java.util.regex`. Rejecting it here also rules out reading the `-` as a literal member,
     // which is what the optional range suffix below falls back to. The check sits on the char
     // that would open the range, so a `-` that follows a closed range stays literal and
     // `[a-z-\d]` remains legal. A nested class is not a class here: Java reads `[a-[b]]` as
     // plain members.
-    Parser<Integer> rangeStart = rangeChar.notFollowedBy(
-        one('-').then(charClassOrProperty), "character class as a range end");
-    Parser<int[]> quotedStart = quotedRun.notFollowedBy(
-        one('-').then(charClassOrProperty), "character class as a range end");
-    Parser<List<CharSetElement>> chars = anyOf(
-        sequence(
-            rangeStart, one('-').then(rangeEnd).orElse(null),
-            (from, to) ->
-                to == null
-                    ? List.<CharSetElement>of(new LiteralChar(from))
-                    : charsThroughRange(from, to)),
-        sequence(
-            quotedStart, one('-').then(rangeEnd).orElse(null),
-            (from, to) -> to == null ? literalChars(from) : charsThroughRange(from, to)));
+    Parser<List<CharSetElement>> chars = sequence(
+        rangeStartOrEnd.notFollowedBy(
+            one('-').then(charClassOrProperty), "character class as a range end"),
+        one('-').then(rangeStartOrEnd).orElse(null),
+        (from, to) -> to == null ? literalChars(from) : charsThroughRange(from, to));
     var elements =
         sequence(
                 one(']')
                     .<CharSetElement>map(LiteralChar::new)
                     .optionallyFollowedBy(
-                        one('-').then(literalChar), (unused, to) -> charRange(']', to))
+                        one('-').then(literalChar(c -> (int) c)),
+                        (unused, to) -> charRange(']', to))
                     .orElse(null),
                 anyOf(chars, element.map(List::of)).zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading == null ? rest : prepend(leading, rest))
@@ -416,6 +408,14 @@ final class RegexParsers {
     }
   }
 
+  private static <T> Parser<T> literalChar(IntFunction<? extends T> f) {
+    return anyOf(
+        // only the trailing `]` closes the specifier, so this excludes `-`, `&`, `\`, `]` and `[`
+        one("[^-&\\][]").map(c -> f.apply(c)),
+        ESCAPED.map(s -> f.apply(s.codePointAt(0))),
+        one('&').notFollowedBy("&").thenReturn(f.apply('&')));
+  }
+
   /** Returns the code points of a char run, each a literal member of a char class. */
   private static List<CharSetElement> literalChars(int[] codePoints) {
     List<CharSetElement> elements = new ArrayList<>(codePoints.length);
@@ -423,11 +423,6 @@ final class RegexParsers {
       elements.add(new LiteralChar(codePoint));
     }
     return elements;
-  }
-
-  /** Returns the members of {@code from-to}, where the range starts at a single code point. */
-  private static List<CharSetElement> charsThroughRange(int from, int[] to) {
-    return charsThroughRange(new int[] {from}, to);
   }
 
   /**
@@ -597,5 +592,9 @@ final class RegexParsers {
     list.add(first);
     list.addAll(rest);
     return list;
+  }
+
+  private static int[] toArray(int i) {
+    return new int[] {i};
   }
 }
