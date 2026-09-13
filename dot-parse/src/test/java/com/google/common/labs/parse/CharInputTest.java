@@ -199,98 +199,98 @@ public final class CharInputTest {
 
   @Test public void fromReader_indexOf_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
-    assertThat(input.charAt(9)).isEqualTo('9'); // load first 10
+    assertThat(input.charAtOrEof(9)).isEqualTo('9'); // load first 10
     input.markCheckpoint(6);
     assertThat(input.indexOf("f", 6)).isEqualTo(15);
   }
 
-  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAt_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAtOrEof_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
-    assertThrows(IndexOutOfBoundsException.class, () -> input.charAt(5));
+    assertThrows(IndexOutOfBoundsException.class, () -> input.charAtOrEof(5));
   }
 
   @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_indexOf_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThrows(IllegalArgumentException.class, () -> input.indexOf("5", 5));
   }
 
   @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_isEof_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.isEof(5));
   }
 
   @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_startsWith_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.startsWith("5", 5));
   }
 
   @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_snippet_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.snippet(5, 1));
   }
 
-  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_charAt() {
+  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_charAtOrEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
-    assertThat(input.charAt(6)).isEqualTo('6');
+    assertThat(input.charAtOrEof(6)).isEqualTo('6');
   }
 
-  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_charAt() {
+  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_charAtOrEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
-    assertThat(input.charAt(9)).isEqualTo('9');
+    assertThat(input.charAtOrEof(9)).isEqualTo('9');
   }
 
   @Test public void fromReader_markCheckpoint_accessAtCheckpoint_isEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.isEof(10)).isTrue();
   }
 
   @Test public void fromReader_markCheckpoint_accessPastCheckpoint_isEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.isEof(10)).isTrue();
   }
 
   @Test public void fromReader_markCheckpoint_accessAtCheckpoint_startsWith() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.startsWith("67", 6)).isTrue();
   }
 
   @Test public void fromReader_markCheckpoint_accessPastCheckpoint_startsWith() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.startsWith("89", 8)).isTrue();
   }
 
   @Test public void fromReader_markCheckpoint_accessAtCheckpoint_snippet() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.snippet(7, 2)).isEqualTo("78");
   }
 
   @Test public void fromReader_markCheckpoint_accessPastCheckpoint_snippet() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    char unused = input.charAt(9); // load all
+    int unused = input.charAtOrEof(9); // load all
     input.markCheckpoint(6);
     assertThat(input.snippet(9, 1)).isEqualTo("9");
   }
@@ -371,13 +371,13 @@ public final class CharInputTest {
 
   @Test public void fromReader_sourcePosition_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("012\n456\n89abcdefg"), 10, 5);
-    assertThat(input.charAt(10)).isEqualTo('a');
+    assertThat(input.charAtOrEof(10)).isEqualTo('a');
 
     // checkpoint is 6. indices 0-5 are before checkpoint.
     input.markCheckpoint(6);
 
     // After compaction, read more. The builder is of size 15 - 6 + 1 = 10.
-    assertThat(input.charAt(15)).isEqualTo('f');
+    assertThat(input.charAtOrEof(15)).isEqualTo('f');
     assertThat(input.sourcePosition(9)).isEqualTo("9");
     assertThat(input.sourcePosition(15)).isEqualTo("15");
   }
@@ -404,7 +404,7 @@ public final class CharInputTest {
   @Test public void fromReader_matchRegex_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
     // Load some characters to allow compaction
-    assertThat(input.charAt(9)).isEqualTo('9');
+    assertThat(input.charAtOrEof(9)).isEqualTo('9');
 
     // Mark checkpoint at 6. garbageCharCount becomes 6.
     input.markCheckpoint(6);
@@ -419,7 +419,7 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new OneCharReader("0123456789a"));
     // Read the first 10 characters to advance the stream
     for (int i = 0; i < 10; i++) {
-      assertThat(input.charAt(i)).isEqualTo((char) ('0' + i));
+      assertThat(input.charAtOrEof(i)).isEqualTo((int) ('0' + i));
     }
     // Now match "a{1,2147483640}" at index 10.
     // Since start + maxSize overflows Integer.MAX_VALUE, it must throw
@@ -514,7 +514,7 @@ public final class CharInputTest {
 
   @Test public void fromReader_skipWhile_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("xxxxaaaaaay"), 10, 4);
-    input.charAt(4); // Advance read
+    input.charAtOrEof(4); // Advance read
     input.markCheckpoint(4); // Compact "xxxx"
     assertThat(input.skipWhile(is('a'), 4)).isEqualTo(10);
   }
@@ -577,7 +577,7 @@ public final class CharInputTest {
 
   @Test public void fromReader_skipWhileLow64_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("xxxx000000y"), 10, 4);
-    input.charAt(4); // Advance read
+    input.charAtOrEof(4); // Advance read
     input.markCheckpoint(4); // Compact "xxxx"
     assertThat(input.skipWhile(range('0', '0').precomputeForAscii(), 4)).isEqualTo(10);
   }
@@ -635,7 +635,7 @@ public final class CharInputTest {
 
   @Test public void fromReader_skipWhileHigh64_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("xxxxaaaaaay"), 10, 4);
-    input.charAt(4); // Advance read
+    input.charAtOrEof(4); // Advance read
     input.markCheckpoint(4); // Compact "xxxx"
     assertThat(input.skipWhile(range('a', 'a').precomputeForAscii(), 4)).isEqualTo(10);
   }

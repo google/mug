@@ -161,10 +161,12 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
    */
   List<V> pruneByPrefix(CharInput input, int index) {
     PrefixPruneTree<V> node = this;
-    for (int i = index; !node.isLeaf(); i++) {
+    for (int i = index; ; i++) {
+      Trie<V> children = node.children;
+      if (children == null) break;
       int c = input.charAtOrEof(i);
       if (c < 0) break;
-      PrefixPruneTree<V> child = node.children.child((char) c);
+      PrefixPruneTree<V> child = children.child((char) c);
       if (child == null) break;
       node = child;
     }

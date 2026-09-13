@@ -32,20 +32,14 @@ import java.util.regex.Pattern;
 abstract class CharInput {
   int nestingLevel = 0;
 
-  /** Reads the character at {@code index}. */
-  abstract char charAt(int index);
-
   /**
    * Reads the character at {@code index}, or returns -1 if {@code index} is at or past EOF.
    *
-   * <p>Equivalent to {@code isEof(index) ? -1 : charAt(index)} but reaches the underlying input
-   * once instead of twice. {@code char} is unsigned, so a real character always widens into {@code
-   * [0, 65535]} and can never be confused with the -1 sentinel. This mirrors the convention of
-   * {@link java.io.Reader#read()}.
+   * <p>{@code char} is unsigned, so a real character always widens into {@code [0, 65535]} and can
+   * never be confused with the -1 sentinel. This mirrors the convention of {@link
+   * java.io.Reader#read()}.
    */
-  int charAtOrEof(int index) {
-    return isEof(index) ? -1 : charAt(index);
-  }
+  abstract int charAtOrEof(int index);
 
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
@@ -104,10 +98,6 @@ abstract class CharInput {
   static CharInput from(String text) {
     requireNonNull(text);
     return new CharInput() {
-      @Override char charAt(int index) {
-        return text.charAt(index);
-      }
-
       @Override int charAtOrEof(int index) {
         return index < text.length() ? text.charAt(index) : -1;
       }
@@ -177,11 +167,6 @@ abstract class CharInput {
       private final char[] temp = new char[bufferSize];
       private final StringBuilder chars = new StringBuilder();
       private int garbageCharCount = 0;
-
-      @Override char charAt(int index) {
-        ensureCharCount(index + 1);
-        return chars.charAt(toPhysicalIndex(index));
-      }
 
       @Override int charAtOrEof(int index) {
         ensureCharCount(index + 1);
