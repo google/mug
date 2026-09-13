@@ -130,8 +130,7 @@ public final class Csv {
     this.delim = delim;
     this.allowsComments = allowsComments;
     this.regularChar = UNRESERVED_CHAR.and(isNot(delim)).precomputeForAscii();
-    Parser<?>.OrEmpty padding =
-        zeroOrMore(CharPredicate.anyOf(" \t").and(isNot(delim)), "whitespace");
+    var padding = zeroOrMore(CharPredicate.anyOf(" \t").and(isNot(delim)), "whitespace");
     this.line = anyOf(
         NEW_LINE.thenReturn(List.of()), // empty line => [], not [""]
         QUOTED.between(padding, padding).or(consecutive(regularChar, "unquoted field"))

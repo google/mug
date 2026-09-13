@@ -573,6 +573,7 @@ public final class CsvTest {
     for (char delimiter : new char[] {'\t', ' '}) {
       Csv csv = CSV.withDelimiter(delimiter);
       for (List<String> fields : List.of(
+          List.of("a" + delimiter + "b", "second"),
           List.of("a\"b", "second"),
           List.of("a\"b", "c\"d"),
           List.of("a\"b", "", ""),
