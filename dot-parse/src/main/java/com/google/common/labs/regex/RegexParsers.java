@@ -326,10 +326,16 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterProperty> characterPropertySuffix() {
+    Parser<String> word = consecutive(noneOf("}\r\n").and(WHITESPACE.not()), "word");
     Parser<String> name = anyOf(
-        // No property name java.util.regex knows has whitespace in it, so `\p{ L }` is an unknown
-        // name there. Under free spacing the whitespace is skipped before the name is read.
-        consecutive(noneOf("}\r\n").and(WHITESPACE.not()), "property name").between("{", "}"),
+        // Java allows single interior spaces in property names (e.g. `\p{InBasic Latin}` or
+        // `\p{block=Basic Latin}`), but rejects leading, trailing, and multiple consecutive spaces.
+        // Under free spacing, whitespace around the property name is skipped before the name is
+        // read.
+        literally(sequence(word, sequence(one(' '), word).zeroOrMore()))
+            .source()
+            .as("property name")
+            .between("{", "}"),
         one("[a-zA-Z]").as("category").map(String::valueOf));
     return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }

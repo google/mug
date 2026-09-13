@@ -1048,11 +1048,12 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Finding 25: a property name containing whitespace is accepted.
+  // Finding 25: property name whitespace handling.
   //
-  // No property name Java knows has whitespace in it, so `\p{ L }` is an unknown name and Java
-  // rejects it. Mug read the spaces as part of the name. Under `(?x)` the spaces are skipped as
-  // free spacing before the name is read, which is a separate divergence, not covered here.
+  // Java allows single interior spaces in property names (such as Unicode blocks like
+  // `\p{InBasic Latin}`), but rejects leading, trailing, and multiple consecutive spaces.
+  // Syntactic validation accepts arbitrary property names (including `\p{Is Lower}`), as Mug does
+  // not maintain a registry of valid Unicode properties.
   // ---------------------------------------------------------------------------------------------
 
   @Test public void of_propertyNameWithLeadingSpace_rejected() {
@@ -1062,12 +1063,27 @@ public final class RegexPatternConformanceTest {
 
   @Test public void of_propertyNameWithTrailingSpace_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{L }"));
-    assertThat(e).hasMessageThat().contains("at 1:5: expecting <}>");
+    assertThat(e).hasMessageThat().contains("at 1:6: expecting <word>");
   }
 
-  @Test public void of_propertyNameWithInnerSpace_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{Is Lower}"));
-    assertThat(e).hasMessageThat().contains("at 1:6: expecting <}>");
+  @Test public void of_propertyNameWithConsecutiveInnerSpaces_rejected() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> RegexPattern.of("\\p{InBasic  Latin}"));
+    assertThat(e).hasMessageThat().contains("at 1:12: expecting <word>");
+  }
+
+  @Test public void of_propertyNameWithInteriorSpace_accepted() {
+    assertThat(RegexPattern.of("\\p{InBasic Latin}"))
+        .isEqualTo(new UnicodeProperty("InBasic Latin"));
+  }
+
+  @Test public void of_propertyNameWithAssignmentAndInteriorSpace_accepted() {
+    assertThat(RegexPattern.of("\\p{block=Basic Latin}"))
+        .isEqualTo(new UnicodeProperty("block=Basic Latin"));
+  }
+
+  @Test public void of_propertyNameWithInnerSpace_accepted_divergence() {
+    assertThat(RegexPattern.of("\\p{Is Lower}")).isEqualTo(new UnicodeProperty("Is Lower"));
   }
 
   @Test public void of_propertyName_accepted() {
@@ -1076,11 +1092,6 @@ public final class RegexPatternConformanceTest {
 
   @Test public void of_propertyNameWithAssignment_accepted() {
     assertThat(RegexPattern.of("\\p{gc=Lu}")).isEqualTo(new UnicodeProperty("gc=Lu"));
-  }
-
-  /** The reference behavior: the spaces make it an unknown property name. */
-  @Test public void of_propertyNameWithSpaces_javaRejects() {
-    assertThrows(PatternSyntaxException.class, () -> javaCompile("\\p{ L }"));
   }
 
   // ---------------------------------------------------------------------------------------------
