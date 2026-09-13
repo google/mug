@@ -1076,7 +1076,9 @@ public final class RegexPatternTest {
   }
 
   @Test public void of_freeSpacingMode_property_spacesInsideBraces() {
-    assertThat(RegexPattern.of("(?x)\\p{ L }")).isEqualTo(freeSpacing(new UnicodeProperty("L")));
+    // `java.util.regex` skips whitespace before `{` but slices the name verbatim to `}`, so the
+    // leading space disappears and the trailing one stays, making this an unknown property name.
+    assertThat(RegexPattern.of("(?x)\\p{ L }")).isEqualTo(freeSpacing(new UnicodeProperty("L ")));
   }
 
   @Test public void of_nestedFreeSpacingMode_enabled() {

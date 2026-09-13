@@ -1050,26 +1050,25 @@ public final class RegexPatternConformanceTest {
   // ---------------------------------------------------------------------------------------------
   // Finding 25: property name whitespace handling.
   //
-  // Java allows single interior spaces in property names (such as Unicode blocks like
-  // `\p{InBasic Latin}`), but rejects leading, trailing, and multiple consecutive spaces.
-  // Syntactic validation accepts arbitrary property names (including `\p{Is Lower}`), as Mug does
-  // not maintain a registry of valid Unicode properties.
+  // `java.util.regex` performs no syntactic validation inside `\p{...}`. It slices to the closing
+  // `}` and looks the result up in its property catalog, so `\p{ L}`, `\p{L }` and
+  // `\p{InBasic  Latin}` all fail as unknown property names rather than as syntax errors, exactly
+  // like `\p{NoSuchThing}`. Mug keeps no catalog, so it accepts any name (including
+  // `\p{Is Lower}`) and the divergence surfaces only when the pattern is handed back to
+  // `java.util.regex`.
   // ---------------------------------------------------------------------------------------------
 
-  @Test public void of_propertyNameWithLeadingSpace_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{ L}"));
-    assertThat(e).hasMessageThat().contains("at 1:4: expecting <property name>");
+  @Test public void of_propertyNameWithLeadingSpace_acceptedAsName() {
+    assertThat(RegexPattern.of("\\p{ L}")).isEqualTo(new UnicodeProperty(" L"));
   }
 
-  @Test public void of_propertyNameWithTrailingSpace_rejected() {
-    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{L }"));
-    assertThat(e).hasMessageThat().contains("at 1:6: expecting <word>");
+  @Test public void of_propertyNameWithTrailingSpace_acceptedAsName() {
+    assertThat(RegexPattern.of("\\p{L }")).isEqualTo(new UnicodeProperty("L "));
   }
 
-  @Test public void of_propertyNameWithConsecutiveInnerSpaces_rejected() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> RegexPattern.of("\\p{InBasic  Latin}"));
-    assertThat(e).hasMessageThat().contains("at 1:12: expecting <word>");
+  @Test public void of_propertyNameWithConsecutiveInnerSpaces_acceptedAsName() {
+    assertThat(RegexPattern.of("\\p{InBasic  Latin}"))
+        .isEqualTo(new UnicodeProperty("InBasic  Latin"));
   }
 
   @Test public void of_propertyNameWithInteriorSpace_accepted() {

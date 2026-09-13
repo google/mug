@@ -141,9 +141,6 @@ final class RegexParsers {
           .source()
           .as("group name");
 
-  /** Any whitespace, which is wider than the set free spacing mode skips. */
-  private static final CharPredicate WHITESPACE = Character::isWhitespace;
-
   /**
    * The characters free spacing mode skips, which are the six that {@code Pattern.isSpace()}
    * accepts. {@code Character::isWhitespace} would be wider: it also covers the information
@@ -325,16 +322,13 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterProperty> characterPropertySuffix() {
-    Parser<String> word = consecutive(BRACED_NAME_CHAR.and(WHITESPACE.not()), "word");
     Parser<String> name = anyOf(
-        // Java allows single interior spaces in property names (e.g. `\p{InBasic Latin}` or
-        // `\p{block=Basic Latin}`), but rejects leading, trailing, and multiple consecutive spaces.
-        // Under free spacing, whitespace around the property name is skipped before the name is
-        // read.
-        literally(sequence(word, sequence(one(' '), word).zeroOrMore()))
-            .source()
-            .as("property name")
-            .between("{", "}"),
+        // `java.util.regex` does no syntactic validation inside the braces: it slices to the
+        // closing `}` and looks the result up in its property catalog, so a space in any position
+        // only makes the name unknown, the same as any other misspelling. This slices the same
+        // way. `literally` keeps free spacing from editing the name; the whitespace before `{`,
+        // which the JDK also skips, is skipped outside it.
+        literally(consecutive(BRACED_NAME_CHAR, "property name")).between("{", "}"),
         one(LATIN_LETTER, "category").map(String::valueOf));
     return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }
