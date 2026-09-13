@@ -93,21 +93,23 @@ final class RegexParsers {
           literally(one("[4-7]"), one("[0-7]").optional()))
       .source()
       .map(digits -> Integer.parseInt(digits, 8));
-  private static final Parser<String> ESCAPED = anyOf(
-      string("\\n").thenReturn("\n"),
-      string("\\r").thenReturn("\r"),
-      string("\\t").thenReturn("\t"),
-      string("\\f").thenReturn("\f"),
-      string("\\a").thenReturn("\u0007"),
-      string("\\e").thenReturn("\u001B"),
-      string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
-      string("\\0").then(OCTAL).map(Character::toString),
+
+  /** An escape sequence, yielding the code point it denotes. */
+  private static final Parser<Integer> ESCAPED = anyOf(
+      string("\\n").thenReturn((int) '\n'),
+      string("\\r").thenReturn((int) '\r'),
+      string("\\t").thenReturn((int) '\t'),
+      string("\\f").thenReturn((int) '\f'),
+      string("\\a").thenReturn(0x0007),
+      string("\\e").thenReturn(0x001B),
+      string("\\u").then(BMP_CODE_UNIT).map(c -> (int) c),
+      string("\\0").then(OCTAL),
       string("\\c")
           .then(one(ANY, "control char"))
           // java.util.regex XORs the character as written; it does not upper-case it first, so
           // `\ca` is '!' (0x61 ^ 64), not U+0001.
-          .map(c -> Character.toString(c ^ 64)),
-      string("\\x").then(CODE_POINT).map(Character::toString),
+          .map(c -> c ^ 64),
+      string("\\x").then(CODE_POINT),
       string("\\N")
           .then(
               consecutive(BRACED_NAME_CHAR, "character name")
@@ -118,9 +120,9 @@ final class RegexParsers {
                     } catch (IllegalArgumentException e) {
                       throw fail(e.getMessage());
                     }
-                  }))
-          .map(Character::toString),
-      literally(string("\\").then(one(ALPHANUMERIC.not(), "escaped char"))).map(String::valueOf));
+                  })),
+      literally(string("\\").then(one(ALPHANUMERIC.not(), "escaped char"))).map(c -> (int) c));
+
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
@@ -219,7 +221,7 @@ final class RegexParsers {
         // trailing quantifier must apply to that code point, not to the low surrogate alone.
         literalRun(
             anyOf(
-                    ESCAPED,
+                    ESCAPED.map(Character::toString),
                     // only the trailing `]` closes the specifier, so this is the set {`}`, `]`}
                     one("[}]]").map(String::valueOf),
                     // `{` is a literal only when it doesn't look like a repetition count.
@@ -407,7 +409,7 @@ final class RegexParsers {
     return anyOf(
         // only the trailing `]` closes the specifier, so this excludes `-`, `&`, `\`, `]` and `[`
         one("[^-&\\][]").map(c -> f.apply(c)),
-        ESCAPED.map(s -> f.apply(s.codePointAt(0))),
+        ESCAPED.map(f::apply),
         one('&').notFollowedBy("&").thenReturn(f.apply('&')));
   }
 
