@@ -68,6 +68,7 @@ import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -412,11 +413,15 @@ final class RegexParsers {
 
   /** Returns the code points of a char run, each a literal member of a char class. */
   private static List<CharSetElement> literalChars(int[] codePoints) {
-    List<CharSetElement> elements = new ArrayList<>(codePoints.length);
-    for (int codePoint : codePoints) {
-      elements.add(new LiteralChar(codePoint));
-    }
-    return elements;
+    return new AbstractList<CharSetElement>() {
+      @Override public LiteralChar get(int i) {
+        return new LiteralChar(codePoints[i]);
+      }
+
+      @Override public int size() {
+        return codePoints.length;
+      }
+    };
   }
 
   /**
