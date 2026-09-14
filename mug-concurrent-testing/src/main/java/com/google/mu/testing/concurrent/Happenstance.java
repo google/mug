@@ -3,12 +3,6 @@ package com.google.mu.testing.concurrent;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.mu.util.graph.Walker;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.Joiner;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -18,6 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.mu.util.graph.Walker;
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * A utility to manipulate happens-before relationships (via {@link #join}) between events in
@@ -270,6 +271,7 @@ public final class Happenstance<K> {
         CHECKIN_STATUS_HANDLE.setRelease(statuses, index, value);
       }
     },
+    @Deprecated
     TEMPORAL {
       @Override int read(int[] statuses, int index) {
         return (int) CHECKIN_STATUS_HANDLE.getOpaque(statuses, index);

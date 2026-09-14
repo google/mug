@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableListMultimap.toImmutableListMul
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
+import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
@@ -3466,6 +3467,171 @@ public class SubstringTest {
     assertThat(pattern.from("...foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("...foo")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("bar...foo bar...foo")).containsExactly("foo", "foo");
+  }
+
+  @Test public void regexGroup_precededBy_selectsRequestedGroup() {
+    Substring.Pattern pattern = first(Pattern.compile("(\\d+)-of-(\\d+)"), 1).precededBy("#");
+    assertThat(pattern.from("#12-of-99")).hasValue("12");
+  }
+
+  @Test public void regexGroup_followedBy_selectsRequestedGroup() {
+    Substring.Pattern pattern = first(Pattern.compile("(\\d+)-of-(\\d+)"), 1).followedBy("-of-");
+    assertThat(pattern.from("12-of-99")).hasValue("12");
+  }
+
+  @Test public void regexGroup_immediatelyBetween_selectsRequestedGroup() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("(\\d+)-of-(\\d+)"), 1).immediatelyBetween("#", "-of-");
+    assertThat(pattern.from("#12-of-99")).hasValue("12");
+  }
+
+  @Test public void regexGroup_notPrecededBy_selectsRequestedGroup() {
+    Substring.Pattern pattern = first(Pattern.compile("(\\d+)-of-(\\d+)"), 1).notPrecededBy("#");
+    assertThat(pattern.from("12-of-99")).hasValue("12");
+  }
+
+  @Test public void regexGroup_notFollowedBy_selectsRequestedGroup() {
+    Substring.Pattern pattern = first(Pattern.compile("(\\d+)-of-(\\d+)"), 1).notFollowedBy("!");
+    assertThat(pattern.from("12-of-99")).hasValue("12");
+  }
+
+  @Test public void regex_alternation_notPrecededBy_appliesToAllAlternatives() {
+    Substring.Pattern pattern = first(Pattern.compile("cat|dog")).notPrecededBy("hot");
+    assertThat(pattern.from("hotdog")).isEmpty();
+  }
+
+  @Test public void regex_alternation_notFollowedBy_appliesToAllAlternatives() {
+    Substring.Pattern pattern = first(Pattern.compile("cat|dog")).notFollowedBy("s");
+    assertThat(pattern.from("cats")).isEmpty();
+  }
+
+  @Test public void regex_caseInsensitiveFlag_preservedByLookaround() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("cat", Pattern.CASE_INSENSITIVE)).followedBy("s");
+    assertThat(pattern.from("CATs")).hasValue("CAT");
+  }
+
+  @Test public void regex_caseInsensitiveFlag_doesNotApplyToLookaround() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("cat", Pattern.CASE_INSENSITIVE)).followedBy("s");
+    assertThat(pattern.from("CATS")).isEmpty();
+  }
+
+  @Test public void regex_literalFlag_preservedByLookaround() {
+    Substring.Pattern pattern = first(Pattern.compile("a.c", Pattern.LITERAL)).followedBy("!");
+    assertThat(pattern.from("abc!")).isEmpty();
+  }
+
+  @Test public void regex_caseInsensitiveFlag_preservedByNegativeLookahead() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("cat", Pattern.CASE_INSENSITIVE)).notFollowedBy("!");
+    assertThat(pattern.from("CAT?")).hasValue("CAT");
+  }
+
+  @Test public void regex_caseInsensitiveFlag_preservedByNegativeLookbehind() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("cat", Pattern.CASE_INSENSITIVE)).notPrecededBy("!");
+    assertThat(pattern.from("?CAT")).hasValue("CAT");
+  }
+
+  @Test public void regex_caseInsensitiveFlag_doesNotApplyToNegativeLookaround() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("cat", Pattern.CASE_INSENSITIVE)).notFollowedBy("s");
+    assertThat(pattern.from("CATS")).hasValue("CAT");
+  }
+
+  @Test public void regex_literalFlag_preservedByNegativeLookaround() {
+    Substring.Pattern pattern = first(Pattern.compile("a.c", Pattern.LITERAL)).notFollowedBy("!");
+    assertThat(pattern.from("abc? a.c?")).hasValue("a.c");
+  }
+
+  @Test public void regex_alternation_precededBy_appliesToAllAlternatives() {
+    Substring.Pattern pattern = first(Pattern.compile("cat|dog")).precededBy("hot");
+    assertThat(pattern.from("a dog hotcat")).hasValue("cat");
+  }
+
+  @Test public void regex_alternation_followedBy_appliesToAllAlternatives() {
+    Substring.Pattern pattern = first(Pattern.compile("cat|dog")).followedBy("s");
+    assertThat(pattern.from("cat dogs")).hasValue("dog");
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_charPredicate() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().match("aaa").map(Match::index)).containsExactly(0);
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_regex() {
+    Substring.Pattern pattern =
+        first(Pattern.compile("a")).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().match("aaa").map(Match::index)).containsExactly(0);
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_string() {
+    Substring.Pattern pattern = first("ab").immediatelyBetween("b", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().match("bababab").map(Match::index)).containsExactly(0, 4);
+  }
+
+  @Test public void immediatelyBetweenInclusive_matchDoesNotStartBeforeFromIndex() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.in("aa", 1)).isEmpty();
+  }
+
+  @Test public void immediatelyBetweenInclusive_nonBacktrackingPattern_matchBeforeFromIndex() {
+    Substring.Pattern pattern =
+        Substring.prefix("b").immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.in("ab", 1)).isEmpty();
+  }
+
+  @Test public void
+      immediatelyBetweenInclusive_asCloseDelimiter_doesNotStartBeforeOpenDelimiterEnd() {
+    Substring.Pattern close =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(Substring.between(first("a"), close).in("aa")).isEmpty();
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_replaceAllFrom() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().replaceAllFrom("aaa", m -> "X")).isEqualTo("Xa");
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_split() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().split("aaa").map(Match::toString))
+        .containsExactly("", "a")
+        .inOrder();
+  }
+
+  @Test public void immediatelyBetweenInclusive_lookbehindOverlapsPreviousMatch_cut() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(pattern.repeatedly().cut("aaa").map(Match::toString))
+        .containsExactly("", "aa", "a")
+        .inOrder();
+  }
+
+  @Test public void immediatelyBetweenInclusive_afterThen_doesNotOverlapPrecedingMatch() {
+    Substring.Pattern pattern =
+        first(CharPredicate.is('a')).immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE);
+    assertThat(first("a").then(pattern).in("aa")).isEmpty();
+  }
+
+  @Test public void precededBy_repeatedly_lookbehindOverlapsPreviousMatch_charPredicate() {
+    Substring.Pattern pattern = first(CharPredicate.is('a')).precededBy("a");
+    assertThat(pattern.repeatedly().match("aaa").map(Match::index)).containsExactly(1, 2);
+  }
+
+  @Test public void precededBy_repeatedly_lookbehindOverlapsPreviousMatch_char() {
+    Substring.Pattern pattern = first('a').precededBy("a");
+    assertThat(pattern.repeatedly().match("aaa").map(Match::index)).containsExactly(1, 2);
+  }
+
+  @Test public void precededBy_repeatedly_lookbehindOverlapsPreviousMatch_string() {
+    Substring.Pattern pattern = first("ab").precededBy("b");
+    assertThat(pattern.repeatedly().match("bababab").map(Match::index)).containsExactly(1, 3, 5);
   }
 
   @Test public void between_empty() {
