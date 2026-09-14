@@ -20,9 +20,9 @@ import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * A utility to manipulate temporal ordering (via {@link #checkpoint}) or happens-before (via {@link
- * #join}) relationships between events in concurrent operations. This is useful for testing, where
- * you want to ensure that certain actions are executed in a specific order.
+ * A utility to manipulate happens-before relationships (via {@link #join}) between events in
+ * concurrent operations. This is useful for testing, where you want to ensure that certain actions
+ * are executed in a specific order.
  *
  * <p>Example:
  *
@@ -39,51 +39,26 @@ import java.util.concurrent.locks.LockSupport;
  *         .parallel()
  *         .forEach(
  *             input -> {
- *               happens.checkpoint("reading" + input);
+ *               happens.join("reading" + input);
  *               sut.read(input);
  *               sut.write(input);
- *               happens.checkpoint("written" + input);
+ *               happens.join("written" + input);
  *               sut.finish(input);
  *             });
  *   }
  * }
  * }</pre>
  *
- * <p>The example uses {@link #checkpoint}, which is the default choice because it doesn't add
- * memory barriers that could hide the SUT bug you are trying to reproduce. Switch to {@link #join}
- * when the test needs the sequence points to establish happens-before, and the extra barriers don't
- * defeat the test.
- *
- * <p>Implementation note: this class uses VarHandle instead of high-level synchronization
- * primitives to avoid introducing unintended memory barrier that may result in false negative tests
- * (the test would have failed without the sequence points). When waiting for predecessors, a
- * three-stage back-off strategy is employed: {@link Thread#onSpinWait} is called up to 1000 times
- * to catch tight visibility races in CPU-bound tests without triggering a context switch; if the
- * predecessor is still not ready, {@link Thread#yield} is called up to 100 times to prevent
- * deadlocks or extreme performance degradation in heavily over-provisioned environments; beyond
- * that the thread parks for 50µs at a time, so that an I/O-bound SUT operation taking hundreds of
- * milliseconds doesn't burn a core per waiter.
- *
- * <p><em>Limits of the no-barrier property:</em> it only holds while a thread stays on the {@code
- * onSpinWait} path. Both {@link Thread#yield} and the parking stage are native calls that the JIT
- * cannot optimize across and that the scheduler typically implements with fences, so a thread that
- * exhausts the spin budget gets a de-facto barrier: plain SUT writes made before the checkpoint can
- * no longer be sunk past the status store, and plain SUT reads made after it can no longer be
- * served from a register. Such a checkpoint degrades toward {@link #join} semantics and a genuine
- * visibility bug may fail to reproduce. In practice the property is preserved for sequence points
- * with no predecessors, or whose predecessors check in within the spin budget (which is
- * microarchitecture-dependent).
- *
- * <p>Even on the spin path, what {@code checkpoint} preserves is mainly the compiler's freedom to
- * reorder plain accesses around the opaque status access; a thousand spin hints leave enough time
- * for store buffers to drain, so hardware-level store-store windows are narrow regardless. On x86
- * (TSO) the hardware never reorders store-store, so the JIT is the only thing that can surface such
- * a bug there. On AArch64 (Apple Silicon, Graviton CI) the hardware-level property is real, and the
- * yield caveat applies equally.
+ * <p>Implementation note: when waiting for predecessors, a three-stage back-off strategy is
+ * employed: {@link Thread#onSpinWait} is called up to 1000 times to catch tight races in CPU-bound
+ * tests without triggering a context switch; if the predecessor is still not ready, {@link
+ * Thread#yield} is called up to 100 times to prevent deadlocks or extreme performance degradation
+ * in heavily over-provisioned environments; beyond that the thread parks for 50µs at a time, so
+ * that an I/O-bound SUT operation taking hundreds of milliseconds doesn't burn a core per waiter.
  *
  * <p>The {@link Builder#sequence} method is intended to be called from the main thread to set up
- * the DAG of relationships between sequence points before the {@code checkpoint()} or {@code
- * join()} method is called from any threads.
+ * the DAG of relationships between sequence points before the {@code join()} method is called from
+ * any threads.
  *
  * @param <K> the type of the sequence points
  * @since 9.9.3
@@ -204,9 +179,9 @@ public final class Happenstance<K> {
    * Joins until all predecessors of {@code sequencePoint} have checked in, then marks {@code
    * sequencePoint} as checked-in and returns.
    *
-   * <p>This method differs from {@link #checkpoint} in that it establishes happens-before
-   * relationship between sequence points, which means writes happening before {@code join(A)} are
-   * visible to code after {@code join(B)} as long as {@code sequence(A, B)} is specified.
+   * <p>This method establishes happens-before relationship between sequence points, which means
+   * writes happening before {@code join(A)} are visible to code after {@code join(B)} as long as
+   * {@code sequence(A, B)} is specified.
    *
    * <p><em>Warning:</em>Using {@code join()} inappropriately may result in false negative tests if
    * the SUT has a bug that writes to non-volatile state, because the {@code join()} call will
@@ -231,28 +206,6 @@ public final class Happenstance<K> {
    * Waits for all predecessors of {@code sequencePoint} to have checked in, then marks {@code
    * sequencePoint} as checked-in and returns.
    *
-   * <p>To avoid introducing unintended memory barriers, this method only establishes temporal
-   * ordering; no additional happens-before relationship between sequence points is established,
-   * which means writes before the checkpoint A may still be invisible to reads after checkpoint B
-   * even with {@code sequence(A, B)}. The SUT itself should establish happens-before relationship
-   * if necessary.
-   *
-   * <p>The temporal ordering applies to the checkpoint calls themselves, not to the SUT code around
-   * them. Opaque accesses order the check-in status updates, but they don't stop the JIT or the CPU
-   * from moving the surrounding plain reads and writes across a checkpoint. So {@code
-   * checkpoint("a"); sut.foo(); checkpoint("a2")} makes it likely, not certain, that {@code foo()}
-   * runs between "a" and "a2". Treat {@code checkpoint} as a best-effort interleaving tool for
-   * making a race likely to reproduce; only {@link #join} pins the surrounding code, because its
-   * release store keeps earlier accesses from sinking past it and its acquire load keeps later
-   * accesses from being hoisted before it.
-   *
-   * <p>If extra memory barrier doesn't defeat your concurrency tests, and you need to establish
-   * happens-before relationships, use {@link #join} instead.
-   *
-   * <p>Note that the absence of memory barriers is best-effort: if the predecessors don't check in
-   * within the spin budget, this method falls back to {@link Thread#yield} and then to parking,
-   * both of which act as barriers. See the class Javadoc for details.
-   *
    * <p>If the calling thread is interrupted while waiting, this method throws {@link
    * AssertionError} without checking in, and leaves the thread's interrupt status set. An {@code
    * Error} is used so that the bail-out isn't swallowed by a {@code catch (Exception)} in the code
@@ -265,7 +218,11 @@ public final class Happenstance<K> {
    *     Builder#sequence}.
    * @throws IllegalStateException if {@code sequencePoint} has already been marked as completed.
    * @throws AssertionError if the calling thread is interrupted while waiting for predecessors.
+   * @deprecated The JIT and the CPU can move the surrounding plain reads and writes across a
+   *     checkpoint, so the ordering applies to the check-in calls themselves, not to the SUT code
+   *     around them. Use {@link #join} instead.
    */
+  @Deprecated
   public void checkpoint(K sequencePoint) {
     checkIn(sequencePoint, Ordering.TEMPORAL);
   }
