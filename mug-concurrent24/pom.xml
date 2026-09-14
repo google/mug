@@ -13,7 +13,6 @@
     <module.name>concurrent24</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
     <project.build.outputTimestamp>2026-09-04T05:30:29Z</project.build.outputTimestamp>
-    <argLine>--enable-preview</argLine>
   </properties>
   
   <build>
@@ -51,9 +50,6 @@
         <version>${maven_compiler_plugin.version}</version>
         <configuration>
           <release>24</release>
-          <compilerArgs>
-            <arg>--enable-preview</arg>
-          </compilerArgs>
           </configuration>
       </plugin>
     </plugins>
