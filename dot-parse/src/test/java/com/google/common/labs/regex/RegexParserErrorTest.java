@@ -486,7 +486,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting one of [), :], encountered:
+            at 1:4: expecting one of [inline modifier flags without (x), :], encountered:
                 (?i
                    ^
             """);
@@ -498,7 +498,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?z:abc)
                   ^
             """);
@@ -510,7 +510,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?z)
                   ^
             """);
@@ -522,7 +522,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting one of [), :], encountered:
+            at 1:4: expecting one of [inline modifier flags without (x), :], encountered:
                 (?iabc)
                    ^
             """);
@@ -618,9 +618,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: free spacing flag (x) is only supported at the start of the pattern; \
-            use (?x:...) to scope it
-
+            at 1:5: expecting <inline modifier flags without (x)>, encountered:
                 a(?x) b
                     ^
             """);
@@ -632,9 +630,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:6: free spacing flag (x) is only supported at the start of the pattern; \
-            use (?x:...) to scope it
-
+            at 1:6: expecting <inline modifier flags without (x)>, encountered:
                 a(?-x)b
                      ^
             """);
@@ -646,9 +642,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:6: free spacing flag (x) is only supported at the start of the pattern; \
-            use (?x:...) to scope it
-
+            at 1:6: expecting <inline modifier flags without (x)>, encountered:
                 a(?ix) b
                      ^
             """);
@@ -660,9 +654,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: free spacing flag (x) is only supported at the start of the pattern; \
-            use (?x:...) to scope it
-
+            at 1:5: expecting <inline modifier flags without (x)>, encountered:
                 ((?x) a b)
                     ^
             """);
@@ -674,7 +666,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?*abc)
                   ^
             """);
@@ -686,7 +678,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?#comment)
                   ^
             """);
@@ -698,7 +690,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?|(a)|(b))
                   ^
             """);
@@ -710,7 +702,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?(1)a|b)
                   ^
             """);
@@ -722,7 +714,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?R)
                   ^
             """);
@@ -734,7 +726,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?P=name)
                   ^
             """);
@@ -746,7 +738,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?'name'abc)
                   ^
             """);
@@ -758,7 +750,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting one of [), :], encountered:
+            at 1:3: expecting one of [inline modifier flags without (x), :], encountered:
                 (?
                   ^
             """);
@@ -1105,6 +1097,43 @@ public final class RegexParserErrorTest {
             at 1:7: expecting <>>, encountered:
                 \\k<foo
                       ^
+            """);
+  }
+
+  @Test public void numberedBackreference_twoDigitsBeyondGroupCount_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a)\\10"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <single-digit backreference>, encountered:
+                (a)\\10
+                    ^
+            """);
+  }
+
+  @Test public void numberedBackreference_twoDigitsWithinGroupCount_rejected() {
+    ParseException e = assertThrows(
+        ParseException.class, () -> RegexPattern.of("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:32: expecting <single-digit backreference>, encountered:
+                (c)(d)(e)(f)(g)(h)(i)(j)\\10
+                                         ^
+            """);
+  }
+
+  @Test public void numberedBackreference_twoDigitsWithNoGroup_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\12"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: expecting <single-digit backreference>, encountered:
+                \\12
+                 ^
             """);
   }
 

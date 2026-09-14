@@ -274,7 +274,7 @@ public final class RegexPatternConformanceTest {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a(?x) b c"));
     assertThat(e)
         .hasMessageThat()
-        .contains("at 1:5: free spacing flag (x) is only supported at the start of the pattern");
+        .contains("at 1:5: expecting <inline modifier flags without (x)>");
   }
 
   /** The reference behavior: `(?x)` runs to the end of the enclosing group, crossing `|`. */
@@ -286,7 +286,7 @@ public final class RegexPatternConformanceTest {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a|(?x) b|c d"));
     assertThat(e)
         .hasMessageThat()
-        .contains("at 1:6: free spacing flag (x) is only supported at the start of the pattern");
+        .contains("at 1:6: expecting <inline modifier flags without (x)>");
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -312,10 +312,10 @@ public final class RegexPatternConformanceTest {
     assertThat(e).hasMessageThat().contains("max must be at least min");
   }
 
-  @Test public void of_oversizedBackreferenceNumber_reportsParseErrorAtPosition() {
+  @Test public void of_longBackreferenceNumber_reportsParseErrorAtPosition() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\99999999999"));
     assertThat(e).hasMessageThat().contains("at 1:2:");
-    assertThat(e).hasMessageThat().contains("number too large: 99999999999");
+    assertThat(e).hasMessageThat().contains("single-digit backreference");
   }
 
   @Test public void of_oversizedHexCodePoint_reportsParseErrorAtPosition() {
@@ -407,72 +407,52 @@ public final class RegexPatternConformanceTest {
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Finding 9: backreference digits consume up to the count of capturing groups seen so far.
-  // java.util.regex stops at the highest group seen so far, so `(a)\10` is group 1 followed by a
-  // literal `0`.
+  // Finding 9: a multi-digit numbered backreference is rejected.
+  //
+  // In `java.util.regex` the digits of `\10` mean group 10 where ten capturing groups precede it,
+  // and group 1 followed by a literal `0` where they don't, so the same two characters parse two
+  // ways depending on the rest of the pattern. Mug parses each construct on its own, so it rejects
+  // the multi-digit form in both cases; `\1` through `\9` and `\k<name>` are unaffected.
   // ---------------------------------------------------------------------------------------------
 
-  @Test public void of_backreferenceDigitsBeyondGroupCount_stopsAtHighestGroupSeen() {
-    assertThat(RegexPattern.of("(a)\\10"))
-        .isEqualTo(
-            sequence(
-                new Group.Capturing(new Literal("a")),
-                new Backreference.Numbered(1),
-                new Literal("0")));
+  @Test public void of_backreferenceDigitsBeyondGroupCount_rejected_divergence() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a)\\10"));
+    assertThat(e).hasMessageThat().contains("at 1:5: expecting <single-digit backreference>");
   }
 
-  @Test public void of_backreferenceDigitsBeyondGroupCount_quantified() {
-    assertThat(RegexPattern.of("(a)\\12*"))
-        .isEqualTo(
-            sequence(
-                new Group.Capturing(new Literal("a")),
-                new Backreference.Numbered(1),
-                new Quantified(new Literal("2"), repeated())));
+  /**
+   * The reference behavior: the digits stop at the highest group seen, so this is `\1` then `0`.
+   */
+  @Test public void of_backreferenceDigitsBeyondGroupCount_javaSplits() {
+    assertThat(Pattern.compile("(a)\\10").matcher("aa0").matches()).isTrue();
   }
 
-  @Test public void of_backreferenceDigitsWithinGroupCount_keptAsNumbered() {
-    StringBuilder pattern = new StringBuilder();
-    for (int i = 1; i <= 12; i++) {
-      pattern.append("(").append((char) ('a' + i - 1)).append(")");
-    }
-    pattern.append("\\12");
-    RegexPattern parsed = RegexPattern.of(pattern.toString());
-    assertThat(parsed).isInstanceOf(RegexPattern.Sequence.class);
-    RegexPattern.Sequence seq = (RegexPattern.Sequence) parsed;
-    assertThat(seq.elements().get(12)).isEqualTo(new Backreference.Numbered(12));
+  @Test public void of_backreferenceDigitsWithinGroupCount_rejected_divergence() {
+    ParseException e = assertThrows(
+        ParseException.class, () -> RegexPattern.of("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10"));
+    assertThat(e).hasMessageThat().contains("at 1:32: expecting <single-digit backreference>");
   }
 
-  @Test public void of_backreferenceWithZeroGroups_takesFirstDigit() {
-    assertThat(RegexPattern.of("\\12"))
-        .isEqualTo(sequence(new Backreference.Numbered(1), new Literal("2")));
+  /** The reference behavior: with ten groups in scope, the same digits name group 10. */
+  @Test public void of_backreferenceDigitsWithinGroupCount_javaReferencesGroupTen() {
+    assertThat(
+            Pattern.compile("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10").matcher("abcdefghijj").matches())
+        .isTrue();
   }
 
-  @Test public void of_backreferenceWithMultipleTrailingDigits_quantified() {
-    assertThat(RegexPattern.of("(a)\\123*"))
-        .isEqualTo(
-            sequence(
-                new Group.Capturing(new Literal("a")),
-                new Backreference.Numbered(1),
-                new Literal("2"),
-                new Quantified(new Literal("3"), repeated())));
+  @Test public void of_backreferenceWithZeroGroups_rejected_divergence() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\12"));
+    assertThat(e).hasMessageThat().contains("at 1:2: expecting <single-digit backreference>");
   }
 
-  @Test public void of_backreferenceAfterNamedGroup_countsNamedGroup() {
-    assertThat(RegexPattern.of("(?<g>a)\\10"))
-        .isEqualTo(
-            sequence(
-                new Group.Named("g", new Literal("a")),
-                new Backreference.Numbered(1),
-                new Literal("0")));
+  @Test public void of_backreferenceWithMultipleTrailingDigits_rejected_divergence() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a)\\123*"));
+    assertThat(e).hasMessageThat().contains("at 1:5: expecting <single-digit backreference>");
   }
 
-  @Test public void of_backreferenceSplit_mergesAdjacentTrailingLiterals() {
-    assertThat(RegexPattern.of("(a)\\12b"))
-        .isEqualTo(
-            sequence(
-                new Group.Capturing(new Literal("a")),
-                new Backreference.Numbered(1),
-                new Literal("2b")));
+  @Test public void of_singleDigitBackreference_stillAccepted() {
+    assertThat(RegexPattern.of("(a)\\1"))
+        .isEqualTo(sequence(new Group.Capturing(new Literal("a")), new Backreference.Numbered(1)));
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -1140,6 +1120,26 @@ public final class RegexPatternConformanceTest {
   @Test public void of_braceWithCommaButNoCount_acceptedAsLiteral_divergence() {
     assertThat(RegexPattern.of("a{,}")).isEqualTo(new Literal("a{,}"));
     assertThrows(PatternSyntaxException.class, () -> javaCompile("a{,}"));
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Finding 27: a quantifier after an unpaired low surrogate repeats the preceding char too.
+  //
+  // A lone low surrogate is a code point of its own, so `java.util.regex` repeats just it. Mug
+  // looked backwards for the last char that isn't a low surrogate and took everything from there
+  // to the end as one code point, which glued the preceding char onto the repeated unit.
+  // ---------------------------------------------------------------------------------------------
+
+  @Test public void of_loneLowSurrogateQuantified() {
+    assertThat(RegexPattern.of("a\uDE00*"))
+        .isEqualTo(sequence(new Literal("a"), new Quantified(new Literal("\uDE00"), repeated())));
+  }
+
+  /** The reference behavior: the surrogate repeats alone, so the empty string doesn't match. */
+  @Test public void of_loneLowSurrogateQuantified_javaRepeatsSurrogateAlone() {
+    Pattern java = Pattern.compile("a\uDE00*");
+    assertThat(java.matcher("a").matches()).isTrue();
+    assertThat(java.matcher("").matches()).isFalse();
   }
 
   /**
