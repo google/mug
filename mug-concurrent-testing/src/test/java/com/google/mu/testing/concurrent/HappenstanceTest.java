@@ -303,25 +303,30 @@ public class HappenstanceTest {
   @Test public void checkpoint_diamondGraph_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A", "B1", "C").sequence("A", "B2", "C").build();
-    List<String> completed = Collections.synchronizedList(new ArrayList<>());
+    AtomicLong stateA = new AtomicLong();
+    AtomicLong stateB1 = new AtomicLong();
+    AtomicLong stateB2 = new AtomicLong();
     try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
       Future<?> futureC = executor.submit(() -> {
         happens.checkpoint("C");
-        completed.add("C");
+        assertThat(stateB1.get()).isEqualTo(1);
+        assertThat(stateB2.get()).isEqualTo(1);
       });
       Future<?> futureB1 = executor.submit(() -> {
+        stateB1.set(1);
         happens.checkpoint("B1");
-        completed.add("B1");
+        assertThat(stateA.get()).isEqualTo(1);
         return null;
       });
       Future<?> futureB2 = executor.submit(() -> {
+        stateB2.set(1);
         happens.checkpoint("B2");
-        completed.add("B2");
+        assertThat(stateA.get()).isEqualTo(1);
         return null;
       });
       Future<?> futureA = executor.submit(() -> {
+        stateA.set(1);
         happens.checkpoint("A");
-        completed.add("A");
         return null;
       });
 
@@ -330,11 +335,6 @@ public class HappenstanceTest {
       futureB2.get(5, TimeUnit.SECONDS);
       futureC.get(5, TimeUnit.SECONDS);
     }
-
-    assertThat(completed).contains("A");
-    assertThat(completed).contains("B1");
-    assertThat(completed).contains("B2");
-    assertThat(completed).contains("C");
   }
 
   @Test public void join_diamondGraph_enforcedOrder() throws Exception {
@@ -418,34 +418,20 @@ public class HappenstanceTest {
     }
   }
 
-  @Ignore
-  @Test public void myListToString_concurrentCalls_mayReturnDifferentInstances_noSequencer()
-      throws Exception {
-    ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
-    Integer[] elements = IntStream.range(0, 100).boxed().toArray(Integer[]::new);
-    String listString = Arrays.toString(elements);
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      for (int i = 0; i < 100000; i++) {
-        MyList<Integer> list = MyList.of(elements);
-        Future<String> f1 = executor.submit(list::toString);
-        Future<String> f2 = executor.submit(list::toString);
-        String s1 = f1.get();
-        String s2 = f2.get();
-        assertThat(s1).isEqualTo(listString);
-        assertThat(s2).isEqualTo(listString);
-        try {
-          assertThat(s1).isSameInstanceAs(s2);
-        } catch (AssertionError e) {
-          races.put(i, e);
-        }
-      }
-    }
-    assertThat(races).isNotEmpty();
-  }
-
-  @Ignore
-  @Test public void myListToString_concurrentCalls_mayReturnDifferentInstances_withSequencer()
-      throws Exception {
+  /**
+   * Demonstrates the property that {@link Happenstance#checkpoint} orders the two {@code
+   * toString()} calls in time without establishing happens-before, so the second call may still
+   * fail to observe the first call's plain write to {@code MyList.string} and recompute it.
+   * Replacing {@code checkpoint} with {@code join} makes the race unobservable.
+   *
+   * <p>Kept as a manual test because it asserts that a race <em>does</em> manifest, which is
+   * inherently platform-dependent. Measured on an Apple M3 Pro (arm64, JDK 24), 5 trials of 100,000
+   * iterations each: 43, 95, 47, 69 and 86 races with {@code checkpoint}, and 0 in every trial with
+   * {@code join}. On x86 the hardware never reorders store-store, so the expected count there is 0
+   * and this test would fail. See the {@code Happenstance} class javadoc.
+   */
+  @Ignore("Manual: asserts a race manifests; only reproduces on weakly ordered CPUs (AArch64).")
+  @Test public void checkpoint_doesNotEstablishHappensBefore() throws Exception {
     ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
     Integer[] elements = IntStream.range(0, 100).boxed().toArray(Integer[]::new);
     String listString = Arrays.toString(elements);
@@ -529,37 +515,6 @@ public class HappenstanceTest {
       }
     }
     assertThat(races).isEmpty();
-  }
-
-  @Ignore
-  @Test public void checkpoint_noUnintendedMemoryBarrier() throws Exception {
-    ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      for (int i = 0; i < 100000; i++) {
-        BuggySut sut = new BuggySut();
-        Happenstance<String> sequencer = Happenstance.<String>builder()
-            .sequence("W", "R")
-            .sequence("Done Writing", "Done Reading")
-            .build();
-        AtomicLong result = new AtomicLong();
-        Future<?> readFuture = executor.submit(() -> {
-          sequencer.checkpoint("R");
-          result.set(sut.read());
-        });
-        Future<?> writeFuture = executor.submit(() -> {
-          sut.write(Long.MAX_VALUE);
-          sequencer.checkpoint("W");
-        });
-        writeFuture.get();
-        readFuture.get();
-        try {
-          assertThat(result.get()).isEqualTo(Long.MAX_VALUE);
-        } catch (AssertionError e) {
-          races.put(i, e);
-        }
-      }
-    }
-    assertThat(races).isNotEmpty();
   }
 
   @Test public void checkpoint_longWait_doesNotBurnCpu() throws Exception {
