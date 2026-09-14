@@ -1054,6 +1054,26 @@ abstract class AbstractStringFormat {
   /**
    * Returns the string formatted with placeholders filled using the provided 1 placeholder args.
    *
+   * <p>Without this overload, {@code format('0')} would widen the {@code char} to {@code long} and
+   * print {@code 48} instead of {@code 0}.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 11.1
+   */
+  public final String format(char arg) {
+    checkFormatArgs(1);
+    return fragments[0] + arg + fragments[1];
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 1 placeholder args.
+   *
    * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
    * a class constant because ErrorProne will check at compile-time if the format arguments are
    * passed in the wrong order.

@@ -1670,6 +1670,24 @@ public class StringFormatTest {
   }
 
   @Test
+  public void format_oneCharPlaceholder() {
+    assertThat(new StringFormat("a = {a}").format('0')).isEqualTo("a = 0");
+  }
+
+  @Test
+  public void format_nullCharacterPlaceholder() {
+    Character a = null;
+    assertThat(new StringFormat("a = {a}").format(a)).isEqualTo("a = null");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_oneCharArg_incorrectNumberOfPlaceholders() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format('0'));
+  }
+
+  @Test
   public void format_oneBoolPlaceholder() {
     assertThat(new StringFormat("a = {a}").format(true)).isEqualTo("a = true");
   }
