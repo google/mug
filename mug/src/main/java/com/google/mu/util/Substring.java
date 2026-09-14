@@ -753,7 +753,7 @@ public final class Substring {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input, int fromIndex) {
-        if (fromIndex > input.length()) return Stream.empty();
+        checkFromIndex(fromIndex, input);
         Matcher matcher = regexPattern.matcher(input);
         if (!matcher.find(fromIndex)) return Stream.empty();
         int groups = matcher.groupCount();
@@ -773,6 +773,9 @@ public final class Substring {
               int end = matcher.end(g);
               if (start >= next) {
                 next = end;
+                // Advance past this group before returning. `next` alone can't do it because a
+                // zero-width group leaves `next` unchanged, which would re-emit it forever.
+                g++;
                 return Match.backtrackable(1, input, start, end - start);
               }
             }

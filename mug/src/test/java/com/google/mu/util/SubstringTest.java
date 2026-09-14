@@ -4268,6 +4268,39 @@ public class SubstringTest {
         .containsExactly("a", "b");
   }
 
+  @Test public void testRegexTopLevelGroups_zeroWidthGroupMatchedOnce() {
+    assertThat(Substring.topLevelGroups(Pattern.compile("(a*)(b)")).from("b").limit(5))
+        .containsExactly("", "b")
+        .inOrder();
+  }
+
+  @Test public void testRegexTopLevelGroups_onlyZeroWidthGroup_matchedOnce() {
+    assertThat(Substring.topLevelGroups(Pattern.compile("(a*)")).from("b").limit(5))
+        .containsExactly("");
+  }
+
+  @Test public void testRegexTopLevelGroups_zeroWidthGroupInMiddle_matchedOnce() {
+    assertThat(Substring.topLevelGroups(Pattern.compile("(a)(x*)(b)")).from("ab").limit(5))
+        .containsExactly("a", "", "b")
+        .inOrder();
+  }
+
+  @Test public void testRegexTopLevelGroups_matchWithFromIndexEqualToLength() {
+    assertThat(Substring.topLevelGroups(Pattern.compile("(f+)")).match("fff", 3)).isEmpty();
+  }
+
+  @Test public void testRegexTopLevelGroups_matchWithTooLargeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.topLevelGroups(Pattern.compile("(f+)")).match("fff", 4));
+  }
+
+  @Test public void testRegexTopLevelGroups_matchWithNegativeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.topLevelGroups(Pattern.compile("(f+)")).match("fff", -1));
+  }
+
   @Test public void match_contentEquals_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.contentEquals("barb")).isFalse();
