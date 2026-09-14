@@ -164,9 +164,7 @@ final class RegexParsers {
       ModifierFlags::new);
 
   private static final Parser<Quantifier> QUANTIFIER = quantifier();
-
   private static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
-
   static final Parser<RegexPattern> TOP_LEVEL =
       anyOf(string("(?").then(MODIFIER_FLAGS).flatMap(flags -> flags.until(')')), PARSER);
 

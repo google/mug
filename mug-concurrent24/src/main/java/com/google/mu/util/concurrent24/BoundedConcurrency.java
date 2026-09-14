@@ -228,6 +228,11 @@ public final class BoundedConcurrency {
       }
 
       void finish(Downstream<? super R> downstream) {
+        if (downstream.isRejecting()) {
+          // Downstream has short-circuited. The pending work was already cancelled and joined by
+          // stop(), and the exceptions it may have queued are artifacts of that cancellation.
+          return;
+        }
         int inFlight = maxConcurrency - semaphore.drainPermits();
         if (!flushOrStop(downstream)) {  // Flush after every happens-before point
           return;
