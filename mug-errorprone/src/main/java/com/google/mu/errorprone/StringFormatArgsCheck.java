@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.DoubleFunction;
@@ -130,6 +131,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final TypeName NUMBER_TYPE = TypeName.of(Number.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
+  private static final TypeName UUID_TYPE = TypeName.of(UUID.class);
 
   @Override public void checkMemberReference(MemberReferenceTree tree, VisitorState state)
       throws ErrorReport {
@@ -336,6 +338,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           } else if (OPTIONAL_TYPE.isSameType(argType, state)
               || COLLECTION_TYPE.isSupertypeOf(argType, state)
               || NUMBER_TYPE.isSupertypeOf(argType, state)
+              || UUID_TYPE.isSameType(argType, state)
               || argType.hasTag(TypeTag.ARRAY)
               || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
                   String.valueOf(ASTHelpers.enclosingPackage(argType.tsym)))) {

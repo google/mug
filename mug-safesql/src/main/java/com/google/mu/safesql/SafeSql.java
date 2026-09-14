@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1736,7 +1737,8 @@ public final class SafeSql {
                   }
                   return;
                 }
-                if (value instanceof Number || value.getClass().isArray()
+                if (value instanceof Number || value instanceof UUID
+                    || value.getClass().isArray()
                     || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
                         value.getClass().getPackageName())) {
                   String rhs = validateOptionalOperatorRhs(conditional);

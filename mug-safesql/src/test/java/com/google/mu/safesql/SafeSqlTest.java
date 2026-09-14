@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -251,6 +252,22 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT {id} AS id, UPPER('{id}') AS title, name FROM tbl", "myId", "myId"));
     assertThat(sql.debugString())
         .isEqualTo("SELECT ? /* myId */ AS id, UPPER(? /* myId */) AS title, name FROM tbl");
+  }
+
+  @Test
+  public void guardOperator_withUuidValue_present() {
+    UUID id = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    SafeSql sql = SafeSql.of("SELECT * FROM tbl WHERE 1=1 {id? -> AND id = id?}", id);
+    assertThat(sql.toString()).isEqualTo("SELECT * FROM tbl WHERE 1=1 AND id = ?");
+    assertThat(sql.debugString())
+        .isEqualTo("SELECT * FROM tbl WHERE 1=1 AND id = ? /* " + id + " */");
+  }
+
+  @Test
+  public void guardOperator_withUuidValue_absent() {
+    UUID id = null;
+    SafeSql sql = SafeSql.of("SELECT * FROM tbl WHERE 1=1 {id? -> AND id = id?}", id);
+    assertThat(sql.toString()).isEqualTo("SELECT * FROM tbl WHERE 1=1 ");
   }
 
   @Test

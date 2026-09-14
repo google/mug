@@ -7,3 +7,10 @@ CREATE TABLE IF NOT EXISTS ITEMS
     `item_uuid`    varchar(255),
     PRIMARY KEY (`id`)
 );
+
+CREATE TABLE IF NOT EXISTS EVENTS
+(
+    `id`       uuid               NOT NULL,
+    `name`     varchar(100)       NOT NULL,
+    PRIMARY KEY (`id`)
+);

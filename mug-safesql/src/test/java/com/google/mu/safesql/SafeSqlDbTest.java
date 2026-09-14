@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,6 +49,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @After public void cleanDb() throws Exception {
     SafeSql.of("TRUNCATE TABLE ITEMS").update(connection());
+    SafeSql.of("TRUNCATE TABLE EVENTS").update(connection());
   }
 
   @Override protected DataSource getDataSource() {
@@ -69,6 +71,46 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @Override protected DatabaseOperation getTearDownOperation() {
       return DatabaseOperation.TRUNCATE_TABLE;
+  }
+
+  @Test public void uuidRoundtrip() throws Exception {
+    UUID id = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    assertThat(
+            SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", id, "launch")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select name from EVENTS where id = {id}", id)
+                .query(connection(), String.class))
+        .containsExactly("launch");
+    assertThat(queryColumn(SafeSql.of("select id from EVENTS"), "id")).containsExactly(id);
+  }
+
+  @Test public void uuidGuardPlaceholder_present() throws Exception {
+    UUID launchId = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    UUID shipId = UUID.fromString("a2b3c4d5-6e7f-4081-9a2b-3c4d5e6f7081");
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", launchId, "launch")
+        .update(connection());
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", shipId, "ship")
+        .update(connection());
+    assertThat(
+            SafeSql.of("select name from EVENTS where 1 = 1 {id? -> AND id = id?}", launchId)
+                .query(connection(), String.class))
+        .containsExactly("launch");
+  }
+
+  @Test public void uuidGuardPlaceholder_absent() throws Exception {
+    UUID launchId = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    UUID shipId = UUID.fromString("a2b3c4d5-6e7f-4081-9a2b-3c4d5e6f7081");
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", launchId, "launch")
+        .update(connection());
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", shipId, "ship")
+        .update(connection());
+    UUID id = null;
+    assertThat(
+            SafeSql.of("select name from EVENTS where 1 = 1 {id? -> AND id = id?}", id)
+                .query(connection(), String.class))
+        .containsExactly("launch", "ship");
   }
 
   @Test public void roundtrip() throws Exception {

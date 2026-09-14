@@ -1,8 +1,13 @@
 package com.google.mu.testing.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.testing.NullPointerTester;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,48 +18,41 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.testing.NullPointerTester;
-
 @RunWith(JUnit4.class)
 public class HappenstanceTest {
 
-  @Test
-  public void checkpoint_undefinedPoint_throwsIllegalArgumentException() {
+  @Test public void checkpoint_undefinedPoint_throwsIllegalArgumentException() {
     Happenstance<String> happens = Happenstance.<String>builder().build();
     assertThrows(IllegalArgumentException.class, () -> happens.checkpoint("undefined"));
   }
 
-  @Test
-  public void join_undefinedPoint_throwsIllegalArgumentException() {
+  @Test public void join_undefinedPoint_throwsIllegalArgumentException() {
     Happenstance<String> happens = Happenstance.<String>builder().build();
     assertThrows(IllegalArgumentException.class, () -> happens.join("undefined"));
   }
 
-  @Test
-  public void inOrder_singlePoint() {
+  @Test public void inOrder_singlePoint() {
     Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.checkpoint("A");
   }
 
-  @Test
-  public void inOrder_oneCall() {
-    Happenstance<String> happens =
-        Happenstance.<String>builder().sequence("A", "B", "C").build();
+  @Test public void inOrder_oneCall() {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A", "B", "C").build();
     happens.checkpoint("A");
     happens.checkpoint("B");
     happens.checkpoint("C");
   }
 
-  @Test
-  public void inOrder_multipleCalls() {
+  @Test public void inOrder_multipleCalls() {
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A", "B").sequence("B", "C").build();
     happens.checkpoint("A");
@@ -62,8 +60,7 @@ public class HappenstanceTest {
     happens.checkpoint("C");
   }
 
-  @Test
-  public void inOrder_redundantEdge() {
+  @Test public void inOrder_redundantEdge() {
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A", "B", "C").sequence("A", "B").build();
     happens.checkpoint("A");
@@ -71,63 +68,51 @@ public class HappenstanceTest {
     happens.checkpoint("C");
   }
 
-  @Test
-  public void inOrder_diamond() {
+  @Test public void inOrder_diamond() {
     Happenstance<String> happens =
-        Happenstance.<String>builder()
-            .sequence("A", "B1", "C")
-            .sequence("A", "B2", "C")
-            .build();
+        Happenstance.<String>builder().sequence("A", "B1", "C").sequence("A", "B2", "C").build();
     happens.checkpoint("A");
     happens.checkpoint("B1");
     happens.checkpoint("B2");
     happens.checkpoint("C");
   }
 
-  @Test
-  public void inOrder_cycle_throwsIllegalArgumentException() {
+  @Test public void inOrder_cycle_throwsIllegalArgumentException() {
     Happenstance.Builder<String> builder = Happenstance.<String>builder().sequence("A", "B");
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class, () -> builder.sequence("B", "A").build());
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> builder.sequence("B", "A").build());
     assertThat(thrown).hasMessageThat().contains("A -> B -> A");
   }
 
-  @Test
-  public void inOrder_longCycle_throwsIllegalArgumentException() {
-    Happenstance.Builder<String> builder =
-        Happenstance.<String>builder().sequence("A", "B", "C");
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class, () -> builder.sequence("C", "A").build());
+  @Test public void inOrder_longCycle_throwsIllegalArgumentException() {
+    Happenstance.Builder<String> builder = Happenstance.<String>builder().sequence("A", "B", "C");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> builder.sequence("C", "A").build());
     assertThat(thrown).hasMessageThat().contains("A -> B -> C -> A");
   }
 
-  @Test
-  public void inOrder_selfCycle_isIgnored() {
+  @Test public void inOrder_selfCycle_isIgnored() {
     Happenstance<String> happens = Happenstance.<String>builder().sequence("A", "A").build();
     happens.checkpoint("A");
   }
 
-  @Test
-  public void inOrder_noParameters() {
+  @Test public void inOrder_noParameters() {
     assertThat(Happenstance.<String>builder().sequence().build()).isNotNull();
   }
 
-  @Test
-  public void checkpoint_alreadyCompleted_throwsIllegalStateException() {
+  @Test public void checkpoint_alreadyCompleted_throwsIllegalStateException() {
     Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.checkpoint("A");
     assertThrows(IllegalStateException.class, () -> happens.checkpoint("A"));
   }
 
-  @Test
-  public void join_alreadyCompleted_throwsIllegalStateException() {
+  @Test public void join_alreadyCompleted_throwsIllegalStateException() {
     Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.join("A");
     assertThrows(IllegalStateException.class, () -> happens.join("A"));
   }
 
-  @Test
-  public void builder_initialPoints_noOrder() throws Exception {
+  @Test public void builder_initialPoints_noOrder() throws Exception {
     Happenstance<String> happens = Happenstance.<String>builder("A", "B").build();
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> b = executor.submit(() -> happens.join("B"));
@@ -137,94 +122,74 @@ public class HappenstanceTest {
     }
   }
 
-  @Test
-  public void builder_points_then_sequence() throws Exception {
+  @Test public void builder_points_then_sequence() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder("A done", "B start")
-            .sequence("A done", "B start")
-            .build();
+        Happenstance.<String>builder("A done", "B start").sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.join("B start");
-                completed.add("B");
-              });
+      Future<?> futureB = executor.submit(() -> {
+        happens.join("B start");
+        completed.add("B");
+      });
       Thread.sleep(100);
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.join("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.join("A done");
+      });
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
     }
     assertThat(completed).containsExactly("A", "B").inOrder();
   }
 
-  @Test
-  public void checkpoint_singleThread_respectsOrder() throws Exception {
-    Happenstance<String> happens =
-        Happenstance.<String>builder().sequence("1", "2", "3").build();
+  @Test public void checkpoint_singleThread_respectsOrder() throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("1", "2", "3").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
-    Thread t =
-        new Thread(
-            () -> {
-              happens.checkpoint("1");
-              completed.add("1");
-              happens.checkpoint("2");
-              completed.add("2");
-              happens.checkpoint("3");
-              completed.add("3");
-            });
+    Thread t = new Thread(() -> {
+      happens.checkpoint("1");
+      completed.add("1");
+      happens.checkpoint("2");
+      completed.add("2");
+      happens.checkpoint("3");
+      completed.add("3");
+    });
     t.start();
     t.join();
     assertThat(completed).containsExactly("1", "2", "3").inOrder();
   }
 
-  @Test
-  public void join_singleThread_respectsOrder() throws Exception {
-    Happenstance<String> happens =
-        Happenstance.<String>builder().sequence("1", "2", "3").build();
+  @Test public void join_singleThread_respectsOrder() throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("1", "2", "3").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
-    Thread t =
-        new Thread(
-            () -> {
-              happens.join("1");
-              completed.add("1");
-              happens.join("2");
-              completed.add("2");
-              happens.join("3");
-              completed.add("3");
-            });
+    Thread t = new Thread(() -> {
+      happens.join("1");
+      completed.add("1");
+      happens.join("2");
+      completed.add("2");
+      happens.join("3");
+      completed.add("3");
+    });
     t.start();
     t.join();
     assertThat(completed).containsExactly("1", "2", "3").inOrder();
   }
 
-  @Test
-  public void checkpoint_twoThreads_enforcedOrder() throws Exception {
+  @Test public void checkpoint_twoThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.checkpoint("B start");
-                completed.add("B");
-              });
+      Future<?> futureB = executor.submit(() -> {
+        happens.checkpoint("B start");
+        completed.add("B");
+      });
       // Give B a chance to start and block
       Thread.sleep(100);
 
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.checkpoint("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.checkpoint("A done");
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
@@ -232,27 +197,22 @@ public class HappenstanceTest {
     assertThat(completed).containsExactly("A", "B").inOrder();
   }
 
-  @Test
-  public void join_twoThreads_enforcedOrder() throws Exception {
+  @Test public void join_twoThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.join("B start");
-                completed.add("B");
-              });
+      Future<?> futureB = executor.submit(() -> {
+        happens.join("B start");
+        completed.add("B");
+      });
       // Give B a chance to start and block
       Thread.sleep(100);
 
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.join("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.join("A done");
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
@@ -260,61 +220,48 @@ public class HappenstanceTest {
     assertThat(completed).containsExactly("A", "B").inOrder();
   }
 
-  @Test
-  public void builder_sequenceAddsNewPoint() throws Exception {
+  @Test public void builder_sequenceAddsNewPoint() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder("A done").sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.join("B start");
-                completed.add("B");
-              });
+      Future<?> futureB = executor.submit(() -> {
+        happens.join("B start");
+        completed.add("B");
+      });
       Thread.sleep(100);
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.join("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.join("A done");
+      });
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
     }
     assertThat(completed).containsExactly("A", "B").inOrder();
   }
 
-  @Test
-  public void checkpoint_threeThreads_enforcedOrder() throws Exception {
-    Happenstance<String> happens =
-        Happenstance.<String>builder()
-            .sequence("A done", "B start")
-            .sequence("B done", "C start")
-            .build();
+  @Test public void checkpoint_threeThreads_enforcedOrder() throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder()
+        .sequence("A done", "B start")
+        .sequence("B done", "C start")
+        .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(3)) {
-      Future<?> futureC =
-          executor.submit(
-              () -> {
-                happens.checkpoint("C start");
-                completed.add("C");
-              });
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.checkpoint("B start");
-                completed.add("B");
-                happens.checkpoint("B done");
-              });
+      Future<?> futureC = executor.submit(() -> {
+        happens.checkpoint("C start");
+        completed.add("C");
+      });
+      Future<?> futureB = executor.submit(() -> {
+        happens.checkpoint("B start");
+        completed.add("B");
+        happens.checkpoint("B done");
+      });
       Thread.sleep(100); // Give B & C chance to block
 
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.checkpoint("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.checkpoint("A done");
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
@@ -323,36 +270,28 @@ public class HappenstanceTest {
     assertThat(completed).containsExactly("A", "B", "C").inOrder();
   }
 
-  @Test
-  public void join_threeThreads_enforcedOrder() throws Exception {
-    Happenstance<String> happens =
-        Happenstance.<String>builder()
-            .sequence("A done", "B start")
-            .sequence("B done", "C start")
-            .build();
+  @Test public void join_threeThreads_enforcedOrder() throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder()
+        .sequence("A done", "B start")
+        .sequence("B done", "C start")
+        .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(3)) {
-      Future<?> futureC =
-          executor.submit(
-              () -> {
-                happens.join("C start");
-                completed.add("C");
-              });
-      Future<?> futureB =
-          executor.submit(
-              () -> {
-                happens.join("B start");
-                completed.add("B");
-                happens.join("B done");
-              });
+      Future<?> futureC = executor.submit(() -> {
+        happens.join("C start");
+        completed.add("C");
+      });
+      Future<?> futureB = executor.submit(() -> {
+        happens.join("B start");
+        completed.add("B");
+        happens.join("B done");
+      });
       Thread.sleep(100); // Give B & C chance to block
 
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                completed.add("A");
-                happens.join("A done");
-              });
+      Future<?> futureA = executor.submit(() -> {
+        completed.add("A");
+        happens.join("A done");
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
@@ -361,42 +300,30 @@ public class HappenstanceTest {
     assertThat(completed).containsExactly("A", "B", "C").inOrder();
   }
 
-  @Test
-  public void checkpoint_diamondGraph_enforcedOrder() throws Exception {
+  @Test public void checkpoint_diamondGraph_enforcedOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder()
-            .sequence("A", "B1", "C")
-            .sequence("A", "B2", "C")
-            .build();
+        Happenstance.<String>builder().sequence("A", "B1", "C").sequence("A", "B2", "C").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
-      Future<?> futureC =
-          executor.submit(
-              () -> {
-                happens.checkpoint("C");
-                completed.add("C");
-              });
-      Future<?> futureB1 =
-          executor.submit(
-              () -> {
-                happens.checkpoint("B1");
-                completed.add("B1");
-                return null;
-              });
-      Future<?> futureB2 =
-          executor.submit(
-              () -> {
-                happens.checkpoint("B2");
-                completed.add("B2");
-                return null;
-              });
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                happens.checkpoint("A");
-                completed.add("A");
-                return null;
-              });
+      Future<?> futureC = executor.submit(() -> {
+        happens.checkpoint("C");
+        completed.add("C");
+      });
+      Future<?> futureB1 = executor.submit(() -> {
+        happens.checkpoint("B1");
+        completed.add("B1");
+        return null;
+      });
+      Future<?> futureB2 = executor.submit(() -> {
+        happens.checkpoint("B2");
+        completed.add("B2");
+        return null;
+      });
+      Future<?> futureA = executor.submit(() -> {
+        happens.checkpoint("A");
+        completed.add("A");
+        return null;
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB1.get(5, TimeUnit.SECONDS);
@@ -410,47 +337,35 @@ public class HappenstanceTest {
     assertThat(completed).contains("C");
   }
 
-  @Test
-  public void join_diamondGraph_enforcedOrder() throws Exception {
+  @Test public void join_diamondGraph_enforcedOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder()
-            .sequence("A", "B1", "C")
-            .sequence("A", "B2", "C")
-            .build();
+        Happenstance.<String>builder().sequence("A", "B1", "C").sequence("A", "B2", "C").build();
     AtomicLong stateA = new AtomicLong();
     AtomicLong stateB1 = new AtomicLong();
     AtomicLong stateB2 = new AtomicLong();
     try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
-      Future<?> futureC =
-          executor.submit(
-              () -> {
-                happens.join("C");
-                assertThat(stateB1.get()).isEqualTo(1);
-                assertThat(stateB2.get()).isEqualTo(1);
-              });
-      Future<?> futureB1 =
-          executor.submit(
-              () -> {
-                stateB1.set(1);
-                happens.join("B1");
-                assertThat(stateA.get()).isEqualTo(1);
-                return null;
-              });
-      Future<?> futureB2 =
-          executor.submit(
-              () -> {
-                stateB2.set(1);
-                happens.join("B2");
-                assertThat(stateA.get()).isEqualTo(1);
-                return null;
-              });
-      Future<?> futureA =
-          executor.submit(
-              () -> {
-                stateA.set(1);
-                happens.join("A");
-                return null;
-              });
+      Future<?> futureC = executor.submit(() -> {
+        happens.join("C");
+        assertThat(stateB1.get()).isEqualTo(1);
+        assertThat(stateB2.get()).isEqualTo(1);
+      });
+      Future<?> futureB1 = executor.submit(() -> {
+        stateB1.set(1);
+        happens.join("B1");
+        assertThat(stateA.get()).isEqualTo(1);
+        return null;
+      });
+      Future<?> futureB2 = executor.submit(() -> {
+        stateB2.set(1);
+        happens.join("B2");
+        assertThat(stateA.get()).isEqualTo(1);
+        return null;
+      });
+      Future<?> futureA = executor.submit(() -> {
+        stateA.set(1);
+        happens.join("A");
+        return null;
+      });
 
       futureA.get(5, TimeUnit.SECONDS);
       futureB1.get(5, TimeUnit.SECONDS);
@@ -459,8 +374,7 @@ public class HappenstanceTest {
     }
   }
 
-  @Test
-  public void stressTest() throws Exception {
+  @Test public void stressTest() throws Exception {
     int numThreads = 10;
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A", "B", "C", "D", "E").build();
@@ -471,10 +385,9 @@ public class HappenstanceTest {
 
       for (String point : points) {
         futures.add(
-            executor.submit(
-                () -> {
-                  happens.checkpoint(point);
-                }));
+            executor.submit(() -> {
+              happens.checkpoint(point);
+            }));
       }
 
       for (Future<?> future : futures) {
@@ -483,8 +396,7 @@ public class HappenstanceTest {
     }
   }
 
-  @Test
-  public void join_stressTest() throws Exception {
+  @Test public void join_stressTest() throws Exception {
     int numThreads = 10;
     Happenstance<String> happens =
         Happenstance.<String>builder().sequence("A", "B", "C", "D", "E").build();
@@ -495,10 +407,9 @@ public class HappenstanceTest {
 
       for (String point : points) {
         futures.add(
-            executor.submit(
-                () -> {
-                  happens.join(point);
-                }));
+            executor.submit(() -> {
+              happens.join(point);
+            }));
       }
 
       for (Future<?> future : futures) {
@@ -508,8 +419,7 @@ public class HappenstanceTest {
   }
 
   @Ignore
-  @Test
-  public void myListToString_concurrentCalls_mayReturnDifferentInstances_noSequencer()
+  @Test public void myListToString_concurrentCalls_mayReturnDifferentInstances_noSequencer()
       throws Exception {
     ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
     Integer[] elements = IntStream.range(0, 100).boxed().toArray(Integer[]::new);
@@ -534,8 +444,7 @@ public class HappenstanceTest {
   }
 
   @Ignore
-  @Test
-  public void myListToString_concurrentCalls_mayReturnDifferentInstances_withSequencer()
+  @Test public void myListToString_concurrentCalls_mayReturnDifferentInstances_withSequencer()
       throws Exception {
     ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
     Integer[] elements = IntStream.range(0, 100).boxed().toArray(Integer[]::new);
@@ -543,28 +452,23 @@ public class HappenstanceTest {
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       for (int i = 0; i < 100000; i++) {
         MyList<Integer> list = MyList.of(elements);
-        Happenstance<String> sequencer =
-            Happenstance.<String>builder()
-                .sequence("a2", "b")
-                .sequence("b", "b2")
-                .sequence("a", "a2")
-                .build();
-        Future<String> f1 =
-            executor.submit(
-                () -> {
-                  sequencer.checkpoint("a");
-                  String s = list.toString();
-                  sequencer.checkpoint("a2");
-                  return s;
-                });
-        Future<String> f2 =
-            executor.submit(
-                () -> {
-                  sequencer.checkpoint("b");
-                  String s = list.toString();
-                  sequencer.checkpoint("b2");
-                  return s;
-                });
+        Happenstance<String> sequencer = Happenstance.<String>builder()
+            .sequence("a2", "b")
+            .sequence("b", "b2")
+            .sequence("a", "a2")
+            .build();
+        Future<String> f1 = executor.submit(() -> {
+          sequencer.checkpoint("a");
+          String s = list.toString();
+          sequencer.checkpoint("a2");
+          return s;
+        });
+        Future<String> f2 = executor.submit(() -> {
+          sequencer.checkpoint("b");
+          String s = list.toString();
+          sequencer.checkpoint("b2");
+          return s;
+        });
         String s1 = f1.get();
         String s2 = f2.get();
         assertThat(s1).isEqualTo(listString);
@@ -600,27 +504,21 @@ public class HappenstanceTest {
     }
   }
 
-  @Test
-  public void join_providesMemoryBarrier() throws Exception {
+  @Test public void join_providesMemoryBarrier() throws Exception {
     ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       for (int i = 0; i < 100000; i++) {
         BuggySut sut = new BuggySut();
-        Happenstance<String> sequencer =
-            Happenstance.<String>builder().sequence("W", "R").build();
+        Happenstance<String> sequencer = Happenstance.<String>builder().sequence("W", "R").build();
         AtomicLong result = new AtomicLong();
-        Future<?> readFuture =
-            executor.submit(
-                () -> {
-                  sequencer.join("R");
-                  result.set(sut.read());
-                });
-        Future<?> writeFuture =
-            executor.submit(
-                () -> {
-                  sut.write(Long.MAX_VALUE);
-                  sequencer.join("W");
-                });
+        Future<?> readFuture = executor.submit(() -> {
+          sequencer.join("R");
+          result.set(sut.read());
+        });
+        Future<?> writeFuture = executor.submit(() -> {
+          sut.write(Long.MAX_VALUE);
+          sequencer.join("W");
+        });
         writeFuture.get();
         readFuture.get();
         try {
@@ -634,30 +532,24 @@ public class HappenstanceTest {
   }
 
   @Ignore
-  @Test
-  public void checkpoint_noUnintendedMemoryBarrier() throws Exception {
+  @Test public void checkpoint_noUnintendedMemoryBarrier() throws Exception {
     ConcurrentMap<Integer, Throwable> races = new ConcurrentHashMap<>();
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       for (int i = 0; i < 100000; i++) {
         BuggySut sut = new BuggySut();
-        Happenstance<String> sequencer =
-            Happenstance.<String>builder()
-                .sequence("W", "R")
-                .sequence("Done Writing", "Done Reading")
-                .build();
+        Happenstance<String> sequencer = Happenstance.<String>builder()
+            .sequence("W", "R")
+            .sequence("Done Writing", "Done Reading")
+            .build();
         AtomicLong result = new AtomicLong();
-        Future<?> readFuture =
-            executor.submit(
-                () -> {
-                  sequencer.checkpoint("R");
-                  result.set(sut.read());
-                });
-        Future<?> writeFuture =
-            executor.submit(
-                () -> {
-                  sut.write(Long.MAX_VALUE);
-                  sequencer.checkpoint("W");
-                });
+        Future<?> readFuture = executor.submit(() -> {
+          sequencer.checkpoint("R");
+          result.set(sut.read());
+        });
+        Future<?> writeFuture = executor.submit(() -> {
+          sut.write(Long.MAX_VALUE);
+          sequencer.checkpoint("W");
+        });
         writeFuture.get();
         readFuture.get();
         try {
@@ -670,9 +562,137 @@ public class HappenstanceTest {
     assertThat(races).isNotEmpty();
   }
 
+  @Test public void checkpoint_longWait_doesNotBurnCpu() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder().sequence("slow", "waiter").build();
+    ThreadMXBean threads = ManagementFactory.getThreadMXBean();
+    AtomicLong cpuNanos = new AtomicLong();
+    Thread waiter = new Thread(() -> {
+      long before = threads.getCurrentThreadCpuTime();
+      happens.checkpoint("waiter");
+      cpuNanos.set(threads.getCurrentThreadCpuTime() - before);
+    });
+    waiter.start();
+    Thread.sleep(500);
+    happens.checkpoint("slow");
+    waiter.join();
+    assertThat(cpuNanos.get()).isLessThan(MILLISECONDS.toNanos(100));
+  }
+
+  @Test public void checkpoint_interruptedWhileWaiting_throwsAssertionError() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder().sequence("never", "waiter").build();
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    Thread waiter = startDaemon(() -> {
+      try {
+        happens.checkpoint("waiter");
+      } catch (Throwable e) {
+        thrown.set(e);
+      }
+    });
+    waiter.interrupt();
+    waiter.join(SECONDS.toMillis(10));
+    assertThat(thrown.get()).isInstanceOf(AssertionError.class);
+    assertThat(thrown.get()).hasMessageThat().contains("waiter");
+  }
+
+  @Test public void join_interruptedWhileWaiting_throwsAssertionError() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder().sequence("never", "waiter").build();
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    Thread waiter = startDaemon(() -> {
+      try {
+        happens.join("waiter");
+      } catch (Throwable e) {
+        thrown.set(e);
+      }
+    });
+    waiter.interrupt();
+    waiter.join(SECONDS.toMillis(10));
+    assertThat(thrown.get()).isInstanceOf(AssertionError.class);
+    assertThat(thrown.get()).hasMessageThat().contains("waiter");
+  }
+
+  @Test public void checkpoint_interruptedWhileWaiting_preservesInterruptStatus() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder().sequence("never", "waiter").build();
+    AtomicBoolean stillInterrupted = new AtomicBoolean();
+    Thread waiter = startDaemon(() -> {
+      try {
+        happens.checkpoint("waiter");
+      } catch (AssertionError expected) {
+        stillInterrupted.set(Thread.currentThread().isInterrupted());
+      }
+    });
+    waiter.interrupt();
+    waiter.join(SECONDS.toMillis(10));
+    assertThat(stillInterrupted.get()).isTrue();
+  }
+
+  @Test public void checkpoint_interruptedWhileWaiting_unblocksWaiter() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder().sequence("never", "waiter").build();
+    Thread waiter = startDaemon(() -> {
+      try {
+        happens.checkpoint("waiter");
+      } catch (AssertionError expected) {
+      }
+    });
+    waiter.interrupt();
+    waiter.join(SECONDS.toMillis(10));
+    assertThat(waiter.isAlive()).isFalse();
+  }
+
+  @Test public void checkpoint_alreadyInterrupted_predecessorSatisfied_checksInNormally()
+      throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("a", "b").build();
+    happens.checkpoint("a");
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    Thread thread = startDaemon(() -> {
+      Thread.currentThread().interrupt();
+      try {
+        happens.checkpoint("b");
+      } catch (Throwable e) {
+        thrown.set(e);
+      }
+    });
+    thread.join(SECONDS.toMillis(10));
+    assertThat(thrown.get()).isNull();
+  }
+
+  @Test public void builder_varargsWithNullPoint_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> Happenstance.builder("A", null));
+  }
+
+  @Test public void builder_iterableWithNullPoint_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> Happenstance.builder(Arrays.asList("A", null)));
+  }
+
+  @Test public void sequence_nullPoint_throwsNullPointerException() {
+    Happenstance.Builder<String> builder = Happenstance.builder();
+    assertThrows(NullPointerException.class, () -> builder.sequence("A", null, "B"));
+  }
+
+  @Test public void checkpoint_nullPoint_throwsNullPointerException() {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A", "B").build();
+    assertThrows(NullPointerException.class, () -> happens.checkpoint(null));
+  }
+
+  @Test public void join_nullPoint_throwsNullPointerException() {
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A", "B").build();
+    assertThrows(NullPointerException.class, () -> happens.join(null));
+  }
+
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(Happenstance.class);
     new NullPointerTester().testAllPublicInstanceMethods(Happenstance.builder());
+  }
+
+  private static Thread startDaemon(Runnable body) {
+    Thread thread = new Thread(body);
+    thread.setDaemon(true);
+    thread.start();
+    return thread;
   }
 
   private static class BuggySut {
