@@ -143,9 +143,6 @@ final class RegexParsers {
   /** {@code (?x)a b} is {@code ab}, but {@code (?x)a\u00A0b} keeps the NBSP: only these six. */
   private static final CharPredicate FREE_SPACE = CharPredicate.anyOf(" \t\n\u000B\f\r");
 
-  /** A {@code #} comment ends at any of the five terminators the JDK recognizes. */
-  private static final CharPredicate COMMENT_CHAR = noneOf("\n\r\u0085\u2028\u2029");
-
   /** {@code a #b} is the literal {@code a #b} normally and just {@code a} under {@code (?x)}. */
   private static final CharPredicate FREE_SPACING_CHAR = is('#').or(FREE_SPACE);
 
@@ -154,7 +151,8 @@ final class RegexParsers {
       noneOf(".[]{}()*+?^$|\\").and(FREE_SPACING_CHAR.not());
 
   private static final Parser<?> FREE_SPACES = anyOf(
-      consecutive(FREE_SPACE, "whitespace"), one('#').then(zeroOrMore(COMMENT_CHAR, "comment")));
+      consecutive(FREE_SPACE, "whitespace"),
+      one('#').then(zeroOrMore(noneOf("\n\r\u0085\u2028\u2029"), "comment")));
 
   private static final Parser<ModifierFlag> MODIFIER =
       anyOf(ModifierFlag.values()).as("modifier flag");
