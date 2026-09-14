@@ -39,7 +39,7 @@ When query components like table names or `ORDER BY` clauses are built from user
 * **TalkTalk (2015) – 156,959 customers:** SQL injection against a forgotten legacy web page. The ICO issued what was then a record £400,000 fine; the total cost to the business ran into tens of millions of pounds.
 * **MOVEit Transfer (2023) – [CVE-2023-34362](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a):** A SQL injection zero-day in a widely deployed managed file transfer product, exploited at scale by the Cl0p group against thousands of downstream organizations.
 
-These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistake, they always do.
+These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistakes, they always do.
 
 #### How Does SafeSql Prevent SQLi?
 
@@ -216,7 +216,36 @@ Manual escaping is repetitive and easy to forget, leading to unpredictable resul
 SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", userName);
 ```
 SafeSql escapes any special characters in parameters used within `LIKE` expressions automatically.
-You don’t have to think about escaping rules or risk mistakes—user input is always treated literally.
+You don’t have to think about escaping rules or risk mistakes.
+
+#### When escaping applies
+
+Escaping is triggered by the wildcards **you write in the template**, not by the `LIKE` keyword.
+Writing `'%{name}%'` (or `'%{name}'`, or `'{name}%'`) says “the value is a literal substring”,
+so SafeSql escapes `%`, `_` and `^` in the value and appends `ESCAPE '^'`:
+
+```java {.good}
+SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", "50%_off");
+// SELECT * FROM users WHERE name LIKE ? ESCAPE '^'   parameter: %50^%^_off%
+// matches names containing the literal text "50%_off"
+```
+
+A placeholder written **alone**, with no wildcards around it, is not a literal fragment — the
+value *is* the pattern. SafeSql passes it through unchanged, so wildcards in the value stay live:
+
+```java {.good}
+SafeSql.of("SELECT * FROM users WHERE name LIKE '{pattern}'", "ann%");
+// SELECT * FROM users WHERE name LIKE ?              parameter: ann%
+// matches names starting with "ann"
+```
+
+This is the escape hatch for applications that build their own `LIKE` patterns. Both forms go
+through `PreparedStatement`, so both are equally injection-safe; the only difference is whether
+`%` and `_` in the value act as wildcards or as ordinary characters.
+
+> [!IMPORTANT]
+> If the pattern comes from an end user, use the `'%{name}%'` form. The bare `'{pattern}'` form
+> lets the caller control matching, which can be abused for expensive leading-wildcard scans.
 
 ---
 
@@ -259,7 +288,7 @@ preparedStatement.setString(2, userId);
 new NamedParameterJdbcTemplate(dataSource)
     .queryForList(
         "SELECT * FROM users WHERE id = :id AND name = :name",
-        Map.of("nmae", userName, "id", userId));  // type!
+        Map.of("nmae", userName, "id", userId));  // typo!
 ```
 This kind of error won’t always be caught during development, and can be difficult to debug.
 

@@ -208,6 +208,24 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEmpty();
   }
 
+  @Test public void likeExpressionWithoutWildcardInSql_callerWildcardStaysLive()
+      throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    // No wildcard in the template: the caller's '%' is honored rather than escaped.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}' and id = {id}",
+                "fo%", testId()), "title"))
+        .containsExactly("foo");
+    // Contrast: with a wildcard in the template the same value is matched literally.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}",
+                "fo%", testId()), "title"))
+        .isEmpty();
+  }
+
   @Test public void likeExpressionWithSuffixWildcardInSql() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")

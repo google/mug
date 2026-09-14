@@ -92,6 +92,13 @@ to ensure safety against SQL injection and maintain readability.
     ` ESCAPE '^'` to the generated SQL. Do not manually append the `ESCAPE`
     clause.
 
+    Escaping is triggered by the wildcards in the *template*, not by `LIKE`
+    itself. A placeholder written alone (`LIKE '{placeholder}'`) is left
+    unescaped and no `ESCAPE` clause is added, because the parameter value is
+    then the pattern rather than a literal fragment of it. Use that form only
+    when the application deliberately supplies its own wildcards; prefer
+    `'%{placeholder}%'` for user-supplied search terms.
+
     **Example**:
 
     ```java

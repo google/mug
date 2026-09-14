@@ -732,6 +732,22 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void likeParameterWithoutWildcardInSql_notEscaped() {
+    // No wildcard next to the placeholder, so the value *is* the pattern and is
+    // passed through verbatim. Documented as an escape hatch in README section 5.
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}'", "ann%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* ann% */");
+  }
+
+  @Test
+  public void likeParameterWithoutWildcardInSql_underscoreAndCaretNotEscaped() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}'", "a_b^c");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* a_b^c */");
+  }
+
+  @Test
   public void literalSingleQuoteValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "'");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
@@ -1213,6 +1229,42 @@ public class SafeSqlTest {
         () ->  SafeSql.of("select * from tbl where id in (-- my_{ids} \n)", /* ids */ asList("foo", "bar")));
     assertThat(thrown).hasMessageThat().contains("{ids}");
     assertThat(thrown).hasMessageThat().contains("enclosed by --");
+  }
+
+  @Test
+  public void scalarParameter_insideQuotedString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select 'abc{id}def' from tbl", /* id */ 1));
+    assertThat(thrown).hasMessageThat().contains("{id}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by '");
+  }
+
+  @Test
+  public void scalarParameter_insideBlockComment_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl /* my_{id} */", /* id */ 1));
+    assertThat(thrown).hasMessageThat().contains("{id}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by /*");
+  }
+
+  @Test
+  public void scalarParameter_insideLineComment_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl -- my_{id} \n", /* id */ 1));
+    assertThat(thrown).hasMessageThat().contains("{id}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by --");
+  }
+
+  @Test
+  public void scalarParameter_afterIlike_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where title ilike '%{title}%'", /* title */ "foo"));
+    assertThat(thrown).hasMessageThat().contains("{title}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by '");
   }
 
   @Test
