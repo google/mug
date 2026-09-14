@@ -220,9 +220,11 @@ You don’t have to think about escaping rules or risk mistakes.
 
 #### When escaping applies
 
-Escaping is triggered by the wildcards **you write in the template**, not by the `LIKE` keyword.
+Escaping is triggered by the wildcards **you write in the template**, not by the operator.
 Writing `'%{name}%'` (or `'%{name}'`, or `'{name}%'`) says “the value is a literal substring”,
-so SafeSql escapes `%`, `_` and `^` in the value and appends `ESCAPE '^'`:
+so SafeSql escapes `%`, `_` and `^` in the value and appends `ESCAPE '^'`.
+Both `LIKE` and `ILIKE` (the case-insensitive variant in PostgreSQL, H2 and CockroachDB) are
+recognized:
 
 ```java {.good}
 SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", "50%_off");
@@ -246,6 +248,27 @@ through `PreparedStatement`, so both are equally injection-safe; the only differ
 > [!IMPORTANT]
 > If the pattern comes from an end user, use the `'%{name}%'` form. The bare `'{pattern}'` form
 > lets the caller control matching, which can be abused for expensive leading-wildcard scans.
+
+#### SQL Server bracket wildcards are not escaped
+
+SafeSql escapes `%`, `_` and `^` — the wildcards defined by standard SQL. It does **not** escape
+`[`, which SQL Server (and Sybase) additionally treat as the start of a character class such as
+`[a-z]` or `[^abc]`. On those databases a search term containing `[` is interpreted as a pattern
+rather than as literal text.
+
+There is no injection risk — the value is still a `PreparedStatement` parameter — but the match
+may be wrong. If you target SQL Server and your search terms can contain `[`, escape the value
+yourself and pass the finished pattern through the bare-placeholder form:
+
+```java {.good}
+// build the whole pattern outside the template, including the wildcards
+String pattern = "%" + term.replace("^", "^^").replace("[", "^[")
+    .replace("%", "^%").replace("_", "^_") + "%";
+SafeSql.of("SELECT * FROM users WHERE name LIKE '{pattern}' ESCAPE '^'", pattern);
+```
+
+Because the placeholder stands alone, SafeSql leaves the value untouched and adds no `ESCAPE`
+clause of its own, so you control both the pattern and the escape character.
 
 ---
 

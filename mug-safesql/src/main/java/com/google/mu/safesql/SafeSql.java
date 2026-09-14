@@ -1672,8 +1672,13 @@ public final class SafeSql {
             private Optional<String> suffixIfLikedStartingWith(
                 String prefix, Substring.Match placeholder) {
               String left = "'" + prefix;
+              // ILIKE is the case-insensitive variant in PostgreSQL, H2 and CockroachDB.
+              String operator =
+                  context.lookbehind("LIKE " + left, placeholder) ? "LIKE"
+                      : context.lookbehind("ILIKE " + left, placeholder) ? "ILIKE"
+                      : null;
               return Optionals.optionally(
-                  context.lookbehind("LIKE " + left, placeholder),
+                  operator != null,
                   () -> {
                     context.rejectEscapeAfter(placeholder);
                     return biStream(allowedAffixes())
@@ -1683,7 +1688,7 @@ public final class SafeSql {
                         .peek((fragment, suffix) -> builder.appendSql(fragment))
                         .map((fragment, suffix) -> suffix)
                         .orElseThrow(() -> new IllegalArgumentException(
-                            "unsupported wildcard in LIKE " + left + placeholder));
+                            "unsupported wildcard in " + operator + " " + left + placeholder));
                   });
             }
 

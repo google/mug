@@ -208,6 +208,28 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEmpty();
   }
 
+  @Test public void ilikeExpressionIsCaseInsensitiveAndEscapesWildcards() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "FooBar")
+                .update(connection()))
+        .isEqualTo(1);
+    // ILIKE matches case-insensitively...
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title ilike '%{...}%' and id = {id}",
+                "oobar", testId()), "title"))
+        .containsExactly("FooBar");
+    // ...unlike LIKE, which is case-sensitive.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}",
+                "oobar", testId()), "title"))
+        .isEmpty();
+    // The '%' in the value is escaped, so it does not act as a wildcard.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title ilike '%{...}%' and id = {id}",
+                "oo%Ba", testId()), "title"))
+        .isEmpty();
+  }
+
   @Test public void likeExpressionWithoutWildcardInSql_callerWildcardStaysLive()
       throws Exception {
     assertThat(

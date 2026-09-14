@@ -732,6 +732,53 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void unsupportedIlikeWildcard_messageNamesIlike() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name ilike '_{foo}unsupported'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("wildcard in ILIKE '_{foo}");
+  }
+
+  @Test
+  public void singleIlikeParameterWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name ilike '%{s}%'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name ilike ? ESCAPE '^'");
+    assertThat(sql.debugString())
+        .isEqualTo("select * from tbl where name ilike ? /* %foo% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void singleIlikeParameterWithWildcardAsSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name ILIKE '{s}%'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name ILIKE ? ESCAPE '^'");
+    assertThat(sql.debugString())
+        .isEqualTo("select * from tbl where name ILIKE ? /* foo% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void literalPercentValueWithIlikeWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name ilike '%{s}%'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name ilike ? ESCAPE '^'");
+    assertThat(sql.debugString())
+        .isEqualTo("select * from tbl where name ilike ? /* %^%% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void ilikeWithEscapeNotSupported() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name ilike '{s}%' ESCAPE '\\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
+  public void ilikeParameterWithoutWildcardInSql_notEscaped() {
+    SafeSql sql = SafeSql.of("select * from tbl where name ilike '{s}'", "ann%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name ilike ?");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name ilike ? /* ann% */");
+  }
+
+  @Test
   public void likeParameterWithoutWildcardInSql_notEscaped() {
     // No wildcard next to the placeholder, so the value *is* the pattern and is
     // passed through verbatim. Documented as an escape hatch in README section 5.
@@ -1258,14 +1305,6 @@ public class SafeSqlTest {
     assertThat(thrown).hasMessageThat().contains("enclosed by --");
   }
 
-  @Test
-  public void scalarParameter_afterIlike_throws() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () ->  SafeSql.of("select * from tbl where title ilike '%{title}%'", /* title */ "foo"));
-    assertThat(thrown).hasMessageThat().contains("{title}");
-    assertThat(thrown).hasMessageThat().contains("enclosed by '");
-  }
 
   @Test
   public void inListOfParameters_emptyList() {
