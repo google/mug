@@ -685,6 +685,17 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("id");
   }
 
+  @Test public void query_withResultType_canonicalNameCollision_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), WithCanonicalNameCollision.class));
+    assertThat(thrown).hasMessageThat().contains("itemUuid");
+    assertThat(thrown).hasMessageThat().contains("item_uuid");
+    assertThat(thrown).hasMessageThat().contains("ITEM_UUID");
+    assertThat(thrown).hasMessageThat().contains("WithCanonicalNameCollision");
+  }
+
   @Test public void query_withResultType_emptyColumnName_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
@@ -1015,6 +1026,40 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(template.with("foo", testId())).containsExactly(new Item(testId(), "foo"));
   }
 
+  @Test public void query_withConstructor_camelCaseParameterName() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, item_uuid) VALUES({id}, {title}, {uuid})",
+                    testId(), /* title */ "bar", /* uuid */ "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), UuidItem.class))
+        .containsExactly(new UuidItem(testId(), "uuid"));
+  }
+
+  static class UuidItem {
+    private final int id;
+    private final String itemUuid;
+
+    UuidItem(int id, String itemUuid) {
+      this.id = id;
+      this.itemUuid = itemUuid;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", itemUuid=" + itemUuid;
+    }
+  }
+
   static class Item {
     private final int id;
     private final String title;
@@ -1073,6 +1118,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   static class WithDuplicateColumnNames {
     WithDuplicateColumnNames(@SqlName("id") int id, @SqlName("id") String id2) {}
+  }
+
+  static class WithCanonicalNameCollision {
+    WithCanonicalNameCollision(String itemUuid, @SqlName("item_uuid") String uuid) {}
   }
 
   static class WithEmptyColumnName {

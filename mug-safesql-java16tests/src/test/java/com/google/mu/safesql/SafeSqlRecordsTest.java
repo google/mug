@@ -67,6 +67,20 @@ public class SafeSqlRecordsTest extends DataSourceBasedDBTestCase {
         .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
   }
 
+  @Test public void query_withRecordResultType_camelCaseComponentName() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, item_uuid) VALUES({id}, {title}, {uuid})",
+                    testId(), /* title */ "bar", /* uuid */ "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), UuidItem.class))
+        .containsExactly(new UuidItem(testId(), "uuid"));
+  }
+
+  record UuidItem(int id, String itemUuid) {}
+
   record Item(int id, String title, Instant time) {}
 
   private int testId() {

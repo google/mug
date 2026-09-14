@@ -26,7 +26,6 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 import java.lang.reflect.Constructor;
@@ -36,8 +35,10 @@ import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -139,24 +140,39 @@ abstract class ResultMapper<T> {
   private static final class Creator<T> {
     private final Constructor<T> constructor;
     private final List<Class<?>> paramTypes;
-    private final List<String> sqlColumnNames;
+    private final List<String> canonicalColumnNames;
 
     Creator(Constructor<T> constructor) {
       this.constructor = constructor;
       this.paramTypes = unmodifiableList(asList(constructor.getParameterTypes()));
-      this.sqlColumnNames = stream(constructor.getParameters())
+      List<String> columnNames = stream(constructor.getParameters())
           .collect(groupingBy(param -> getNameForSql(param), counting()))
           .peek((name, cnt) ->
               checkArgument(cnt == 1, "Duplicate parameter name for sql: %s", name))
           .keys()
           .collect(toList());
+      // Canonicalize up front so that the names this constructor is selected by
+      // (getCanonicalColumnNames()) are the same names create() reads the columns by.
+      // Distinct parameter names can still collide once canonicalized, as in fooBar
+      // vs. foo_bar, which would otherwise silently bind both to the same column.
+      Map<String, String> canonicalized = new LinkedHashMap<>();
+      for (String name : columnNames) {
+        String canonical = canonicalize(name);
+        String previous = canonicalized.putIfAbsent(canonical, name);
+        checkArgument(
+            previous == null,
+            "Parameters %s and %s of %s map to the same column name: %s",
+            previous, name, constructor.getDeclaringClass(), canonical);
+      }
+      this.canonicalColumnNames = unmodifiableList(new ArrayList<>(canonicalized.keySet()));
       constructor.setAccessible(true);
     }
 
     T create(ResultSet row) throws SQLException {
       Object[] args = new Object[paramTypes.size()];
       for (int i = 0; i < paramTypes.size(); i++) {
-        args[i] = row.getObject(sqlColumnNames.get(i), wrapperType(paramTypes.get(i)));
+        args[i] =
+            row.getObject(canonicalColumnNames.get(i), wrapperType(paramTypes.get(i)));
       }
       try {
         return constructor.newInstance(args);
@@ -171,9 +187,7 @@ abstract class ResultMapper<T> {
     }
 
     Set<String> getCanonicalColumnNames() {
-      return sqlColumnNames.stream()
-          .map(ResultMapper::canonicalize)
-          .collect(toCollection(LinkedHashSet::new));
+      return new LinkedHashSet<>(canonicalColumnNames);
     }
 
     @Override public String toString() {
