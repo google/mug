@@ -3619,6 +3619,58 @@ public class SubstringTest {
     assertThat(first("a").then(pattern).in("aa")).isEmpty();
   }
 
+  @Test public void immediatelyBetweenInclusive_rejectedByFollowedBy_retriesAtNextIndex_string() {
+    Substring.Pattern pattern =
+        first("a").immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE).followedBy("!");
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedByFollowedBy_expandedMatch_string() {
+    Substring.Pattern pattern =
+        first("a").immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE).followedBy("!");
+    assertThat(pattern.from("aaa!")).hasValue("aa");
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedByFollowedBy_retriesAtNextIndex_char() {
+    Substring.Pattern pattern =
+        first('a').immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE).followedBy("!");
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void
+      immediatelyBetweenInclusive_rejectedByFollowedBy_retriesAtNextIndex_charPredicate() {
+    Substring.Pattern pattern = first(CharPredicate.is('a'))
+        .immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE)
+        .followedBy("!");
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedByFollowedBy_retriesAtNextIndex_regex() {
+    Substring.Pattern pattern = first(Pattern.compile("a"))
+        .immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE)
+        .followedBy("!");
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedByNotFollowedBy_retriesAtNextIndex() {
+    Substring.Pattern pattern =
+        first("a").immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE).notFollowedBy("a");
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedBySeparatedBy_retriesAtNextIndex() {
+    Substring.Pattern pattern = first("a")
+        .immediatelyBetween("a", INCLUSIVE, "", EXCLUSIVE)
+        .separatedBy(CharPredicate.ANY, CharPredicate.is('!'));
+    assertThat(pattern.in("aaa!").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void immediatelyBetweenInclusive_rejectedByFollowedBy_multiCharLookbehind() {
+    Substring.Pattern pattern =
+        first("c").immediatelyBetween("ab", INCLUSIVE, "", EXCLUSIVE).followedBy("!");
+    assertThat(pattern.in("abcabc!").map(Match::index)).hasValue(3);
+  }
+
   @Test public void precededBy_repeatedly_lookbehindOverlapsPreviousMatch_charPredicate() {
     Substring.Pattern pattern = first(CharPredicate.is('a')).precededBy("a");
     assertThat(pattern.repeatedly().match("aaa").map(Match::index)).containsExactly(1, 2);

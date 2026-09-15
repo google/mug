@@ -3059,7 +3059,13 @@ public final class Substring {
       int newLength = length() + toLeft + toRight;
       int newEndIndex = newStartIndex + newLength;
       int newRepetitionStartIndex = max(repetitionStartIndex, newEndIndex);
-      return new Match(context, newStartIndex, newLength, backtrackIndex, newRepetitionStartIndex);
+      // backtrackIndex is an offset from the un-expanded start index. Callers backtrack in terms of
+      // where the _expanded_ match starts, so shift it left by the same amount, or else the
+      // characters between the expanded and un-expanded start are skipped on the retry.
+      int newBacktrackIndex =
+          backtrackIndex == Integer.MAX_VALUE ? Integer.MAX_VALUE : backtrackIndex - toLeft;
+      return new Match(
+          context, newStartIndex, newLength, newBacktrackIndex, newRepetitionStartIndex);
     }
 
     Match trim() {

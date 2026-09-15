@@ -500,6 +500,33 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void instantExample_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("2011-12-03T10:15:30Z"))
+        .isEqualTo(Instant.parse("2011-12-03T10:15:30Z"));
+  }
+
+  // Instant.toString() emits exactly this shape, so all three entry points must read it.
+  @Test
+  public void instantExample_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30Z"))
+        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.UTC));
+  }
+
+  @Test
+  public void instantExample_parseOffsetDateTime() {
+    assertThat(DateTimeFormats.parseOffsetDateTime("2011-12-03T10:15:30Z"))
+        .isEqualTo(OffsetDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.UTC));
+  }
+
+  @Test
+  public void instantExample_withNanos_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30.123Z"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123000000), ZoneOffset.UTC));
+  }
+
+  @Test
   public void isoLocalDateTimeExample() {
     assertThat(LocalDateTime.parse("2023-10-05T15:03:05", formatOf("2023-10-05T15:30:05")))
         .isEqualTo(LocalDateTime.of(2023, 10, 5, 15, 3, 5));

@@ -16,27 +16,24 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -52,6 +49,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -120,24 +123,15 @@ public final class DateTimeFormats {
   /** delimiters don't have semantics and are ignored during parsing. */
   private static final CharPredicate DELIMITER = anyOf(" ,;");
 
-  /**
-   * Token names that a letter run alone cannot produce, because they embed a digit
-   * ({@code AST4ADT}) or a punctuation char ({@code NZ-CHAT}). Matching them whole upholds the
-   * invariant that every declared name in {@link Token#ALL} is reachable as a single token;
-   * otherwise the tokenizer would split them and the name lookup could never see them. Longest
-   * first, because {@code AST4ADT} and {@code AST4} start at the same index and ties go to
-   * encounter order.
-   */
-  private static final Substring.Pattern INDIVISIBLE_NAME = Token.ALL.keySet().stream()
-      .filter(name -> !ALPHA.matchesAllOf(name))
-      .sorted(comparingInt(String::length).reversed())
-      .map(Substring::first)
-      .collect(firstOccurrence());
-
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
-          consecutive(DIGIT), INDIVISIBLE_NAME, consecutive(ALPHA),
-          first(DateTimeFormats::isSeparator))
+          Stream.of(consecutive(DIGIT)),
+          Token.ALL.keySet().stream()
+              .filter(name -> !ALPHA.matchesAllOf(name))
+              .sorted(comparingInt(String::length).reversed())
+              .map(Substring::first),
+          Stream.of(consecutive(ALPHA), first(DateTimeFormats::isSeparator)))
+      .flatMap(identity())
       .collect(firstOccurrence())
       .repeatedly();
 
@@ -159,7 +153,11 @@ public final class DateTimeFormats {
           forExample("2011-12-03T10:15:30-01:00"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30-01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
-          forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT)
+          // ISO_INSTANT resolves to INSTANT_SECONDS alone, which is not enough to build a
+          // ZonedDateTime or an OffsetDateTime. The zone override supplies the missing zone.
+          // It doesn't change formatting: ISO_INSTANT already prints in UTC by contract.
+          forExample("2011-12-03T10:15:30Z"),
+              DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC))
       .toMap();
 
   /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
