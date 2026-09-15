@@ -118,9 +118,24 @@ public final class DateTimeFormats {
   /** delimiters don't have semantics and are ignored during parsing. */
   private static final CharPredicate DELIMITER = anyOf(" ,;");
 
+  /**
+   * Token names that a letter run alone cannot produce, because they embed a digit
+   * ({@code AST4ADT}) or a punctuation char ({@code NZ-CHAT}). Matching them whole upholds the
+   * invariant that every declared name in {@link Token#ALL} is reachable as a single token;
+   * otherwise the tokenizer would split them and the name lookup could never see them. Longest
+   * first, because {@code AST4ADT} and {@code AST4} start at the same index and ties go to
+   * encounter order.
+   */
+  private static final Substring.Pattern INDIVISIBLE_NAME = Token.ALL.keySet().stream()
+      .filter(name -> !ALPHA.matchesAllOf(name))
+      .sorted(comparingInt(String::length).reversed())
+      .map(Substring::first)
+      .collect(firstOccurrence());
+
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
-          consecutive(DIGIT), consecutive(ALPHA), first(DateTimeFormats::isSeparator))
+          consecutive(DIGIT), INDIVISIBLE_NAME, consecutive(ALPHA),
+          first(DateTimeFormats::isSeparator))
       .collect(firstOccurrence())
       .repeatedly();
 
@@ -246,7 +261,30 @@ public final class DateTimeFormats {
           .add(forExample("1:00AM"), "h:mma")
           .add(forExample("1:00:00 AM"), "h:mm:ss a")
           .add(forExample("1:00:00AM"), "h:mm:ssa")
-          .add(forExample("America/Los_Angeles"), "VV")
+          // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
+          // token: a shape made of WORD alone would claim every unrecognized word, turning typos
+          // into bad-zone errors.
+          .add(forExample("America/Los_Angeles"), "VV") // region and city
+          .add(forExample("America/Argentina/Buenos_Aires"), "VV") // three parts
+          .add(forExample("America/Jamaica"), "VV") // 2nd part is a region name
+          .add(forExample("Australia/ACT"), "VV") // 2nd part is a zone abbreviation
+          .add(forExample("Africa/Porto-Novo"), "VV") // hyphenated city name
+          .add(forExample("America/Port-au-Prince"), "VV") // twice-hyphenated city name
+          .add(forExample("Japan"), "VV") // single-word zone id
+          .add(forExample("GB-Eire"), "VV")
+          .add(forExample("Etc/UTC"), "VV")
+          .add(forExample("Etc/Greenwich"), "VV")
+          .add(forExample("Etc/GMT+0"), "VV")
+          .add(forExample("Etc/GMT-0"), "VV")
+          .add(forExample("Etc/GMT+10"), "VV")
+          .add(forExample("Etc/GMT-10"), "VV")
+          // Brackets are literal text, so the zone id inside them matches the entries above on its
+          // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
+          // (zzz), but ZonedDateTime only ever brackets a zone id.
+          .add(forExample("["), "'['")
+          .add(forExample("]"), "']'")
+          .add(forExample("[UTC]"), "'['VV']'")
+          .add(forExample("CET"), "VV") // reads as Europe/Paris if treated as a zone name
           .add(forExample("PST"), "zzz")
           .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
           .add(forExample("Z"), "X")
@@ -264,8 +302,11 @@ public final class DateTimeFormats {
           .add(forExample("GMT-8"), "O")
           .add(forExample("GMT+12"), "O")
           .add(forExample("GMT-12"), "O")
-          .add(forExample("GMT+08:00"), "OOOO")
-          .add(forExample("GMT-08:00"), "OOOO")
+          // ZoneId.of("GMT+08:00") is a ZoneRegion, and VV round-trips it. OOOO would parse it to
+          // a plain ZoneOffset, losing the zone identity. The short GMT+8 spelling below has no
+          // choice: VV rejects it, only O parses it.
+          .add(forExample("GMT+08:00"), "VV")
+          .add(forExample("GMT-08:00"), "VV")
           .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("周一"), "EEE")
@@ -448,7 +489,7 @@ public final class DateTimeFormats {
           })
           .orElse(0);
       if (consumed <= 0) {
-        consumed = LocalDateRule.resolve(signature)
+        consumed = LocalDateRule.resolve(remaining)
             .map((prefix, fmt) -> {
               builder.append(fmt);
               return prefix.size();
@@ -481,7 +522,7 @@ public final class DateTimeFormats {
     return TOKENIZER.cut(example)
         .filter(Substring.Match::isNotEmpty)
         .map(match -> {
-          if (DIGIT.matchesAnyOf(match)) {
+          if (DIGIT.matchesAllOf(match)) {
             return new Numeric(match);
           }
           String name = match.toString();
@@ -632,12 +673,20 @@ public final class DateTimeFormats {
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
         "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
+    /**
+     * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
+     * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as
+     * {@code Europe/Paris}). They must be read as ids. The other abbreviations that are also
+     * ids, such as {@code GMT} and {@code UTC}, stay in {@link #ZONE_NAME} because both
+     * readings agree in every locale.
+     */
+    ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
     ZONE_NAME(
         "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
         "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
-        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST", "CHOT",
+        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST", "CHOT",
         "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
-        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
+        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EGST", "EGT",
         "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
         "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
         "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
@@ -646,15 +695,21 @@ public final class DateTimeFormats {
         "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT",
         "SAKT", "SAMT", "SAST", "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT",
         "THA", "TJT", "TKT", "TLT", "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT",
-        "VLAT", "VOLT", "VOST", "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT",
-        "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST"),
+        "VLAT", "VOLT", "VOST", "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WIB", "WIT",
+        "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST",
+        // Legacy SystemV and POSIX-style names that embed a UTC offset in the name itself.
+        "AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "GMT0", "HST10", "MST7", "MST7MDT",
+        "PST8", "PST8PDT", "YST9", "YST9YDT"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
         "Canada", "Chile", "Cuba", "Egypt", "Eire", "Europe", "GB", "Greenwich", "Hongkong",
         "Iceland", "Indian", "Iran", "Israel", "Jamaica", "Japan", "Kwajalein", "Libya", "Mexico",
         "Mideast", "Navajo", "Pacific", "Poland", "Portugal", "Singapore", "SystemV", "Turkey",
-        "US", "Universal", "Zulu"),
+        "US", "Universal", "Zulu",
+        // Country-code aliases from the tz database's backward-compatibility list. The hyphenated
+        // ones are single names, not two, so they rely on INDIVISIBLE_NAME to stay whole.
+        "NZ", "NZ-CHAT", "PRC", "ROK", "W-SU"),
     NIAN("年"),
     YUE("月"),
     RI("日"),
