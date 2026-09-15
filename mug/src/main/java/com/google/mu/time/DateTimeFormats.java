@@ -89,8 +89,10 @@ import java.util.stream.Stream;
  * year month day}, {@code month day year} or {@code day month year}) are supported.
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
- * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). AM/PM and 12-hour numbers are
- * not supported. Though you can explicitly specify them together with placeholders (see below).
+ * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). An AM/PM marker can follow, as
+ * in {@code 1:00 PM}. But a two-digit hour is always read as a 24-hour number, so {@code 10:00 PM}
+ * means hour 10 and is rejected as self-contradictory. Use a single-digit example hour if you mean
+ * a 12-hour clock.
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders (between a pair
@@ -162,11 +164,12 @@ public final class DateTimeFormats {
 
   /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
   private static final Map<List<?>, DateTimeFormatter> RFC_1123_FORMATTERS = Stream.of(
-          "Tue, 1 Jun 2008 11:05:30 GMT", "Tue, 10 Jun 2008 11:05:30 GMT",
-          "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Tue, 1 Jun 2008 11:05:30 +0800",
-          "Tue, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
+          "Sun, 1 Jun 2008 11:05:30 GMT", "Tue, 10 Jun 2008 11:05:30 GMT",
+          "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Sun, 1 Jun 2008 11:05:30 +0800",
+          "Sun, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
           "Tue, 10 Jun 2008 11:05:30 -0800", "1 Jun 2008 11:05:30 +0800",
-          "10 Jun 2008 11:05:30 +0800")
+          "1 Jun 2008 11:05:30 -0800", "10 Jun 2008 11:05:30 +0800",
+          "10 Jun 2008 11:05:30 -0800")
       .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
 
   private static final Map<List<?>, String> LOCAL_DATE_PATTERNS =
@@ -359,7 +362,9 @@ public final class DateTimeFormats {
                 inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
             fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
             return fmt;
-          } catch (DateTimeParseException e) {
+          } catch (DateTimeParseException | IllegalArgumentException e) {
+            // IllegalArgumentException comes from ofPattern(): the verbatim (non-placeholder) part
+            // of the example is passed through as-is, so it can contain invalid pattern letters.
             throw new DateTimeException(
                 "invalid date time example: " + example + " (" + pattern + ")", e);
           }
@@ -383,7 +388,12 @@ public final class DateTimeFormats {
     }
     if (signature.contains(Token.MONTH_ABBREVIATION) || signature.contains(Token.MONTH)
         || signature.contains(Token.WEEKDAY_ABBREVIATION) || signature.contains(Token.WEEKDAY)
-        || signature.contains(Token.AM_PM)) {
+        || signature.contains(Token.AM_PM)
+        // Zone abbreviations map to zzz, a locale-sensitive text lookup: "PST" reads as
+        // Asia/Manila under en_GB. Pin the locale so the zone doesn't depend on the JVM
+        // default. Zone ids (VV) need no pin; they are read as ids, not looked up by name.
+        || signature.contains(Token.ZONE_NAME)
+        || signature.contains(Token.GENERIC_ZONE_NAME)) {
       return fmt.withLocale(Locale.ENGLISH);
     }
     return fmt;
@@ -573,8 +583,7 @@ public final class DateTimeFormats {
     }
 
     static Optional<DateTimeFormatter> resolveFormat(List<?> signature) {
-      return resolve(signature).filter((prefix, p) -> prefix.size() == 5)
-          .map((prefix, p) -> DateTimeFormatter.ofPattern(p));
+      return resolve(signature).map((prefix, p) -> DateTimeFormatter.ofPattern(p));
     }
 
     private final Predicate<List<?>> predicate;
@@ -657,6 +666,9 @@ public final class DateTimeFormats {
     XINGQI("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
     ZHOU("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
     WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
+    // "May" is deliberately absent: it's spelled the same abbreviated and in full, and ALL is a
+    // name -> token map, so listing it here too would fail with "Duplicate key: [May]" at class
+    // init. It belongs to MONTH, which means a "May" example always infers LLLL, never LLL.
     MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     MONTH(
         "January", "February", "March", "April", "May", "June", "July", "August", "September",

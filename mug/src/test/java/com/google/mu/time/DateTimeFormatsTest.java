@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -190,13 +189,45 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void singleDigitHourWithAmPm() {
+  public void singleDigitHour_upperCaseAmMarker() {
     assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+  }
+
+  @Test
+  public void singleDigitHour_upperCasePmMarkerAfterSpace() {
     assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
-    assertLocalTime("1am", "ha").isEqualTo(LocalTime.of(1, 0, 0));
-    assertLocalTime("2pm", "ha").isEqualTo(LocalTime.of(14, 0, 0));
-    assertLocalTime("1a.m.", "ha").isEqualTo(LocalTime.of(1, 0, 0));
-    assertLocalTime("2p.m.", "ha").isEqualTo(LocalTime.of(14, 0, 0));
+  }
+
+  // The library pins Locale.ENGLISH for AM/PM, and the "a" specifier is case sensitive, so a
+  // lower case marker is rejected in every locale rather than resolving differently per machine.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHour_lowerCaseAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1am"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 1am (ha)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHour_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2pm"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 2pm (ha)");
+  }
+
+  // "a.m." is a registered marker spelling, but no hour-plus-marker shape is registered for a
+  // single digit hour, so the example is not covered at all.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHour_dottedAmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1a.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 1a.m.");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHour_dottedPmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 2p.m.");
   }
 
   @Test
@@ -206,13 +237,41 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void singleDigitHourMinuteWithAmPm() {
+  public void singleDigitHourMinute_upperCaseAmMarker() {
     assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinute_upperCasePmMarkerAfterSpace() {
     assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
-    assertLocalTime("1:10 am", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
-    assertLocalTime("2:05pm", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
-    assertLocalTime("1:10 a.m.", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
-    assertLocalTime("2:05p.m.", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinute_lowerCaseAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1:10 am"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 1:10 am (h:mm a)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinute_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2:05pm"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 2:05pm (h:mma)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinute_dottedAmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1:10 a.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 1:10 a.m.");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinute_dottedPmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2:05p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 2:05p.m.");
   }
 
   @Test
@@ -222,23 +281,81 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void singleDigitHourMinuteSecondWithAmPm() {
+  public void singleDigitHourMinuteSecond_upperCaseAmMarker() {
     assertLocalTime("1:10:30AM", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
-    assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
-    assertLocalTime("1:10:30 am", "h:mm:ss a").isEqualTo(LocalTime.of(1, 10, 30));
-    assertLocalTime("2:05:00pm", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
-    assertLocalTime("1:10:30a.m.", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
-    assertLocalTime("2:05:00p.m.", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
   }
 
   @Test
-  public void twoDigitHourWithAmPm() {
+  public void singleDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
+    assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinuteSecond_lowerCaseAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1:10:30 am"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 1:10:30 am (h:mm:ss a)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinuteSecond_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2:05:00pm"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 2:05:00pm (h:mm:ssa)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinuteSecond_dottedAmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("1:10:30a.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 1:10:30a.m.");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitHourMinuteSecond_dottedPmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("2:05:00p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 2:05:00p.m.");
+  }
+
+  @Test
+  public void twoDigitHour_upperCaseAmMarker() {
     assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+  }
+
+  @Test
+  public void twoDigitHour_upperCasePmMarkerAfterSpace() {
     assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("09am", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
-    assertLocalTime("12 pm", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("09 a.m.", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
-    assertLocalTime("12 p.m.", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHour_lowerCaseAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("09am"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 09am (HHa)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHour_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12 pm"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12 pm (HH a)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHour_dottedAmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("09 a.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 09 a.m.");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHour_dottedPmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12 p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 12 p.m.");
   }
 
   @Test
@@ -248,23 +365,103 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void twoDigitHourMinuteWithAmPm() {
+  public void twoDigitHourMinute_upperCaseAmMarker() {
     assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
-    assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("12:00 pm", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("12:00 am", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("12:00 a.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
-    assertLocalTime("12:00 p.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test
-  public void twoDigitHourMinuteSecondWithAmPm() {
+  public void twoDigitHourMinute_upperCasePmMarkerAfterSpace() {
+    assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinute_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 pm"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 pm (HH:mm a)");
+  }
+
+  // 12:00 is hour 12 on a 24-hour dial, which is PM, so an AM marker contradicts it. This is the
+  // 24-hour reading of a two-digit hour, not a 12-hour clock reading midnight as noon.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinute_amMarkerContradictsHour_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 AM"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 AM (HH:mm a)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinute_dottedAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 a.m."));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 a.m. (HH:mm a)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinute_dottedPmMarker_unsupported() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 12:00 p.m.");
+  }
+
+  @Test
+  public void twoDigitHourMinuteSecond_upperCaseAmMarker() {
     assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+  }
+
+  // 15:00:30 is hour 15, which is PM, so the marker agrees and the example is accepted. The hour
+  // stays a 24-hour number; the marker is redundant.
+  @Test
+  public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
     assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
-    assertLocalTime("09:00:30am", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
-    assertLocalTime("15:00:30 pm", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_lowerCaseAmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("09:00:30am"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 09:00:30am (HH:mm:ssa)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_lowerCasePmMarker_disallowed() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("15:00:30 pm"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 15:00:30 pm (HH:mm:ss a)");
+  }
+
+  // "a.m." is a locale-specific spelling: en-CA, fr-CA, nl and ~47 others use it, en-US and en-GB
+  // do not. It is not a Token.AM_PM name, so no locale is pinned and the example follows the
+  // runtime locale. Nothing else in such an example is locale sensitive -- any weekday, month or
+  // zone name would pin ENGLISH and reject the marker -- so the only outcomes are these two.
+  @Test
+  public void twoDigitHourMinuteSecond_dottedAmMarker_localeThatSpellsItThatWay() {
+    overrideLocale(Locale.CANADA);
     assertLocalTime("09:00:30a.m.", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
-    assertLocalTime("15:00:30 p.m.", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_dottedAmMarker_localeThatDoesNot_disallowed() {
+    overrideLocale(Locale.US);
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("09:00:30a.m."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 09:00:30a.m. (HH:mm:ssa)");
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_dottedPmMarker_unsupported() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("15:00:30 p.m."));
+    assertThat(thrown).hasMessageThat().contains("unsupported date time example: 15:00:30 p.m.");
   }
 
   @Test
@@ -586,6 +783,24 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void zoneAbbreviation_resolvesSameZoneInEveryLocale() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST").getZone())
+        .isEqualTo(ZoneId.of("America/Los_Angeles"));
+  }
+
+  @Test
+  public void genericZoneAbbreviation_resolvesSameZoneInEveryLocale() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MT").getZone())
+        .isEqualTo(ZoneId.of("America/Denver"));
+  }
+
+  @Test
+  public void zoneAbbreviation_precededByWeekday_resolvesSameZone() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Sat 2011-12-03 10:15:30 PST").getZone())
+        .isEqualTo(ZoneId.of("America/Los_Angeles"));
+  }
+
+  @Test
   public void bareZoneId_hyphenatedCityName() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Africa/Porto-Novo"))
         .isEqualTo(
@@ -760,6 +975,24 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2008, 6, 20, 3, 10, 10, 0), ZoneOffset.UTC));
     assertThat(ZonedDateTime.parse("13 Jun 2008 03:10:10 GMT", formatOf("3 Jun 2008 11:05:30 GMT")))
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2008, 6, 13, 3, 10, 10, 0), ZoneOffset.UTC));
+  }
+
+  @Test
+  public void rfc1123_negativeOffsetWithoutWeekday_singleDigitDayExample() {
+    assertThat(
+            ZonedDateTime.parse(
+                "Fri, 6 Jun 2008 03:10:10 -0800", formatOf("1 Jun 2008 11:05:30 -0800")))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2008, 6, 6, 3, 10, 10, 0), ZoneOffset.ofHours(-8)));
+  }
+
+  @Test
+  public void rfc1123_negativeOffsetWithoutWeekday_twoDigitDayExample() {
+    assertThat(
+            ZonedDateTime.parse(
+                "Fri, 20 Jun 2008 03:10:10 -0800", formatOf("13 Jun 2008 11:05:30 -0800")))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2008, 6, 20, 3, 10, 10, 0), ZoneOffset.ofHours(-8)));
   }
 
   @Test
@@ -1131,7 +1364,9 @@ public final class DateTimeFormatsTest {
           String datetime)
       throws Exception {
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
-    String example = zonedTime.format(getFormatterByName(formatterName));
+    // Zone names (z, zz, zzz) are rendered in English because that's the locale the library pins
+    // when parsing them back. Without it, the two halves of the roundtrip would disagree.
+    String example = zonedTime.format(getFormatterByName(formatterName).withLocale(Locale.ENGLISH));
     assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
         .isEqualTo(zonedTime.withFixedOffsetZone());
   }
@@ -1641,7 +1876,6 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
-    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime).isEqualTo(
@@ -1659,7 +1893,6 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
-    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
     assertThat(dateTime.toInstant())
@@ -1710,6 +1943,13 @@ public final class DateTimeFormatsTest {
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void typoInExample() {
     assertThrows(DateTimeException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void placeholderExample_invalidPatternLetterInVerbatimPart_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("<Tue> foo"));
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: <Tue> foo (EEE foo)");
   }
 
   @Test
@@ -2039,18 +2279,16 @@ public final class DateTimeFormatsTest {
     return assertThat(date);
   }
 
+  // The example is a parameter, so the compile-time example check can't evaluate it here.
+  @SuppressWarnings("DateTimeExampleStringCheck")
   private static ComparableSubject<LocalTime> assertLocalTime(
       @CompileTimeConstant String example, String equivalentPattern) {
-    String pattern = DateTimeFormats.inferDateTimePattern(example);
-    assertThat(pattern).isEqualTo(equivalentPattern);
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-    LocalTime time;
-    try {
-      time = LocalTime.parse(example, formatter);
-    } catch (DateTimeParseException e) {
-      Assume.assumeNoException("Cannot test local time in system locale", e);
-      throw e;
-    }
+    assertThat(DateTimeFormats.inferDateTimePattern(example)).isEqualTo(equivalentPattern);
+    // Build through the public formatOf() so the test sees the locale the library pins for AM/PM.
+    // Compiling the raw pattern instead would read the marker in the ambient locale, which made
+    // every AM/PM assertion below silently skip.
+    DateTimeFormatter formatter = formatOf(example);
+    LocalTime time = LocalTime.parse(example, formatter);
     assertThat(time.format(formatter)).isEqualTo(example);
     return assertThat(time);
   }
