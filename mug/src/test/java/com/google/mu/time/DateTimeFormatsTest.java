@@ -709,6 +709,35 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void bareUtcOffsetZone_isZoneId() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC+08:00"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("UTC+08:00")));
+  }
+
+  @Test
+  public void bareUtcNegativeOffsetZone_isZoneId() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC-08:00"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("UTC-08:00")));
+  }
+
+  /**
+   * The localized offset specifier {@code O} requires the literal "GMT" prefix, and {@code VV}
+   * rejects the abbreviated offset, so no pattern can read this.
+   */
+  @Test
+  public void bareUtcShortOffset_unsupported() {
+    DateTimeException thrown =
+        assertThrows(
+            DateTimeException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC+8"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("unsupported date time example: 2011-12-03 10:15:30 UTC+8");
+  }
+
+  @Test
   public void zoneIdInBrackets_gmtOffsetZone() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30+08:00[GMT+08:00]"))
         .isEqualTo(
@@ -1020,6 +1049,34 @@ public final class DateTimeFormatsTest {
                 "Fri, 20 Jun 2008 03:10:10 -0800", formatOf("13 Jun 2008 11:05:30 -0800")))
         .isEqualTo(
             ZonedDateTime.of(LocalDateTime.of(2008, 6, 20, 3, 10, 10, 0), ZoneOffset.ofHours(-8)));
+  }
+
+  @Test
+  public void rfc1123Shape_gmtZoneName_usesRfcFormatter() {
+    assertThat(formatOf("Tue, 10 Jun 2008 11:05:30 GMT"))
+        .isSameInstanceAs(DateTimeFormatter.RFC_1123_DATE_TIME);
+  }
+
+  @Test
+  public void rfc1123Shape_utcZoneName_notShadowedByRfcFormatter() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Tue, 10 Jun 2008 11:05:30 UTC"))
+        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2008, 6, 10, 11, 5, 30), ZoneId.of("UTC")));
+  }
+
+  @Test
+  public void rfc1123Shape_zoneNameAbbreviation_notShadowedByRfcFormatter() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Tue, 10 Jun 2008 11:05:30 PST"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2008, 6, 10, 11, 5, 30), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @Test
+  public void rfc1123Shape_withoutWeekday_zoneNameAbbreviation_notShadowedByRfcFormatter() {
+    assertThat(DateTimeFormats.parseZonedDateTime("10 Jun 2008 11:05:30 PST"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2008, 6, 10, 11, 5, 30), ZoneId.of("America/Los_Angeles")));
   }
 
   @Test

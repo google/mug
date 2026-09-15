@@ -274,6 +274,7 @@ public final class DateTimeFormats {
           .add(forExample("Japan"), "VV") // single-word zone id
           .add(forExample("GB-Eire"), "VV")
           .add(forExample("Etc/UTC"), "VV")
+          .add(forExample("Etc/GMT"), "VV") // GMT is its own token, so Etc/UTC doesn't cover it
           .add(forExample("Etc/Greenwich"), "VV")
           .add(forExample("Etc/GMT+0"), "VV")
           .add(forExample("Etc/GMT-0"), "VV")
@@ -285,8 +286,10 @@ public final class DateTimeFormats {
           .add(forExample("["), "'['")
           .add(forExample("]"), "']'")
           .add(forExample("[UTC]"), "'['VV']'")
+          .add(forExample("[GMT]"), "'['VV']'")
           .add(forExample("CET"), "VV") // reads as Europe/Paris if treated as a zone name
           .add(forExample("PST"), "zzz")
+          .add(forExample("GMT"), "zzz") // its own token, so the PST entry doesn't cover it
           .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
           .add(forExample("Z"), "X")
           .add(forExample("+08"), "x")
@@ -299,6 +302,8 @@ public final class DateTimeFormats {
           .add(forExample("-0800"), "ZZ")
           .add(forExample("+08:00"), "ZZZZZ")
           .add(forExample("-08:00"), "ZZZZZ")
+          // Only GMT has these two shapes: O requires the literal "GMT", and there is no pattern
+          // that reads "UTC+8" at all (VV rejects the abbreviated offset).
           .add(forExample("GMT+8"), "O")
           .add(forExample("GMT-8"), "O")
           .add(forExample("GMT+12"), "O")
@@ -308,6 +313,8 @@ public final class DateTimeFormats {
           // choice: VV rejects it, only O parses it.
           .add(forExample("GMT+08:00"), "VV")
           .add(forExample("GMT-08:00"), "VV")
+          .add(forExample("UTC+08:00"), "VV")
+          .add(forExample("UTC-08:00"), "VV")
           .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("周一"), "EEE")
@@ -391,7 +398,10 @@ public final class DateTimeFormats {
         // Asia/Manila under en_GB. Pin the locale so the zone doesn't depend on the JVM
         // default. Zone ids (VV) need no pin; they are read as ids, not looked up by name.
         || signature.contains(Token.ZONE_NAME)
-        || signature.contains(Token.GENERIC_ZONE_NAME)) {
+        || signature.contains(Token.GENERIC_ZONE_NAME)
+        // GMT maps to zzz on its own and is the literal prefix the locale-sensitive O specifier
+        // expects, so it needs the same pin.
+        || signature.contains(Token.GMT)) {
       return fmt.withLocale(Locale.ENGLISH);
     }
     return fmt;
@@ -684,11 +694,20 @@ public final class DateTimeFormats {
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
         "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
     /**
+     * {@code GMT} is a zone name, but it is also a keyword of the offset syntax: the localized
+     * offset specifier {@code O} requires it as a literal prefix ({@code GMT+8}), and
+     * {@link DateTimeFormatter#RFC_1123_DATE_TIME} accepts it as the only spelling of a zero
+     * offset. A key that spells {@code GMT} therefore means {@code GMT}, not "any zone name" --
+     * otherwise it would claim {@code UTC+8} and {@code Tue, 10 Jun 2008 11:05:30 UTC}, which
+     * those formatters reject.
+     */
+    GMT("GMT"),
+    /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
      * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as
      * {@code Europe/Paris}). They must be read as ids. The other abbreviations that are also
-     * ids, such as {@code GMT} and {@code UTC}, stay in {@link #ZONE_NAME} because both
-     * readings agree in every locale.
+     * ids, such as {@code UTC}, stay in {@link #ZONE_NAME} because both readings agree in every
+     * locale.
      */
     ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
     ZONE_NAME(
@@ -697,7 +716,7 @@ public final class DateTimeFormats {
         "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST", "CHOT",
         "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
         "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EGST", "EGT",
-        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
+        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GST",
         "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
         "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
         "MAGT", "MAWT", "MDT", "MEST", "MET", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
