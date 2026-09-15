@@ -127,6 +127,7 @@ public final class DateTimeFormats {
   private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
           Stream.of(consecutive(DIGIT)),
           Token.ALL.keySet().stream()
+              .filter(name -> name.length() > 1)
               .filter(name -> !ALPHA.matchesAllOf(name))
               .sorted(comparingInt(String::length).reversed())
               .map(Substring::first),
