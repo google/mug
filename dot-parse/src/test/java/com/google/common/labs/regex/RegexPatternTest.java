@@ -117,6 +117,21 @@ public final class RegexPatternTest {
     assertThat(quantified.toString()).isEqualTo("(?:ab)*");
   }
 
+  @Test public void quantifiedSupplementaryCodePointLiteralToString() {
+    Quantified quantified = new Quantified(new Literal("\uD83D\uDE00"), repeated());
+    assertThat(quantified.toString()).isEqualTo("\uD83D\uDE00*");
+  }
+
+  @Test public void quantifiedTwoCharLiteralToString() {
+    Quantified quantified = new Quantified(new Literal("ab"), repeated());
+    assertThat(quantified.toString()).isEqualTo("(?:ab)*");
+  }
+
+  @Test public void quantifiedEmptyLiteralToString() {
+    Quantified quantified = new Quantified(new Literal(""), repeated());
+    assertThat(quantified.toString()).isEqualTo("(?:)*");
+  }
+
   @Test public void atLeastToString() {
     assertThat(atLeast(0).toString()).isEqualTo("*");
     assertThat(atLeast(1).toString()).isEqualTo("+");

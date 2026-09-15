@@ -306,9 +306,14 @@ public sealed interface RegexPattern {
     @Override public String toString() {
       return element instanceof Sequence || element instanceof Alternation
               || element instanceof Quantified
-              || (element instanceof Literal lit && lit.value().length() != 1)
+              // a quantifier binds to the last code point, which can be a surrogate pair
+              || (element instanceof Literal lit && !isSingleCodePoint(lit.value()))
           ? "(?:" + element + ")" + quantifier
           : element.toString() + quantifier;
+    }
+
+    private static boolean isSingleCodePoint(String value) {
+      return value.codePointCount(0, value.length()) == 1;
     }
   }
 
@@ -627,10 +632,10 @@ public sealed interface RegexPattern {
     /**
      * A backreference to a capturing group by number, like {@code \1}.
      *
-     * <p>When parsed via {@link RegexPattern#of}, digits are consumed only while the number does
-     * not exceed the count of capturing groups seen so far (the first digit is always consumed),
-     * matching {@link java.util.regex.Pattern} semantics. Any remaining digits become literal
-     * characters.
+     * <p>{@link RegexPattern#of} parses only single-digit backreferences ({@code \1} through {@code
+     * \9}). A multi-digit sequence like {@code \12} is rejected rather than being resolved against
+     * the number of capturing groups seen so far, which is what {@link java.util.regex.Pattern}
+     * does.
      */
     record Numbered(int groupNumber) implements Backreference {
       public Numbered {
