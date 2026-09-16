@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -824,16 +823,19 @@ public final class DateTimeFormatsTest {
                 ZoneId.of("America/Argentina/Buenos_Aires")));
   }
 
-  @Test public void bareZoneId_singleWord() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Japan"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Japan")));
+  @Test public void bareZoneId_singleWord_throws() {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Japan"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 Japan");
   }
 
   @Test public void bareZoneId_secondPartIsRegionName() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Asia/Singapore"))
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 US/Pacific"))
         .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Asia/Singapore")));
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("US/Pacific")));
   }
 
   @Test public void bareZoneId_secondPartIsZoneNameAbbreviation() {
@@ -895,21 +897,59 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("WET")));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationMet() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MET"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET")));
+  @Test public void legacyZoneAbbreviation_throws(@TestParameter({"MET", "UCT"}) String name) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 " + name);
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationMet_roundTrips() {
-    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 MET");
-    ZonedDateTime time =
-        ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET"));
-    assertThat(formatter.format(time)).isEqualTo("2011-12-03 10:15:30 MET");
+  @Test public void bracketedLegacyZoneAbbreviation_throws(
+      @TestParameter({"MET", "UCT"}) String name) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[" + name + "]"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03T10:15:30[" + name + "]");
   }
 
   @Test public void zoneAbbreviation_resolvesSameZoneInEveryLocale() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST").getZone())
         .isEqualTo(ZoneId.of("America/Los_Angeles"));
+  }
+
+  @Test public void allZoneNameAbbreviationsParse() {
+    for (String name : DateTimeFormats.zoneNameAbbreviations()) {
+      assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name)).isNotNull();
+    }
+  }
+
+  @Test public void wrongOffsetZoneAbbreviation_throws(
+      @TestParameter({"IST", "BST", "GST", "ACST", "ACT", "IDT", "CIT"}) String name) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 " + name);
+  }
+
+  @Test public void unresolvableZoneAbbreviation_throws(
+      @TestParameter({
+            "BET", "BIOT", "CEDT", "CWST", "DFT", "DUT", "EEDT", "EIT", "FET", "HAEC",
+            "HMT", "HNE", "MEZ", "PHT", "SLT", "THA", "VOLT", "WEDT", "YET", "YKT",
+            "YST", "BRT", "SGT", "ICT", "CAST", "MYT", "WST", "NPT"
+          })
+          String name) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 " + name);
   }
 
   @Test public void genericZoneAbbreviation_pt_throws() {
@@ -928,6 +968,31 @@ public final class DateTimeFormatsTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("unsupported date time example: 2011-12-03 10:15:30 MT");
+  }
+
+  @Test public void zoneAbbreviation_cst() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CST").getZone())
+        .isEqualTo(ZoneId.of("America/Chicago"));
+  }
+
+  @Test public void zoneAbbreviation_est() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 EST").getZone())
+        .isEqualTo(ZoneId.of("America/New_York"));
+  }
+
+  @Test public void zoneAbbreviation_cest() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CEST").getZone())
+        .isEqualTo(ZoneId.of("Europe/Paris"));
+  }
+
+  @Test public void zoneAbbreviation_utc() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC").getZone())
+        .isEqualTo(ZoneId.of("UTC"));
+  }
+
+  @Test public void zoneAbbreviation_gmt() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GMT").getZone())
+        .isEqualTo(ZoneId.of("GMT"));
   }
 
   @Test public void zoneAbbreviation_ut() {
@@ -954,67 +1019,62 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Port-au-Prince")));
   }
 
-  @Test public void bareZoneId_hyphenatedRegionAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GB-Eire"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("GB-Eire")));
+  @Test public void legacySingleWordAndHyphenatedRegionAlias_throws(
+      @TestParameter({
+            "Cuba", "Egypt", "Eire", "GB", "GB-Eire", "Greenwich", "Hongkong", "Iceland", "Iran",
+            "Israel", "Jamaica", "Japan", "Kwajalein", "Libya", "Navajo", "NZ", "NZ-CHAT", "Poland",
+            "Portugal", "PRC", "ROK", "Singapore", "Turkey", "Universal", "W-SU", "Zulu"
+          })
+          String alias) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + alias));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 " + alias);
   }
 
-  @Test public void bareZoneId_systemVAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 SystemV/AST4"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("SystemV/AST4")));
+  @Test public void bracketedLegacySingleWordAndHyphenatedRegionAlias_throws(
+      @TestParameter({"GB-Eire", "NZ", "NZ-CHAT", "PRC", "ROK", "W-SU", "Japan", "Singapore"})
+          String alias) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[" + alias + "]"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03T10:15:30[" + alias + "]");
   }
 
-  @Test public void bareZoneId_abbreviationAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CST6CDT"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("CST6CDT")));
+  @Test public void legacySystemVAndPosixZone_throws(
+      @TestParameter({
+            "SystemV/AST4",
+            "SystemV/AST4ADT",
+            "SystemV/HST10",
+            "SystemV/YST9YDT",
+            "CST6CDT",
+            "EST5EDT",
+            "MST7MDT",
+            "PST8PDT",
+            "GMT0",
+            "Etc/GMT0"
+          })
+          String zone) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + zone));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03 10:15:30 " + zone);
   }
 
-  @Test public void bareZoneId_systemVAliasWithDaylightSuffix() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 SystemV/AST4ADT"))
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("SystemV/AST4ADT")));
-  }
-
-  @Test public void bareZoneId_systemVAliasWithTwoDigitOffset() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 SystemV/HST10"))
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("SystemV/HST10")));
-  }
-
-  @Test public void bareZoneId_systemVAliasWithUnlistedDaylightSuffix() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 SystemV/YST9YDT"))
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("SystemV/YST9YDT")));
-  }
-
-  @Test public void bareZoneId_gmtZeroAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GMT0"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("GMT0")));
-  }
-
-  @Test public void bareZoneId_etcGmtZeroAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Etc/GMT0"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Etc/GMT0")));
-  }
-
-  @Test public void zoneIdInBrackets_systemVAliasWithDaylightSuffix() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[SystemV/AST4ADT]"))
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("SystemV/AST4ADT")));
-  }
-
-  @Test public void zoneIdInBrackets_abbreviationAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[CST6CDT]"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("CST6CDT")));
+  @Test public void bracketedLegacySystemVAndPosixZone_throws(
+      @TestParameter({"SystemV/AST4ADT", "CST6CDT"}) String zone) {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[" + zone + "]"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011-12-03T10:15:30[" + zone + "]");
   }
 
   /**
@@ -1023,43 +1083,6 @@ public final class DateTimeFormatsTest {
    */
   @Test public void isoDateTime_tDesignatorNotFusedWithHour() {
     assertThat(formatOf("2011-12-03T10:15:30")).isEqualTo(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-  }
-
-  @Test public void bareZoneId_countryCodeAliasNz() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 NZ"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("NZ")));
-  }
-
-  @Test public void bareZoneId_countryCodeAliasPrc() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PRC"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("PRC")));
-  }
-
-  @Test public void bareZoneId_countryCodeAliasRok() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 ROK"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("ROK")));
-  }
-
-  @Test public void bareZoneId_hyphenatedCountryCodeAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 NZ-CHAT"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("NZ-CHAT")));
-  }
-
-  @Test public void bareZoneId_aliasStartingWithSingleLetter() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 W-SU"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("W-SU")));
-  }
-
-  @Test public void zoneIdInBrackets_hyphenatedCountryCodeAlias() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[NZ-CHAT]"))
-        .isEqualTo(
-            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("NZ-CHAT")));
-  }
-
-  @Test public void zoneIdInBrackets_aliasStartingWithSingleLetter() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[W-SU]"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("W-SU")));
   }
 
   /** A lone unrecognized word must stay unsupported, so that typos aren't reported as bad zones. */
@@ -2031,10 +2054,9 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("UT")));
   }
 
-  @Ignore("fails under Java 22")
   @Test public void timeZoneMixedIn_fourLetterZoneNameAbbreviation() {
-    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<CAST>");
-    ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30CAST", formatter);
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<CEST>");
+    ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30CEST", formatter);
     assertThat(dateTime.toLocalDateTime()).isEqualTo(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0));
   }
 

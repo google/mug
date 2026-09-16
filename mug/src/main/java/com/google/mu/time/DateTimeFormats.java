@@ -24,6 +24,7 @@ import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
@@ -270,16 +271,12 @@ public final class DateTimeFormats {
               forExamples(
                   "America/Los_Angeles", // region and city
                   "America/Argentina/Buenos_Aires", // three parts
-                  "America/Jamaica", // 2nd part is a region name
-                  "Australia/ACT", // 2nd part is a zone abbreviation
+                  "US/Pacific", // 2nd part is a region name
                   "Africa/Porto-Novo", // hyphenated city name
                   "America/Port-au-Prince", // twice-hyphenated city name
-                  "Japan", // single-word zone id
-                  "GB-Eire",
                   "CET", // reads as Europe/Paris if treated as a zone name
                   "Etc/UTC",
                   "Etc/GMT",
-                  "Etc/Greenwich",
                   "Etc/GMT+0",
                   "Etc/GMT-0",
                   "Etc/GMT+10",
@@ -353,45 +350,45 @@ public final class DateTimeFormats {
     List<?> signature = forExample(example);
     DateTimeFormatter rfc = lookup(RFC_1123_FORMATTERS, signature).orElse(null);
     if (rfc != null) return rfc;
-    DateTimeFormatter iso = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
-    if (iso != null) return iso;
+    DateTimeFormatter isoDate = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
+    if (isoDate != null) return isoDate;
     // Ignore the ".nanosecond" part of the time in ISO examples because all ISO
     // time formats allow the nanosecond part optionally, with 1 to 9 digits.
-    return lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(example).orElse(signature))
-        .map(fmt -> {
-          try {
-            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-          } catch (DateTimeParseException e) {
-            throw new DateTimeException("invalid date time example: " + example, e);
-          }
-          return fmt;
-        })
-        .orElseGet(() -> {
-          AtomicInteger placeholderCount = new AtomicInteger();
-          String pattern = PLACEHOLDERS.replaceAllFrom(
-              example,
-              placeholder -> {
-                placeholderCount.incrementAndGet();
-                return inferDateTimePattern(placeholder.skip(1, 1).toString());
-              });
-          try {
-            if (placeholderCount.get() > 0) {
-              // There is at least 1 placeholder. The input isn't a pure datetime "example".
-              // So we can't validate using parse().
-              return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-            }
-            pattern = inferDateTimePattern(example, signature);
-            DateTimeFormatter fmt =
-                inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-            return fmt;
-          } catch (DateTimeParseException | IllegalArgumentException e) {
-            // IllegalArgumentException comes from ofPattern(): the verbatim (non-placeholder) part
-            // of the example is passed through as-is, so it can contain invalid pattern letters.
-            throw new DateTimeException(
-                "invalid date time example: " + example + " (" + pattern + ")", e);
-          }
+    DateTimeFormatter isoDateTime =
+        lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(example).orElse(signature))
+            .map(fmt -> {
+              try {
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+              } catch (DateTimeParseException e) {
+                throw new DateTimeException("invalid date time example: " + example, e);
+              }
+              return fmt;
+            })
+            .orElse(null);
+    if (isoDateTime != null) return isoDateTime;
+    AtomicInteger placeholderCount = new AtomicInteger();
+    String pattern = PLACEHOLDERS.replaceAllFrom(
+        example,
+        placeholder -> {
+          placeholderCount.incrementAndGet();
+          return inferDateTimePattern(placeholder.skip(1, 1).toString());
         });
+    try {
+      if (placeholderCount.get() > 0) {
+        // There is at least 1 placeholder. The input isn't a pure datetime "example".
+        // So we can't validate using parse().
+        return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
+      }
+      pattern = inferDateTimePattern(example, signature);
+      DateTimeFormatter fmt = inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
+      fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+      return fmt;
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      // IllegalArgumentException comes from ofPattern(): the verbatim (non-placeholder) part
+      // of the example is passed through as-is, so it can contain invalid pattern letters.
+      throw new DateTimeException(
+          "invalid date time example: " + example + " (" + pattern + ")", e);
+    }
   }
 
   private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
@@ -487,6 +484,10 @@ public final class DateTimeFormats {
 
   static String inferDateTimePattern(String example) {
     return inferDateTimePattern(example, forExample(example));
+  }
+
+  static Set<String> zoneNameAbbreviations() {
+    return Token.ZONE_NAME.names;
   }
 
   private static DateTimeFormatter inferDateTimeFormatter(String example, List<?> signature) {
@@ -735,47 +736,32 @@ public final class DateTimeFormats {
     /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
      * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as {@code
-     * Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}). They must be
-     * read as ids. The other abbreviations that are also ids, such as {@code UTC}, stay in {@link
-     * #ZONE_NAME} because both readings agree in every locale.
+     * Europe/Paris}). They must be read as ids. The other abbreviations that are also ids, such as
+     * {@code UTC}, stay in {@link #ZONE_NAME} because both readings agree in every locale.
      *
      * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
      */
-    ZONE_ID_ABBREVIATION("CET", "EET", "MET", "WET"),
+    ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
     /**
      * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
      * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
      * zone doesn't depend on the JVM default locale.
+     *
+     * <p>The list is limited to abbreviations that resolve under {@link Locale#ENGLISH} on current
+     * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) is read
+     * as the JDK's English default, and abbreviations whose default reading has the wrong offset
+     * are deliberately excluded.
      */
     ZONE_NAME(
-        Locale.ENGLISH, "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST",
-        "AKT", "AMST", "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT",
-        "BST", "BTT", "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST",
-        "CHOT", "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST",
-        "DAVT", "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EGST", "EGT",
-        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GST", "GYT",
-        "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT", "IOT",
-        "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
-        "MAWT", "MDT", "MEST", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
-        "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
-        "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT", "SAKT", "SAMT", "SAST",
-        "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT",
-        "TMT", "TVT", "UCT", "ULAT", "UT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST",
-        "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
-        "YET", "YKT", "YST",
-        // Legacy SystemV and POSIX-style names that embed a UTC offset in the name itself.
-        "AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "GMT0", "HST10", "MST7", "MST7MDT",
-        "PST8", "PST8PDT", "YST9", "YST9YDT"),
+        Locale.ENGLISH, "ACDT", "ADT", "AEDT", "AEST", "AET", "AKDT", "AKST", "AKT", "AST", "AWDT",
+        "AWST", "AWT", "CAT", "CDT", "CEST", "CST", "ChST", "EAT", "EDT", "EEST", "EST", "HADT",
+        "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MSK", "MST", "NDT", "NST", "NZDT",
+        "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UT", "UTC", "WAT", "WEST", "WIB", "WIT",
+        "WITA"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
-        "Canada", "Chile", "Cuba", "Egypt", "Eire", "Europe", "GB", "Greenwich", "Hongkong",
-        "Iceland", "Indian", "Iran", "Israel", "Jamaica", "Japan", "Kwajalein", "Libya", "Mexico",
-        "Mideast", "Navajo", "Pacific", "Poland", "Portugal", "Singapore", "SystemV", "Turkey",
-        "US", "Universal", "Zulu",
-        // Country-code aliases from the tz database's backward-compatibility list. The hyphenated
-        // ones are single names, not two, so they rely on INDIVISIBLE_NAME to stay whole.
-        "NZ", "NZ-CHAT", "PRC", "ROK", "W-SU"),
+        "Canada", "Chile", "Etc", "Europe", "Indian", "Mexico", "Pacific", "US"),
     NIAN("年"),
     YUE("月"),
     RI("日"),
@@ -797,7 +783,7 @@ public final class DateTimeFormats {
 
     private Token(Locale locale, String... names) {
       this.locale = locale;
-      this.names = new HashSet<String>(asList(names));
+      this.names = unmodifiableSet(new HashSet<>(asList(names)));
     }
   }
 
