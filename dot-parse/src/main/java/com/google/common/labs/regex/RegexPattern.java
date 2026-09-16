@@ -15,6 +15,8 @@
 package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
+import static com.google.mu.util.CharPredicate.range;
+import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -191,72 +193,59 @@ public sealed interface RegexPattern {
     }
 
     private static List<RegexPattern> flatten(List<RegexPattern> elements) {
-      boolean hasNested = false;
-      for (RegexPattern element : elements) {
-        if (element instanceof Sequence) {
-          hasNested = true;
-          break;
-        }
-      }
-      if (!hasNested) {
+      if (!hasNestedSequence(elements)) {
         return List.copyOf(elements);
       }
-      List<RegexPattern> flattened = new ArrayList<>(elements.size() + 4);
-      addFlattened(flattened, elements);
-      return List.copyOf(flattened);
+      // A nested sequence was flattened by its own constructor, so one level suffices.
+      return elements.stream()
+          .flatMap(e -> e instanceof Sequence seq ? seq.elements().stream() : Stream.of(e))
+          .collect(toUnmodifiableList());
     }
 
-    private static void addFlattened(List<RegexPattern> target, List<RegexPattern> elements) {
+    // a plain loop: this runs for every sequence the parser builds, and a stream costs more than
+    // the two or three elements it usually inspects
+    private static boolean hasNestedSequence(List<RegexPattern> elements) {
       for (RegexPattern element : elements) {
-        if (element instanceof Sequence seq) {
-          addFlattened(target, seq.elements());
-        } else {
-          target.add(element);
+        if (element instanceof Sequence) {
+          return true;
         }
       }
+      return false;
     }
 
     @Override public Metadata metadata() {
-      int minSize = 0;
-      int maxSize = 0;
-      for (RegexPattern element : elements) {
-        Metadata metadata = element.metadata();
-        minSize = SafeMath.saturatedAdd(minSize, metadata.minSize());
-        maxSize = SafeMath.saturatedAdd(maxSize, metadata.maxSize());
-      }
-      return new Metadata(minSize, maxSize);
+      return elements.stream()
+          .map(RegexPattern::metadata)
+          .reduce((a, b) -> new Metadata(
+              SafeMath.saturatedAdd(a.minSize(), b.minSize()),
+              SafeMath.saturatedAdd(a.maxSize(), b.maxSize())))
+          .orElseThrow();
     }
 
     @Override public String toString() {
-      StringBuilder builder = new StringBuilder();
-      boolean afterGroupNumber = false;
-      boolean directivesOnly = true;
-      for (int i = 0; i < elements.size(); i++) {
-        RegexPattern element = elements.get(i);
-        // `|` binds loosest, so a nested alternation has to be grouped to stay one element. The
-        // exception is a trailing alternation behind nothing but modifier directives: Java scopes
-        // their flags to the end of the enclosing group, so `(?i)a|b` needs no parentheses, and
-        // that is the shape a leading `(?i)` with a top-level `|` parses to.
-        boolean scopeSpanning = directivesOnly && i == elements.size() - 1;
-        String rendered =
-            element instanceof Alternation && !scopeSpanning
-                ? "(?:" + element + ")"
-                : element.toString();
-        // `\1` followed by `0` must not render as `\10`, which reads back as group 10. Only a
-        // directly adjacent sibling is considered; the parser never nests a Sequence in a Sequence.
-        if (afterGroupNumber && startsWithDigit(rendered)) {
-          builder.append("\\x3");
-        }
-        builder.append(rendered);
-        afterGroupNumber = element instanceof Backreference.Numbered;
-        directivesOnly &= element instanceof ModifierDirective;
+      int last = elements.size() - 1;
+      // Java scopes a directive's flags to the end of the enclosing group, so an alternation that
+      // ends the sequence behind nothing but modifier directives needs no parentheses: `(?i)a|b`,
+      // which is the shape a leading `(?i)` with a top-level `|` parses to.
+      if (elements.get(last) instanceof Alternation
+          && elements.subList(0, last).stream().allMatch(ModifierDirective.class::isInstance)) {
+        return elements.stream().map(Object::toString).collect(joining());
       }
-      return builder.toString();
+      return grouped(elements.get(0))
+          + adjacentPairsFrom(elements).mapToObj(Sequence::render).collect(joining());
     }
 
-    /** True if {@code rendered} starts with an ASCII digit, which {@code \x3N} can escape. */
-    private static boolean startsWithDigit(String rendered) {
-      return rendered.length() > 0 && rendered.charAt(0) >= '0' && rendered.charAt(0) <= '9';
+    /** `|` binds loosest, so a nested alternation is grouped to stay one element. */
+    private static String grouped(RegexPattern element) {
+      return element instanceof Alternation ? "(?:" + element + ")" : element.toString();
+    }
+
+    /** `\1` followed by `0` must not render as `\10`, which reads back as group 10. */
+    private static String render(RegexPattern previous, RegexPattern element) {
+      String rendered = grouped(element);
+      return previous instanceof Backreference.Numbered && range('0', '9').isPrefixOf(rendered)
+          ? "\\x3" + rendered
+          : rendered;
     }
   }
 
@@ -268,9 +257,11 @@ public sealed interface RegexPattern {
     }
 
     @Override public Metadata metadata() {
-      return new Metadata(
-          alternatives.stream().mapToInt(p -> p.metadata().minSize()).min().getAsInt(),
-          alternatives.stream().mapToInt(p -> p.metadata().maxSize()).max().getAsInt());
+      return alternatives.stream()
+          .map(RegexPattern::metadata)
+          .reduce((a, b) ->
+              new Metadata(Math.min(a.minSize(), b.minSize()), Math.max(a.maxSize(), b.maxSize())))
+          .orElseThrow();
     }
 
     @Override public String toString() {
@@ -872,19 +863,14 @@ public sealed interface RegexPattern {
     DOC_END("\\Z"),
     DOC_ABSOLUTE_END("\\z"),
     PREVIOUS_MATCH_END("\\G"),
-    GRAPHEME_CLUSTER_BOUNDARY("\\b", "{g}"),
+    GRAPHEME_CLUSTER_BOUNDARY("\\b{g}"),
     WORD_BOUNDARY("\\b"),
     NON_WORD_BOUNDARY("\\B");
 
-    @SuppressWarnings("ImmutableEnumChecker")
-    private final List<String> tokens;
+    private final String pattern;
 
-    Anchor(String... tokens) {
-      this.tokens = List.of(tokens);
-    }
-
-    List<String> tokens() {
-      return tokens;
+    Anchor(String pattern) {
+      this.pattern = pattern;
     }
 
     @Override public Metadata metadata() {
@@ -892,7 +878,7 @@ public sealed interface RegexPattern {
     }
 
     @Override public String toString() {
-      return String.join("", tokens);
+      return pattern;
     }
   }
 

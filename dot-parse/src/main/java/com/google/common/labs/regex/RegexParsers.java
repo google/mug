@@ -41,7 +41,6 @@ import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
-import static java.util.Comparator.comparingInt;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
@@ -129,10 +128,6 @@ final class RegexParsers {
       stream(PosixCharClass.values())
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
-  private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
-      .sorted(comparingInt((Anchor a) -> a.tokens().size()).reversed().thenComparing(Anchor::name))
-      .map(RegexParsers::anchor)
-      .collect(Parser.or());
 
   /** {@code (?<n1>...)} yes; {@code (?<1n>...)}, {@code (?<a_b>...)}, {@code (?<a b>...)} no. */
   private static final Parser<String> GROUP_NAME =
@@ -175,7 +170,7 @@ final class RegexParsers {
         negativeCharacterProperty(),
         groupOrLookaround(regex),
         anyOf(PredefinedCharClass.values()),
-        ANCHOR,
+        anyOf(Anchor.values()),
         literally(
             string("\\")
                 .then(
@@ -280,7 +275,7 @@ final class RegexParsers {
     Parser<String> name = anyOf(
         // The JDK slices to the `}` and looks the name up, so a misplaced space is just an
         // unknown name. `literally` keeps free spacing out of the name; before `{` it's skipped.
-        literally(consecutive(BRACED_NAME_CHAR, "property name")).between("{", "}"),
+        literally(consecutive(BRACED_NAME_CHAR, "property name").between("{", "}")),
         one(LATIN_LETTER, "category").map(String::valueOf));
     return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }
@@ -335,7 +330,7 @@ final class RegexParsers {
     return anyOf(
         body.between("[^", "]").map(RegexParsers::complementOf),
         // `^` is only a literal after the first position, so `[^]` is not an empty negated class.
-        body.between(one('[').notFollowedBy("^"), one(']')));
+        body.between(literally(one('[').notFollowedBy("^")), one(']')));
   }
 
   /** Creates a {@link CharRange}, reporting an invalid range as a parse error. */
@@ -402,7 +397,7 @@ final class RegexParsers {
   private static Parser<CharacterSet> intersected(
       Parser<CharacterSet> primary, Parser<CharacterSet> secondary) {
     return sequence(
-        primary, string("&&").then(secondary).zeroOrMore(),
+        primary, one('&').then(one('&')).then(secondary).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
   }
 
@@ -472,14 +467,6 @@ final class RegexParsers {
       }
       return parser;
     }
-  }
-
-  private static Parser<Anchor> anchor(Anchor anchor) {
-    return anchor.tokens().stream()
-        .map(Parser::string)
-        .reduce(Parser::then)
-        .orElseThrow()
-        .thenReturn(anchor);
   }
 
   private static <T> List<T> prepend(T first, List<? extends T> rest) {

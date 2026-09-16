@@ -985,11 +985,6 @@ public final class RegexPatternTest {
         .isEqualTo(freeSpacing(anyOf(new UnicodeProperty("L"))));
   }
 
-  @Test public void of_freeSpacingMode_charClass_withProperty_commentInsideBraces() {
-    assertThat(RegexPattern.of("(?x)[\\p{ # comment\n L}]"))
-        .isEqualTo(freeSpacing(anyOf(new UnicodeProperty("L"))));
-  }
-
   @Test public void of_freeSpacingMode_namedBackreference_spaceAfterK() {
     assertThat(RegexPattern.of("(?x)(?<foo>a)\\k <foo>"))
         .isEqualTo(
@@ -1006,14 +1001,22 @@ public final class RegexPatternTest {
                     new Group.Named("foo", new Literal("a")), new Backreference.Named("foo"))));
   }
 
-  @Test public void of_freeSpacingMode_anchor_graphemeClusterBoundary_spaceAfterB() {
+  @Test public void of_freeSpacingMode_anchor_spaceAfterBIsWordBoundaryAndLiteral() {
     assertThat(RegexPattern.of("(?x)\\b {g}"))
-        .isEqualTo(freeSpacing(Anchor.GRAPHEME_CLUSTER_BOUNDARY));
+        .isEqualTo(freeSpacing(sequence(Anchor.WORD_BOUNDARY, new Literal("{g}"))));
   }
 
-  @Test public void of_freeSpacingMode_anchor_graphemeClusterBoundary_commentAfterB() {
-    assertThat(RegexPattern.of("(?x)\\b # comment\n {g}"))
-        .isEqualTo(freeSpacing(Anchor.GRAPHEME_CLUSTER_BOUNDARY));
+  @Test public void of_freeSpacingMode_charClass_spaceBeforeCaretIsLiteral() {
+    assertThat(RegexPattern.of("(?x)[ ^a]"))
+        .isEqualTo(freeSpacing(anyOf(new LiteralChar('^'), new LiteralChar('a'))));
+  }
+
+  @Test public void of_freeSpacingMode_charClass_intersectionWithSpacesBetweenAmpersands() {
+    assertThat(RegexPattern.of("(?x)[a & & b]"))
+        .isEqualTo(
+            freeSpacing(
+                RegexPattern.intersection(
+                    List.of(anyOf(new LiteralChar('a')), anyOf(new LiteralChar('b'))))));
   }
 
   @Test public void of_freeSpacingMode_numberedBackreference_followedBySpaceAndDigit() {
@@ -1091,9 +1094,7 @@ public final class RegexPatternTest {
   }
 
   @Test public void of_freeSpacingMode_property_spacesInsideBraces() {
-    // `java.util.regex` skips whitespace before `{` but slices the name verbatim to `}`, so the
-    // leading space disappears and the trailing one stays, making this an unknown property name.
-    assertThat(RegexPattern.of("(?x)\\p{ L }")).isEqualTo(freeSpacing(new UnicodeProperty("L ")));
+    assertThat(RegexPattern.of("(?x)\\p{ L }")).isEqualTo(freeSpacing(new UnicodeProperty(" L ")));
   }
 
   @Test public void of_nestedFreeSpacingMode_enabled() {
