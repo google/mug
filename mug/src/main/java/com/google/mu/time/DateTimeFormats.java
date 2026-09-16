@@ -16,11 +16,11 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Arrays.asList;
@@ -30,6 +30,11 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -50,12 +55,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -168,8 +167,7 @@ public final class DateTimeFormats {
           "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Sun, 1 Jun 2008 11:05:30 +0800",
           "Sun, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
           "Tue, 10 Jun 2008 11:05:30 -0800", "1 Jun 2008 11:05:30 +0800",
-          "1 Jun 2008 11:05:30 -0800", "10 Jun 2008 11:05:30 +0800",
-          "10 Jun 2008 11:05:30 -0800")
+          "1 Jun 2008 11:05:30 -0800", "10 Jun 2008 11:05:30 +0800", "10 Jun 2008 11:05:30 -0800")
       .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
 
   private static final Map<List<?>, String> LOCAL_DATE_PATTERNS =
@@ -222,11 +220,12 @@ public final class DateTimeFormats {
           .build()
           .toMap();
 
-  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS = BiStream.from(
-          LOCAL_DATE_PATTERNS)
-      .mapValues((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
-      .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
-      .toMap();
+  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
+      BiStream.from(LOCAL_DATE_PATTERNS)
+          .mapValues(
+              (signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
+          .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+          .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
@@ -278,14 +277,25 @@ public final class DateTimeFormats {
                   "Japan", // single-word zone id
                   "GB-Eire",
                   "CET", // reads as Europe/Paris if treated as a zone name
-                  "Etc/UTC", "Etc/GMT", "Etc/Greenwich",
-                  "Etc/GMT+0", "Etc/GMT-0", "Etc/GMT+10", "Etc/GMT-10",
+                  "Etc/UTC",
+                  "Etc/GMT",
+                  "Etc/Greenwich",
+                  "Etc/GMT+0",
+                  "Etc/GMT-0",
+                  "Etc/GMT+10",
+                  "Etc/GMT-10",
                   // Etc/UTC±N are not valid tzdb ids, but Etc/UTC is. Mapping them to VV prevents
                   // greedy composition (VV + x) from silently parsing "Etc/UTC+10".
-                  "Etc/UTC+0", "Etc/UTC-0", "Etc/UTC+10", "Etc/UTC-10",
+                  "Etc/UTC+0",
+                  "Etc/UTC-0",
+                  "Etc/UTC+10",
+                  "Etc/UTC-10",
                   // ZoneId.of("GMT+08:00") and "UTC+08:00" are valid ZoneRegions that VV
                   // round-trips. OOOO would parse them to plain ZoneOffsets, losing zone identity.
-                  "GMT+08:00", "GMT-08:00", "UTC+08:00", "UTC-08:00"),
+                  "GMT+08:00",
+                  "GMT-08:00",
+                  "UTC+08:00",
+                  "UTC-08:00"),
               "VV")
           // Brackets are literal text, so the zone id inside them matches the entries above on its
           // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
@@ -305,8 +315,7 @@ public final class DateTimeFormats {
           // to greedy composition (e.g. zzz + x on "PST+12" or VV + x on "CET+12").
           .addAll(
               forExamples(
-                  "GMT+8", "GMT-8", "GMT+12", "GMT-12",
-                  "UTC+8", "UTC-8", "UTC+12", "UTC-12",
+                  "GMT+8", "GMT-8", "GMT+12", "GMT-12", "UTC+8", "UTC-8", "UTC+12", "UTC-12",
                   "CET+8", "CET-8", "CET+12", "CET-12"),
               "O")
           // GMT+0800 (e.g. from JavaScript Date.toString()) maps to 'GMT'xx so the offset is
@@ -389,11 +398,10 @@ public final class DateTimeFormats {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
-            .orElseGet(() ->
-                lookup(
-                        ISO_DATE_TIME_FORMATTERS,
-                        signatureWithoutNanoseconds(dateTimeString).orElse(signature))
-                    .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
+            .orElseGet(() -> lookup(
+                    ISO_DATE_TIME_FORMATTERS,
+                    signatureWithoutNanoseconds(dateTimeString).orElse(signature))
+                .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
 
@@ -500,7 +508,8 @@ public final class DateTimeFormats {
         continue;
       }
 
-      int consumed = PREFIX_TABLE.getAll(remaining)
+      int consumed = PREFIX_TABLE
+          .getAll(remaining)
           .collect(maxByKey(comparingInt(List::size)))
           .map((prefix, fmt) -> {
             builder.append(fmt);
@@ -538,7 +547,8 @@ public final class DateTimeFormats {
    * signature lists being: {@code [2, :, 2]} and {@code [2, :, 2, :, 2]} respectively.
    */
   private static List<?> forExample(String example) {
-    return TOKENIZER.cut(example)
+    return TOKENIZER
+        .cut(example)
         .filter(Substring.Match::isNotEmpty)
         .map(match -> {
           if (DIGIT.matchesAllOf(match)) {
@@ -560,9 +570,11 @@ public final class DateTimeFormats {
   }
 
   private static Optional<List<?>> signatureWithoutNanoseconds(String example) {
-    Substring.Pattern nanos = consecutive(DIGIT).immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
-       .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
-    return nanos.in(example)
+    Substring.Pattern nanos = consecutive(DIGIT)
+        .immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
+        .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
+    return nanos
+        .in(example)
         .map(part -> forExample(example.substring(0, part.index() - 1) + part.after()));
   }
 
@@ -586,7 +598,8 @@ public final class DateTimeFormats {
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
-      return RESOLUTION_TABLE.getAll(signature)
+      return RESOLUTION_TABLE
+          .getAll(signature)
           .flatMapValues(rules -> rules.stream()
               .filter(rule -> rule.predicate.test(signature))
               .map(rule -> rule.format))
@@ -679,8 +692,8 @@ public final class DateTimeFormats {
   private enum Token {
     WEEKDAY_ABBREVIATION(Locale.ENGLISH, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
     WEEKDAY(
-        Locale.ENGLISH,
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+        Locale.ENGLISH, "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+        "Sunday"),
     XINGQI(Locale.CHINA, "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
     ZHOU(Locale.CHINA, "周一", "周二", "周三", "周四", "周五", "周六", "周日"),
     WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
@@ -688,12 +701,11 @@ public final class DateTimeFormats {
     // name -> token map, so listing it here too would fail with "Duplicate key: [May]" at class
     // init. It belongs to MONTH, which means a "May" example always infers LLLL, never LLL.
     MONTH_ABBREVIATION(
-        Locale.ENGLISH,
-        "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+        Locale.ENGLISH, "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov",
+        "Dec"),
     MONTH(
-        Locale.ENGLISH,
-        "January", "February", "March", "April", "May", "June", "July", "August", "September",
-        "October", "November", "December"),
+        Locale.ENGLISH, "January", "February", "March", "April", "May", "June", "July", "August",
+        "September", "October", "November", "December"),
     MONTH_CODES("L", "LL", "LLL", "LLLL"),
     YEAR_CODES("yyyy", "YYYY"),
     DAY_CODES("dd", "d"),
@@ -710,22 +722,22 @@ public final class DateTimeFormats {
     AD_BC(Locale.ENGLISH, "AD", "BC"),
     /**
      * {@code GMT} is a zone name, but it is also a keyword of the offset syntax: the localized
-     * offset specifier {@code O} requires it as a literal prefix ({@code GMT+8}), and
-     * {@link DateTimeFormatter#RFC_1123_DATE_TIME} accepts it as the only spelling of a zero
-     * offset. A key that spells {@code GMT} therefore means {@code GMT}, not "any zone name" --
-     * otherwise it would claim {@code UTC+8} and {@code Tue, 10 Jun 2008 11:05:30 UTC}, which
-     * those formatters reject.
+     * offset specifier {@code O} requires it as a literal prefix ({@code GMT+8}), and {@link
+     * DateTimeFormatter#RFC_1123_DATE_TIME} accepts it as the only spelling of a zero offset. A key
+     * that spells {@code GMT} therefore means {@code GMT}, not "any zone name" -- otherwise it
+     * would claim {@code UTC+8} and {@code Tue, 10 Jun 2008 11:05:30 UTC}, which those formatters
+     * reject.
      *
-     * <p>On its own it maps to {@code zzz}, and {@code O} is locale-sensitive too, so it takes
-     * the same {@link Locale#ENGLISH} pin as {@link #ZONE_NAME}.
+     * <p>On its own it maps to {@code zzz}, and {@code O} is locale-sensitive too, so it takes the
+     * same {@link Locale#ENGLISH} pin as {@link #ZONE_NAME}.
      */
     GMT(Locale.ENGLISH, "GMT"),
     /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
-     * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as
-     * {@code Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}).
-     * They must be read as ids. The other abbreviations that are also ids, such as {@code UTC},
-     * stay in {@link #ZONE_NAME} because both readings agree in every locale.
+     * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as {@code
+     * Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}). They must be
+     * read as ids. The other abbreviations that are also ids, such as {@code UTC}, stay in {@link
+     * #ZONE_NAME} because both readings agree in every locale.
      *
      * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
      */
@@ -736,28 +748,24 @@ public final class DateTimeFormats {
      * zone doesn't depend on the JVM default locale.
      */
     ZONE_NAME(
-        Locale.ENGLISH,
-        "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
-        "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
-        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST", "CHOT",
-        "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
-        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EGST", "EGT",
-        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GST",
-        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
-        "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
-        "MAGT", "MAWT", "MDT", "MEST", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
-        "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT",
-        "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT",
-        "SAKT", "SAMT", "SAST", "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT",
-        "THA", "TJT", "TKT", "TLT", "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT",
-        "VLAT", "VOLT", "VOST", "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WIB", "WIT",
-        "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST",
+        Locale.ENGLISH, "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST",
+        "AKT", "AMST", "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT",
+        "BST", "BTT", "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST",
+        "CHOT", "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST",
+        "DAVT", "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EGST", "EGT",
+        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GST", "GYT",
+        "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT", "IOT",
+        "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
+        "MAWT", "MDT", "MEST", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
+        "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
+        "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT", "SAKT", "SAMT", "SAST",
+        "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT",
+        "TMT", "TVT", "UCT", "ULAT", "UT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST",
+        "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
+        "YET", "YKT", "YST",
         // Legacy SystemV and POSIX-style names that embed a UTC offset in the name itself.
         "AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "GMT0", "HST10", "MST7", "MST7MDT",
-        "PST8", "PST8PDT", "YST9", "YST9YDT",
-        // Two-letter generic zone names (e.g. "PT", "ET").
-        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
-        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
+        "PST8", "PST8PDT", "YST9", "YST9YDT"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
