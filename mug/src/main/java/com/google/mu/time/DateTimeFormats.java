@@ -356,7 +356,7 @@ public final class DateTimeFormats {
     if (iso != null) return iso;
     // Ignore the ".nanosecond" part of the time in ISO examples because all ISO
     // time formats allow the nanosecond part optionally, with 1 to 9 digits.
-    return lookup(ISO_DATE_TIME_FORMATTERS, withoutNanoseconds(example).orElse(signature))
+    return lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(example).orElse(signature))
         .map(fmt -> {
           try {
             fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
@@ -398,7 +398,7 @@ public final class DateTimeFormats {
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
             .orElseGet(() ->
-                lookup(ISO_DATE_TIME_FORMATTERS, withoutNanoseconds(dateTimeString).orElse(signature))
+                lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(dateTimeString).orElse(signature))
                     .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
@@ -561,7 +561,7 @@ public final class DateTimeFormats {
         .collect(toList());
   }
 
-  private static Optional<List<?>> withoutNanoseconds(String example) {
+  private static Optional<List<?>> signatureWithoutNanoseconds(String example) {
     Substring.Pattern nanos = consecutive(DIGIT).immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
        .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
     return nanos.in(example)
