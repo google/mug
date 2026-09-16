@@ -39,6 +39,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import org.junit.After;
@@ -713,6 +714,79 @@ public final class DateTimeFormatsTest {
     assertThat(DateTimeFormats.parseZonedDateTime("Sat Dec 03 2011 10:15:30 GMT+0800"))
         .isEqualTo(
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8)));
+  }
+
+  @Test public void dateToString_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Wed Sep 16 11:32:43 PDT 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @Test public void dateToString_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("Wed Sep 16 11:32:43 PDT 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                    LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles"))
+                .toInstant());
+  }
+
+  @Test public void dateToString_fromJavaUtilDate_parseToInstant() {
+    Date date = new Date(1789583563000L);
+    assertThat(DateTimeFormats.parseToInstant(date.toString())).isEqualTo(date.toInstant());
+  }
+
+  @Test public void dateToString_monthOfMay_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Mon May 04 12:00:00 PDT 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 5, 4, 12, 0, 0), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void golangReferenceTimestamp_formatOf() {
+    DateTimeFormatter formatter = formatOf("Mon Jan 2 15:04:05 MST 2006");
+    assertThat(ZonedDateTime.parse("Wed Sep 16 11:32:43 PDT 2026", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void golangUnixDate_spacePaddedSingleDigitDay_formatOf() {
+    DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 MST 2006");
+    assertThat(ZonedDateTime.parse("Mon Jan  2 15:04:05 MST 2006", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2006, 1, 2, 15, 4, 5), ZoneId.of("America/Denver")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void golangUnixDate_spacePaddedFormat_parsesTwoDigitDay() {
+    DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 MST 2006");
+    assertThat(ZonedDateTime.parse("Thu Jan 12 15:04:05 MST 2006", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2006, 1, 12, 15, 4, 5), ZoneId.of("America/Denver")));
+  }
+
+  @Test public void golangRubyDate_parseOffsetDateTime() {
+    assertThat(DateTimeFormats.parseOffsetDateTime("Mon Jan 02 15:04:05 -0700 2006"))
+        .isEqualTo(OffsetDateTime.of(2006, 1, 2, 15, 4, 5, 0, ZoneOffset.ofHours(-7)));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void golangAnsic_formatOf() {
+    DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 2006");
+    assertThat(LocalDateTime.parse("Mon Jan  2 15:04:05 2006", formatter))
+        .isEqualTo(LocalDateTime.of(2006, 1, 2, 15, 4, 5));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void dateToString_missingYear_throws() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("Mon Jan 02 15:04:05 MST"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: Mon Jan 02 15:04:05 MST");
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck") // TODO: remove after mug-errorprone release

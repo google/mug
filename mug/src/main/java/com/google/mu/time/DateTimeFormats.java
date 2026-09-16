@@ -23,6 +23,7 @@ import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
+import static com.google.mu.util.stream.BiStream.crossJoining;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Comparator.comparingInt;
@@ -42,6 +43,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -209,12 +211,14 @@ public final class DateTimeFormats {
           .add(forExample("13日"), "dd日")
           .add(forExample("Jan 11 2011"), "LLL dd yyyy")
           .add(forExample("Jan 1 2011"), "LLL d yyyy")
+          .add(forExample("Jan  1 2011"), "LLL ppd yyyy")
           .add(forExample("11 Jan 2011"), "dd LLL yyyy")
           .add(forExample("1 Jan 2011"), "d LLL yyyy")
           .add(forExample("2011 Jan 1"), "yyyy LLL d")
           .add(forExample("2011 Jan 11"), "yyyy LLL dd")
           .add(forExample("January 11 2011"), "LLLL dd yyyy")
           .add(forExample("January 1 2011"), "LLLL d yyyy")
+          .add(forExample("January  1 2011"), "LLLL ppd yyyy")
           .add(forExample("11 January 2011"), "dd LLLL yyyy")
           .add(forExample("1 January 2011"), "d LLLL yyyy")
           .add(forExample("2011 January 1"), "yyyy LLLL d")
@@ -232,39 +236,61 @@ public final class DateTimeFormats {
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
           .addAll(LOCAL_DATE_PATTERNS)
-          .add(forExample("T"), "'T'")
-          .add(forExample("10:15"), "HH:mm")
-          .add(forExample("10:15:30"), "HH:mm:ss")
-          .add(forExample("10:15:30.1"), "HH:mm:ss.S")
-          .add(forExample("10:15:30.12"), "HH:mm:ss.SS")
-          .add(forExample("10:15:30.123"), "HH:mm:ss.SSS")
-          .add(forExample("10:15:30.1234"), "HH:mm:ss.SSSS")
-          .add(forExample("10:15:30.12345"), "HH:mm:ss.SSSSS")
-          .add(forExample("10:15:30.123456"), "HH:mm:ss.SSSSSS")
-          .add(forExample("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
-          .add(forExample("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
-          .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
-          .add(forExample("10点"), "HH点")
-          .add(forExample("1点"), "H点")
-          .add(forExample("10时"), "HH时")
-          .add(forExample("1时"), "H时")
-          .add(forExample("15分"), "mm分")
-          .add(forExample("5分"), "m分")
-          .add(forExample("13秒"), "ss秒")
-          .add(forExample("3秒"), "s秒")
-          .add(forExample("上午"), "a")
-          .add(forExample("下午2点"), "ah点")
-          .add(forExample("下午2时"), "ah时")
-          .add(forExample("下午2:10:10"), "ah:mm:ss")
-          .add(forExample("下午2:10"), "ah:mm")
-          .add(forExample("1 AM"), "h a")
-          .add(forExample("1AM"), "ha")
-          .add(forExample("10 AM"), "HH a")
-          .add(forExample("10AM"), "HHa")
-          .add(forExample("1:00 AM"), "h:mm a")
-          .add(forExample("1:00AM"), "h:mma")
-          .add(forExample("1:00:00 AM"), "h:mm:ss a")
-          .add(forExample("1:00:00AM"), "h:mm:ssa")
+          .addAll(
+              crossJoin(
+                      BiStream.of(
+                              "Dec 03", "LLL dd",
+                              "Dec 3", "LLL d",
+                              "Dec  3", "LLL ppd",
+                              "May 03", "LLLL dd",
+                              "May 3", "LLLL d",
+                              "May  3", "LLLL ppd")
+                          .mapKeys(Collections::singletonList)
+                          .toMap(),
+                      " ",
+                      BiStream.of(
+                              asList("10:15:30 PST 2011", "10:15:30 GMT 2011"), "HH:mm:ss zzz yyyy",
+                              asList("10:15:30 +0800 2011", "10:15:30 -0800 2011"),
+                                  "HH:mm:ss ZZ yyyy",
+                              asList("10:15:30 GMT+08:00 2011", "10:15:30 GMT-08:00 2011"),
+                                  "HH:mm:ss VV yyyy",
+                              asList("10:15:30 2011"), "HH:mm:ss yyyy")
+                          .toMap())
+                  .mapKeys(DateTimeFormats::forExample)
+                  .toMap())
+          .addAll(forExamples("T"), "'T'")
+          .addAll(forExamples("10:15"), "HH:mm")
+          .addAll(forExamples("10:15:30"), "HH:mm:ss")
+          .addAll(forExamples("10:15:30.1"), "HH:mm:ss.S")
+          .addAll(forExamples("10:15:30.12"), "HH:mm:ss.SS")
+          .addAll(forExamples("10:15:30.123"), "HH:mm:ss.SSS")
+          .addAll(forExamples("10:15:30.1234"), "HH:mm:ss.SSSS")
+          .addAll(forExamples("10:15:30.12345"), "HH:mm:ss.SSSSS")
+          .addAll(forExamples("10:15:30.123456"), "HH:mm:ss.SSSSSS")
+          .addAll(forExamples("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
+          .addAll(forExamples("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
+          .addAll(forExamples("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
+          .addAll(forExamples("10点"), "HH点")
+          .addAll(forExamples("1点"), "H点")
+          .addAll(forExamples("10时"), "HH时")
+          .addAll(forExamples("1时"), "H时")
+          .addAll(forExamples("15分"), "mm分")
+          .addAll(forExamples("5分"), "m分")
+          .addAll(forExamples("13秒"), "ss秒")
+          .addAll(forExamples("3秒"), "s秒")
+          .addAll(forExamples("上午"), "a")
+          .addAll(forExamples("下午2点"), "ah点")
+          .addAll(forExamples("下午2时"), "ah时")
+          .addAll(forExamples("下午2:10:10"), "ah:mm:ss")
+          .addAll(forExamples("下午2:10"), "ah:mm")
+          .addAll(forExamples("1 AM"), "h a")
+          .addAll(forExamples("1AM"), "ha")
+          .addAll(forExamples("10 AM"), "HH a")
+          .addAll(forExamples("10AM"), "HHa")
+          .addAll(forExamples("1:00 AM"), "h:mm a")
+          .addAll(forExamples("1:00AM"), "h:mma")
+          .addAll(forExamples("1:00:00 AM"), "h:mm:ss a")
+          .addAll(forExamples("1:00:00AM"), "h:mm:ssa")
           // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
           // token: a shape made of WORD alone would claim every unrecognized word, turning typos
           // into bad-zone errors.
@@ -297,11 +323,11 @@ public final class DateTimeFormats {
           // Brackets are literal text, so the zone id inside them matches the entries above on its
           // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
           // (zzz), but ZonedDateTime only ever brackets a zone id.
-          .add(forExample("["), "'['")
-          .add(forExample("]"), "']'")
+          .addAll(forExamples("["), "'['")
+          .addAll(forExamples("]"), "']'")
           .addAll(forExamples("[UTC]", "[GMT]"), "'['VV']'")
           .addAll(forExamples("PST", "GMT"), "zzz")
-          .add(forExample("Z"), "X")
+          .addAll(forExamples("Z"), "X")
           .addAll(forExamples("+08", "-08"), "x")
           .addAll(forExamples("+080000", "-080000"), "xxxx")
           .addAll(forExamples("+08:00:00", "-08:00:00"), "xxxxx")
@@ -319,15 +345,12 @@ public final class DateTimeFormats {
           // falling through to greedy composition (zzz + ZZ).
           .addAll(forExamples("GMT+0800", "GMT-0800", "UTC+0800", "UTC-0800"), "'GMT'xx")
           .addAll(forExamples("GMT+080000", "GMT-080000", "UTC+080000", "UTC-080000"), "'GMT'xxxx")
-          .add(forExample("Fri"), "EEE")
-          .add(forExample("Friday"), "EEEE")
-          .add(forExample("周一"), "EEE")
-          .add(forExample("星期一"), "EEEE")
-          .add(forExample("Jan"), "LLL")
-          .add(forExample("January"), "LLLL")
-          .add(forExample("PM"), "a")
-          .add(forExample("a.m."), "a")
-          .add(forExample("AD"), "G")
+          .addAll(forExamples("Fri", "周五"), "EEE")
+          .addAll(forExamples("Friday", "星期五"), "EEEE")
+          .addAll(forExamples("Jan"), "LLL")
+          .addAll(forExamples("January"), "LLLL")
+          .addAll(forExamples("PM", "a.m."), "a")
+          .addAll(forExamples("AD"), "G")
           .build();
 
   /**
@@ -576,15 +599,27 @@ public final class DateTimeFormats {
         || type == Character.CONNECTOR_PUNCTUATION || type == Character.OTHER_PUNCTUATION;
   }
 
+  private static BiStream<String, String> crossJoin(
+      Map<List<String>, String> left, String separator, Map<List<String>, String> right) {
+    return BiStream.from(left)
+        .flatMap((k1s, v1) -> BiStream.from(right)
+            .flatMap((k2s, v2) -> k1s.stream()
+                .collect(crossJoining(k2s.stream()))
+                .mapKeys((k1, k2) -> k1 + separator + k2)
+                .mapValues(unused -> v1 + separator + v2)));
+  }
+
   private static final class LocalDateRule {
     private static final PrefixSearchTable<Object, List<LocalDateRule>> RESOLUTION_TABLE =
         PrefixSearchTable.<Object, List<LocalDateRule>>builder()
-            .add(forExample("10-30-2014"), asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
-            .add(forExample("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
-            .add(forExample("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
-            .add(forExample("10/30/2014"), asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
-            .add(forExample("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
-            .add(forExample("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
+            .addAll(
+                forExamples("10-30-2014"), asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
+            .addAll(forExamples("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
+            .addAll(forExamples("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
+            .addAll(
+                forExamples("10/30/2014"), asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
+            .addAll(forExamples("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
+            .addAll(forExamples("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
@@ -723,9 +758,9 @@ public final class DateTimeFormats {
      */
     GMT(Locale.ENGLISH, "GMT"),
     /**
-     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads
-     * as {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that
-     * the zone doesn't depend on the JVM default locale.
+     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
+     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
+     * zone doesn't depend on the JVM default locale.
      *
      * <p>The list is limited to abbreviations that resolve under {@link Locale#ENGLISH} on current
      * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) is read
