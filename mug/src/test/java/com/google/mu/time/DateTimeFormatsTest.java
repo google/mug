@@ -727,14 +727,106 @@ public final class DateTimeFormatsTest {
    * rejects the abbreviated offset, so no pattern can read this.
    */
   @Test
-  public void bareUtcShortOffset_unsupported() {
-    DateTimeException thrown =
+  public void bareUtcShortOffset_throws() {
+    DateTimeParseException thrown =
         assertThrows(
-            DateTimeException.class,
+            DateTimeParseException.class,
             () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC+8"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("unsupported date time example: 2011-12-03 10:15:30 UTC+8");
+        .isEqualTo("Text '2011-12-03 10:15:30 UTC+8' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareUtcTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC+12"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 UTC+12' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareZoneAbbreviationWithTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST+12"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PST+12' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareZoneIdAbbreviationWithTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET+12"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 CET+12' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareZoneIdAbbreviationWithColonOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET+08:00"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 CET+08:00' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bracketedUtcTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30+08:00[UTC+08]"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03T10:15:30+08:00[UTC+08]' could not be parsed at index 26");
+  }
+
+  @Test
+  public void etcUtcShortOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Etc/UTC+8"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Text '2011-12-03 10:15:30 Etc/UTC+8' could not be parsed, unparsed text found at"
+                + " index 27");
+  }
+
+  @Test
+  public void etcUtcTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 Etc/UTC+10"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Text '2011-12-03 10:15:30 Etc/UTC+10' could not be parsed, unparsed text found at"
+                + " index 27");
+  }
+
+  @Test
+  public void bracketedEtcUtcTwoDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30+08:00[Etc/UTC+08]"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03T10:15:30+08:00[Etc/UTC+08]' could not be parsed at index 33");
   }
 
   @Test
@@ -1691,6 +1783,81 @@ public final class DateTimeFormatsTest {
         .isEqualTo(
             ZonedDateTime.parse(
                 "2025-08-13T02:10:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+  }
+
+  /**
+   * A CJK token pins {@link Locale#CHINA} and a zone abbreviation pins {@link Locale#ENGLISH}. When
+   * an example carries both, CHINA wins, and the zone reading differs as a result. This is the only
+   * shape where the precedence is observable: every other mix of the two is unparseable in either
+   * locale.
+   */
+  @Test
+  public void localePrecedence_cjkWeekdayWinsOverZoneAbbreviation() {
+    assertThat(DateTimeFormats.parseZonedDateTime("星期六 2011-12-03 10:15:30 MT"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Mazatlan")));
+  }
+
+  @Test
+  public void localePrecedence_englishWeekdayKeepsEnglishZoneReading() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Sat 2011-12-03 10:15:30 MT"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Denver")));
+  }
+
+  @Test
+  public void localePrecedence_cjkAmPmMarkerWinsOverZoneAbbreviation() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011年12月3日 上午10点 PST"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 0), ZoneId.of("America/Los_Angeles")));
+  }
+
+  /**
+   * {@code AD} and {@code BC} are English spellings read through the locale-sensitive {@code G}
+   * specifier, so the era token pins {@link Locale#ENGLISH}. Unpinned, the example parses in only
+   * 6 of the 22 locales below -- the ones whose own era text happens to be "AD"/"BC".
+   */
+  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin. Until
+  // then the compile-time check runs the old, unpinned inference against whatever locale the build
+  // machine defaults to, so it accepts or rejects these examples depending on the machine.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void era_adSuffix_readInEnglish() {
+    assertThat(LocalDate.parse("2011-12-03 AD", formatOf("2011-12-03 AD")))
+        .isEqualTo(LocalDate.of(2011, 12, 3));
+  }
+
+  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void era_adPrefix_readInEnglish() {
+    assertThat(LocalDate.parse("AD 2011-12-03", formatOf("AD 2011-12-03")))
+        .isEqualTo(LocalDate.of(2011, 12, 3));
+  }
+
+  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin.
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void era_bcSuffix_readInEnglish() {
+    assertThat(LocalDate.parse("0500-12-03 BC", formatOf("0500-12-03 BC")))
+        .isEqualTo(LocalDate.of(-499, 12, 3));
+  }
+
+  /**
+   * The CJK tokens are declared before the era token, so they keep winning the locale. A mixed
+   * example is rejected rather than read under a locale that can only understand half of it.
+   */
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void era_mixedWithCjkWeekday_throws() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("星期六 2011-12-03 AD"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 星期六 2011-12-03 AD (EEEE yyyy-MM-dd G)");
   }
 
   @Test

@@ -25,6 +25,7 @@ import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -281,6 +282,10 @@ public final class DateTimeFormats {
           .add(forExample("Etc/GMT-0"), "VV")
           .add(forExample("Etc/GMT+10"), "VV")
           .add(forExample("Etc/GMT-10"), "VV")
+          .add(forExample("Etc/UTC+0"), "VV")
+          .add(forExample("Etc/UTC-0"), "VV")
+          .add(forExample("Etc/UTC+10"), "VV")
+          .add(forExample("Etc/UTC-10"), "VV")
           // Brackets are literal text, so the zone id inside them matches the entries above on its
           // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
           // (zzz), but ZonedDateTime only ever brackets a zone id.
@@ -303,19 +308,30 @@ public final class DateTimeFormats {
           .add(forExample("-0800"), "ZZ")
           .add(forExample("+08:00"), "ZZZZZ")
           .add(forExample("-08:00"), "ZZZZZ")
-          // Only GMT has these two shapes: O requires the literal "GMT", and there is no pattern
-          // that reads "UTC+8" at all (VV rejects the abbreviated offset).
+          // GMT+8 / GMT+12 map to O (which requires literal "GMT"). Registering the same shapes
+          // for ZONE_NAME (UTC) and ZONE_ID_ABBREVIATION (CET) prevents them from falling through
+          // to greedy composition (e.g. zzz + x on "PST+12" or VV + x on "CET+12").
           .add(forExample("GMT+8"), "O")
           .add(forExample("GMT-8"), "O")
           .add(forExample("GMT+12"), "O")
           .add(forExample("GMT-12"), "O")
+          .add(forExample("UTC+8"), "O")
+          .add(forExample("UTC-8"), "O")
+          .add(forExample("UTC+12"), "O")
+          .add(forExample("UTC-12"), "O")
+          .add(forExample("CET+8"), "O")
+          .add(forExample("CET-8"), "O")
+          .add(forExample("CET+12"), "O")
+          .add(forExample("CET-12"), "O")
           // ZoneId.of("GMT+08:00") is a ZoneRegion, and VV round-trips it. OOOO would parse it to
-          // a plain ZoneOffset, losing the zone identity. The short GMT+8 spelling below has no
-          // choice: VV rejects it, only O parses it.
+          // a plain ZoneOffset, losing the zone identity. CET+08:00 is not a valid ZoneId; mapping
+          // it to OOOO prevents it from falling through to VV + ZZZZZ.
           .add(forExample("GMT+08:00"), "VV")
           .add(forExample("GMT-08:00"), "VV")
           .add(forExample("UTC+08:00"), "VV")
           .add(forExample("UTC-08:00"), "VV")
+          .add(forExample("CET+08:00"), "OOOO")
+          .add(forExample("CET-08:00"), "OOOO")
           .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("周一"), "EEE")
@@ -340,7 +356,7 @@ public final class DateTimeFormats {
     if (iso != null) return iso;
     // Ignore the ".nanosecond" part of the time in ISO examples because all ISO
     // time formats allow the nanosecond part optionally, with 1 to 9 digits.
-    return lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(example)))
+    return lookup(ISO_DATE_TIME_FORMATTERS, withoutNanoseconds(example).orElse(signature))
         .map(fmt -> {
           try {
             fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
@@ -382,30 +398,20 @@ public final class DateTimeFormats {
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
             .orElseGet(() ->
-                lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
+                lookup(ISO_DATE_TIME_FORMATTERS, withoutNanoseconds(dateTimeString).orElse(signature))
                     .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
 
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
-    if (signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU)
-        || signature.contains(Token.WU)) {
-      return fmt.withLocale(Locale.CHINA);
-    }
-    if (signature.contains(Token.MONTH_ABBREVIATION) || signature.contains(Token.MONTH)
-        || signature.contains(Token.WEEKDAY_ABBREVIATION) || signature.contains(Token.WEEKDAY)
-        || signature.contains(Token.AM_PM)
-        // Zone abbreviations map to zzz, a locale-sensitive text lookup: "PST" reads as
-        // Asia/Manila under en_GB. Pin the locale so the zone doesn't depend on the JVM
-        // default. Zone ids (VV) need no pin; they are read as ids, not looked up by name.
-        || signature.contains(Token.ZONE_NAME)
-        || signature.contains(Token.GENERIC_ZONE_NAME)
-        // GMT maps to zzz on its own and is the literal prefix the locale-sensitive O specifier
-        // expects, so it needs the same pin.
-        || signature.contains(Token.GMT)) {
-      return fmt.withLocale(Locale.ENGLISH);
-    }
-    return fmt;
+    return signature.stream()
+        .filter(Token.class::isInstance)
+        .map(Token.class::cast)
+        .filter(token -> token.locale != null)
+        // Enum natural order is declaration order: the token declared first wins.
+        .min(naturalOrder())
+        .map(token -> fmt.withLocale(token.locale))
+        .orElse(fmt);
   }
 
   /**
@@ -555,13 +561,11 @@ public final class DateTimeFormats {
         .collect(toList());
   }
 
-  private static String removeNanosecondsPart(String example) {
-    return consecutive(DIGIT).immediatelyBetween(
-            ":", INCLUSIVE, ".", INCLUSIVE) // the "":ss."" in "HH:mm:ss.nnnnn"
-        .then(leading(DIGIT)) // the digits immediately after the ":ss." are the nanos
-        .in(example)
-        .map(nanos -> example.substring(0, nanos.index() - 1) + nanos.after())
-        .orElse(example);
+  private static Optional<List<?>> withoutNanoseconds(String example) {
+    Substring.Pattern nanos = consecutive(DIGIT).immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
+       .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
+    return nanos.in(example)
+        .map(part -> forExample(example.substring(0, part.index() - 1) + part.after()));
   }
 
   private static boolean isSeparator(char c) {
@@ -668,18 +672,28 @@ public final class DateTimeFormats {
    * Words listed for the same token enum are considered equivalent. That is, you can use "Fri" in
    * the example pattern and it will match "Mon" (but won't match "Monday" as it belongs to a
    * different token enum.
+   *
+   * <p>A token whose text is read through a locale-sensitive lookup declares the locale to read it
+   * in. When an example carries tokens of more than one locale, the one declared first here wins:
+   * see {@code inferLocaleIfNeeded}.
    */
+  @SuppressWarnings("ImmutableEnumChecker")
   private enum Token {
-    WEEKDAY_ABBREVIATION("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-    WEEKDAY("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
-    XINGQI("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
-    ZHOU("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
+    WEEKDAY_ABBREVIATION(Locale.ENGLISH, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+    WEEKDAY(
+        Locale.ENGLISH,
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+    XINGQI(Locale.CHINA, "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
+    ZHOU(Locale.CHINA, "周一", "周二", "周三", "周四", "周五", "周六", "周日"),
     WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
     // "May" is deliberately absent: it's spelled the same abbreviated and in full, and ALL is a
     // name -> token map, so listing it here too would fail with "Duplicate key: [May]" at class
     // init. It belongs to MONTH, which means a "May" example always infers LLLL, never LLL.
-    MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+    MONTH_ABBREVIATION(
+        Locale.ENGLISH,
+        "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     MONTH(
+        Locale.ENGLISH,
         "January", "February", "March", "April", "May", "June", "July", "August", "September",
         "October", "November", "December"),
     MONTH_CODES("L", "LL", "LLL", "LLLL"),
@@ -688,10 +702,21 @@ public final class DateTimeFormats {
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_PM("AM", "PM", "am", "pm"),
-    WU("上午", "下午"),
-    AD_BC("AD", "BC"),
+    AM_PM(Locale.ENGLISH, "AM", "PM", "am", "pm"),
+    WU(Locale.CHINA, "上午", "下午"),
+    /**
+     * {@code AD} and {@code BC} are the English spellings of the era, read through {@code G}, a
+     * locale-sensitive text lookup. Unpinned, they would only be readable on a machine whose
+     * default locale spells the era the same way.
+     */
+    AD_BC(Locale.ENGLISH, "AD", "BC"),
+    /**
+     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
+     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
+     * zone doesn't depend on the JVM default locale.
+     */
     GENERIC_ZONE_NAME(
+        Locale.ENGLISH,
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
         "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
     /**
@@ -701,17 +726,23 @@ public final class DateTimeFormats {
      * offset. A key that spells {@code GMT} therefore means {@code GMT}, not "any zone name" --
      * otherwise it would claim {@code UTC+8} and {@code Tue, 10 Jun 2008 11:05:30 UTC}, which
      * those formatters reject.
+     *
+     * <p>On its own it maps to {@code zzz}, and {@code O} is locale-sensitive too, so it takes
+     * the same {@link Locale#ENGLISH} pin as {@link #ZONE_NAME}.
      */
-    GMT("GMT"),
+    GMT(Locale.ENGLISH, "GMT"),
     /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
      * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as
      * {@code Europe/Paris}). They must be read as ids. The other abbreviations that are also
      * ids, such as {@code UTC}, stay in {@link #ZONE_NAME} because both readings agree in every
      * locale.
+     *
+     * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
      */
     ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
     ZONE_NAME(
+        Locale.ENGLISH,
         "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
         "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
         "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CHADT", "CHAST", "CHOST", "CHOT",
@@ -752,10 +783,15 @@ public final class DateTimeFormats {
     static final Map<String, Token> ALL =
         biStream(Arrays.stream(Token.values())).flatMapKeys(token -> token.names.stream()).toMap();
 
-    @SuppressWarnings("ImmutableEnumChecker")
     private final Set<String> names;
+    final Locale locale;
 
     private Token(String... names) {
+      this((Locale) null, names);
+    }
+
+    private Token(Locale locale, String... names) {
+      this.locale = locale;
       this.names = new HashSet<String>(asList(names));
     }
   }
