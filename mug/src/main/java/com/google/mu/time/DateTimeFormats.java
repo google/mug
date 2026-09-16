@@ -267,71 +267,63 @@ public final class DateTimeFormats {
           // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
           // token: a shape made of WORD alone would claim every unrecognized word, turning typos
           // into bad-zone errors.
-          .add(forExample("America/Los_Angeles"), "VV") // region and city
-          .add(forExample("America/Argentina/Buenos_Aires"), "VV") // three parts
-          .add(forExample("America/Jamaica"), "VV") // 2nd part is a region name
-          .add(forExample("Australia/ACT"), "VV") // 2nd part is a zone abbreviation
-          .add(forExample("Africa/Porto-Novo"), "VV") // hyphenated city name
-          .add(forExample("America/Port-au-Prince"), "VV") // twice-hyphenated city name
-          .add(forExample("Japan"), "VV") // single-word zone id
-          .add(forExample("GB-Eire"), "VV")
-          .add(forExample("Etc/UTC"), "VV")
-          .add(forExample("Etc/GMT"), "VV") // GMT is its own token, so Etc/UTC doesn't cover it
-          .add(forExample("Etc/Greenwich"), "VV")
-          .add(forExample("Etc/GMT+0"), "VV")
-          .add(forExample("Etc/GMT-0"), "VV")
-          .add(forExample("Etc/GMT+10"), "VV")
-          .add(forExample("Etc/GMT-10"), "VV")
-          .add(forExample("Etc/UTC+0"), "VV")
-          .add(forExample("Etc/UTC-0"), "VV")
-          .add(forExample("Etc/UTC+10"), "VV")
-          .add(forExample("Etc/UTC-10"), "VV")
+          .addAll(
+              forExamples(
+                  "America/Los_Angeles", // region and city
+                  "America/Argentina/Buenos_Aires", // three parts
+                  "America/Jamaica", // 2nd part is a region name
+                  "Australia/ACT", // 2nd part is a zone abbreviation
+                  "Africa/Porto-Novo", // hyphenated city name
+                  "America/Port-au-Prince", // twice-hyphenated city name
+                  "Japan", // single-word zone id
+                  "GB-Eire",
+                  "CET", // reads as Europe/Paris if treated as a zone name
+                  "Etc/UTC", "Etc/GMT", "Etc/Greenwich",
+                  "Etc/GMT+0", "Etc/GMT-0", "Etc/GMT+10", "Etc/GMT-10",
+                  // Etc/UTC±N are not valid tzdb ids, but Etc/UTC is. Mapping them to VV prevents
+                  // greedy composition (VV + x) from silently parsing "Etc/UTC+10".
+                  "Etc/UTC+0", "Etc/UTC-0", "Etc/UTC+10", "Etc/UTC-10",
+                  // ZoneId.of("GMT+08:00") and "UTC+08:00" are valid ZoneRegions that VV
+                  // round-trips. OOOO would parse them to plain ZoneOffsets, losing zone identity.
+                  "GMT+08:00", "GMT-08:00", "UTC+08:00", "UTC-08:00"),
+              "VV")
           // Brackets are literal text, so the zone id inside them matches the entries above on its
           // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
           // (zzz), but ZonedDateTime only ever brackets a zone id.
           .add(forExample("["), "'['")
           .add(forExample("]"), "']'")
-          .add(forExample("[UTC]"), "'['VV']'")
-          .add(forExample("[GMT]"), "'['VV']'")
-          .add(forExample("CET"), "VV") // reads as Europe/Paris if treated as a zone name
-          .add(forExample("PST"), "zzz")
-          .add(forExample("GMT"), "zzz") // its own token, so the PST entry doesn't cover it
-          .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
+          .addAll(forExamples("[UTC]", "[GMT]"), "'['VV']'")
+          .addAll(forExamples("PST", "GMT"), "zzz")
           .add(forExample("Z"), "X")
-          .add(forExample("+08"), "x")
-          .add(forExample("-08"), "x")
-          .add(forExample("+080000"), "xxxx")
-          .add(forExample("-080000"), "xxxx")
-          .add(forExample("+08:00:00"), "xxxxx")
-          .add(forExample("-08:00:00"), "xxxxx")
-          .add(forExample("+0800"), "ZZ")
-          .add(forExample("-0800"), "ZZ")
-          .add(forExample("+08:00"), "ZZZZZ")
-          .add(forExample("-08:00"), "ZZZZZ")
+          .addAll(forExamples("+08", "-08"), "x")
+          .addAll(forExamples("+080000", "-080000"), "xxxx")
+          .addAll(forExamples("+08:00:00", "-08:00:00"), "xxxxx")
+          .addAll(forExamples("+0800", "-0800"), "ZZ")
+          .addAll(forExamples("+08:00", "-08:00"), "ZZZZZ")
           // GMT+8 / GMT+12 map to O (which requires literal "GMT"). Registering the same shapes
           // for ZONE_NAME (UTC) and ZONE_ID_ABBREVIATION (CET) prevents them from falling through
           // to greedy composition (e.g. zzz + x on "PST+12" or VV + x on "CET+12").
-          .add(forExample("GMT+8"), "O")
-          .add(forExample("GMT-8"), "O")
-          .add(forExample("GMT+12"), "O")
-          .add(forExample("GMT-12"), "O")
-          .add(forExample("UTC+8"), "O")
-          .add(forExample("UTC-8"), "O")
-          .add(forExample("UTC+12"), "O")
-          .add(forExample("UTC-12"), "O")
-          .add(forExample("CET+8"), "O")
-          .add(forExample("CET-8"), "O")
-          .add(forExample("CET+12"), "O")
-          .add(forExample("CET-12"), "O")
-          // ZoneId.of("GMT+08:00") is a ZoneRegion, and VV round-trips it. OOOO would parse it to
-          // a plain ZoneOffset, losing the zone identity. CET+08:00 is not a valid ZoneId; mapping
-          // it to OOOO prevents it from falling through to VV + ZZZZZ.
-          .add(forExample("GMT+08:00"), "VV")
-          .add(forExample("GMT-08:00"), "VV")
-          .add(forExample("UTC+08:00"), "VV")
-          .add(forExample("UTC-08:00"), "VV")
-          .add(forExample("CET+08:00"), "OOOO")
-          .add(forExample("CET-08:00"), "OOOO")
+          .addAll(
+              forExamples(
+                  "GMT+8", "GMT-8", "GMT+12", "GMT-12",
+                  "UTC+8", "UTC-8", "UTC+12", "UTC-12",
+                  "CET+8", "CET-8", "CET+12", "CET-12"),
+              "O")
+          // GMT+0800 (e.g. from JavaScript Date.toString()) maps to 'GMT'xx so the offset is
+          // preserved without shifting local wall time. Registering UTC+0800 and CET+0800 prevents
+          // them from falling through to greedy composition (zzz + ZZ or VV + ZZ).
+          .addAll(
+              forExamples("GMT+0800", "GMT-0800", "UTC+0800", "UTC-0800", "CET+0800", "CET-0800"),
+              "'GMT'xx")
+          .addAll(
+              forExamples(
+                  "GMT+080000", "GMT-080000",
+                  "UTC+080000", "UTC-080000",
+                  "CET+080000", "CET-080000"),
+              "'GMT'xxxx")
+          // CET+08:00 is not a valid ZoneId; mapping it to OOOO prevents it from falling through
+          // to VV + ZZZZZ.
+          .addAll(forExamples("CET+08:00", "CET-08:00"), "OOOO")
           .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("周一"), "EEE")
@@ -398,7 +390,9 @@ public final class DateTimeFormats {
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
             .orElseGet(() ->
-                lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(dateTimeString).orElse(signature))
+                lookup(
+                        ISO_DATE_TIME_FORMATTERS,
+                        signatureWithoutNanoseconds(dateTimeString).orElse(signature))
                     .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
@@ -561,6 +555,10 @@ public final class DateTimeFormats {
         .collect(toList());
   }
 
+  private static List<List<?>> forExamples(String... examples) {
+    return Stream.of(examples).map(DateTimeFormats::forExample).collect(toList());
+  }
+
   private static Optional<List<?>> signatureWithoutNanoseconds(String example) {
     Substring.Pattern nanos = consecutive(DIGIT).immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
        .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
@@ -711,15 +709,6 @@ public final class DateTimeFormats {
      */
     AD_BC(Locale.ENGLISH, "AD", "BC"),
     /**
-     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
-     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
-     * zone doesn't depend on the JVM default locale.
-     */
-    GENERIC_ZONE_NAME(
-        Locale.ENGLISH,
-        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
-        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
-    /**
      * {@code GMT} is a zone name, but it is also a keyword of the offset syntax: the localized
      * offset specifier {@code O} requires it as a literal prefix ({@code GMT+8}), and
      * {@link DateTimeFormatter#RFC_1123_DATE_TIME} accepts it as the only spelling of a zero
@@ -734,13 +723,18 @@ public final class DateTimeFormats {
     /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
      * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as
-     * {@code Europe/Paris}). They must be read as ids. The other abbreviations that are also
-     * ids, such as {@code UTC}, stay in {@link #ZONE_NAME} because both readings agree in every
-     * locale.
+     * {@code Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}).
+     * They must be read as ids. The other abbreviations that are also ids, such as {@code UTC},
+     * stay in {@link #ZONE_NAME} because both readings agree in every locale.
      *
      * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
      */
-    ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
+    ZONE_ID_ABBREVIATION("CET", "EET", "MET", "WET"),
+    /**
+     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
+     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
+     * zone doesn't depend on the JVM default locale.
+     */
     ZONE_NAME(
         Locale.ENGLISH,
         "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
@@ -751,7 +745,7 @@ public final class DateTimeFormats {
         "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GST",
         "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
         "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
-        "MAGT", "MAWT", "MDT", "MEST", "MET", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
+        "MAGT", "MAWT", "MDT", "MEST", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
         "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT",
         "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT",
         "SAKT", "SAMT", "SAST", "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT",
@@ -760,7 +754,10 @@ public final class DateTimeFormats {
         "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST",
         // Legacy SystemV and POSIX-style names that embed a UTC offset in the name itself.
         "AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "GMT0", "HST10", "MST7", "MST7MDT",
-        "PST8", "PST8PDT", "YST9", "YST9YDT"),
+        "PST8", "PST8PDT", "YST9", "YST9YDT",
+        // Two-letter generic zone names (e.g. "PT", "ET").
+        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
+        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",

@@ -819,6 +819,113 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void bareGmtFourDigitOffset_parses() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GMT+0800"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8)));
+  }
+
+  @Test
+  public void bareGmtFourDigitOffset_jsDateToStringShape_parses() {
+    assertThat(DateTimeFormats.parseZonedDateTime("Sat Dec 03 2011 10:15:30 GMT+0800"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8)));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck") // TODO: remove after mug-errorprone release
+  @Test
+  public void bareGmtFourDigitOffset_roundTrips() {
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 GMT+0800");
+    ZonedDateTime time =
+        ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8));
+    assertThat(formatter.format(time)).isEqualTo("2011-12-03 10:15:30 GMT+0800");
+  }
+
+  @Test
+  public void bareUtcFourDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UTC+0800"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 UTC+0800' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareZoneAbbreviationWithFourDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST+0800"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PST+0800' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareZoneIdAbbreviationWithFourDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET+0800"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 CET+0800' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareGenericZoneAbbreviationWithShortOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PT+08"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PT+08' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareGenericZoneAbbreviationWithFourDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PT+0800"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PT+0800' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareGenericZoneAbbreviationWithColonOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PT+08:00"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PT+08:00' could not be parsed at index 20");
+  }
+
+  @Test
+  public void bareGmtSixDigitOffset_parses() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GMT+080000"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8)));
+  }
+
+  @Test
+  public void bareZoneAbbreviationWithSixDigitOffset_throws() {
+    DateTimeParseException thrown =
+        assertThrows(
+            DateTimeParseException.class,
+            () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST+080000"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Text '2011-12-03 10:15:30 PST+080000' could not be parsed at index 20");
+  }
+
+  @Test
   public void bracketedEtcUtcTwoDigitOffset_throws() {
     DateTimeParseException thrown =
         assertThrows(
@@ -928,6 +1035,20 @@ public final class DateTimeFormatsTest {
   public void bareZoneId_ambiguousAbbreviationWet() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 WET"))
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("WET")));
+  }
+
+  @Test
+  public void bareZoneId_ambiguousAbbreviationMet() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MET"))
+        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET")));
+  }
+
+  @Test
+  public void bareZoneId_ambiguousAbbreviationMet_roundTrips() {
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 MET");
+    ZonedDateTime time =
+        ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET"));
+    assertThat(formatter.format(time)).isEqualTo("2011-12-03 10:15:30 MET");
   }
 
   @Test

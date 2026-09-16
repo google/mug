@@ -146,6 +146,19 @@ public final class PrefixSearchTable<K, V> {
       return this;
     }
 
+    /**
+     * Maps each key in {@code compoundKeys} to {@code value}.
+     *
+     * @since 10.1
+     */
+    public Builder<K, V> addAll(Iterable<? extends List<? extends K>> compoundKeys, V value) {
+      requireNonNull(value);
+      for (List<? extends K> compoundKey : compoundKeys) {
+        add(compoundKey, value);
+      }
+      return this;
+    }
+
     public PrefixSearchTable<K, V> build() {
       return new PrefixSearchTable<>(BiStream.from(nodes).mapValues(Node.Builder::build).toMap());
     }
