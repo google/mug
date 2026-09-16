@@ -897,23 +897,16 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("WET")));
   }
 
-  @Test public void legacyZoneAbbreviation_throws(@TestParameter({"MET", "UCT"}) String name) {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("unsupported date time example: 2011-12-03 10:15:30 " + name);
+  @Test public void bareZoneId_ambiguousAbbreviationMet() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MET"))
+        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET")));
   }
 
-  @Test public void bracketedLegacyZoneAbbreviation_throws(
-      @TestParameter({"MET", "UCT"}) String name) {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime("2011-12-03T10:15:30[" + name + "]"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("unsupported date time example: 2011-12-03T10:15:30[" + name + "]");
+  @Test public void bareZoneId_ambiguousAbbreviationMet_roundTrips() {
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 MET");
+    ZonedDateTime time =
+        ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET"));
+    assertThat(formatter.format(time)).isEqualTo("2011-12-03 10:15:30 MET");
   }
 
   @Test public void zoneAbbreviation_resolvesSameZoneInEveryLocale() {
@@ -998,6 +991,11 @@ public final class DateTimeFormatsTest {
   @Test public void zoneAbbreviation_ut() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UT").getZone())
         .isEqualTo(ZoneId.of("UT"));
+  }
+
+  @Test public void zoneAbbreviation_uct() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 UCT").getZone())
+        .isEqualTo(ZoneId.of("UCT"));
   }
 
   @Test public void zoneAbbreviation_precededByWeekday_resolvesSameZone() {

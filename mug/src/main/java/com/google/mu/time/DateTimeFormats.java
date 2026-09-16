@@ -736,12 +736,13 @@ public final class DateTimeFormats {
     /**
      * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
      * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as {@code
-     * Europe/Paris}). They must be read as ids. The other abbreviations that are also ids, such as
-     * {@code UTC}, stay in {@link #ZONE_NAME} because both readings agree in every locale.
+     * Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}). They must be
+     * read as ids. The other abbreviations that are also ids, such as {@code UTC}, stay in {@link
+     * #ZONE_NAME} because both readings agree in every locale.
      *
      * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
      */
-    ZONE_ID_ABBREVIATION("CET", "EET", "WET"),
+    ZONE_ID_ABBREVIATION("CET", "EET", "MET", "WET"),
     /**
      * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
      * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
@@ -756,8 +757,8 @@ public final class DateTimeFormats {
         Locale.ENGLISH, "ACDT", "ADT", "AEDT", "AEST", "AET", "AKDT", "AKST", "AKT", "AST", "AWDT",
         "AWST", "AWT", "CAT", "CDT", "CEST", "CST", "ChST", "EAT", "EDT", "EEST", "EST", "HADT",
         "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MSK", "MST", "NDT", "NST", "NZDT",
-        "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UT", "UTC", "WAT", "WEST", "WIB", "WIT",
-        "WITA"),
+        "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT", "WEST", "WIB",
+        "WIT", "WITA"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
