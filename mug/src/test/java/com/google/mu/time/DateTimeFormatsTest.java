@@ -667,7 +667,9 @@ public final class DateTimeFormatsTest {
         () -> DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET+08:00"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Text '2011-12-03 10:15:30 CET+08:00' could not be parsed at index 20");
+        .isEqualTo(
+            "Text '2011-12-03 10:15:30 CET+08:00' could not be parsed, unparsed text found at"
+                + " index 23");
   }
 
   @Test public void bracketedUtcTwoDigitOffset_throws() {
@@ -882,31 +884,30 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Etc/Greenwich")));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationCet() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("CET")));
+  @Test public void zoneAbbreviation_cet() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CET").getZone())
+        .isEqualTo(ZoneId.of("Europe/Paris"));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationEet() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 EET"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("EET")));
+  @Test public void zoneAbbreviation_eet() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 EET").getZone())
+        .isEqualTo(ZoneId.of("Asia/Famagusta"));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationWet() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 WET"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("WET")));
+  @Test public void zoneAbbreviation_wet() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 WET").getZone())
+        .isEqualTo(ZoneId.of("Atlantic/Canary"));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationMet() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MET"))
-        .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET")));
+  @Test public void zoneAbbreviation_met() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 MET").getZone())
+        .isEqualTo(ZoneId.of("MET"));
   }
 
-  @Test public void bareZoneId_ambiguousAbbreviationMet_roundTrips() {
-    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 MET");
-    ZonedDateTime time =
-        ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("MET"));
-    assertThat(formatter.format(time)).isEqualTo("2011-12-03 10:15:30 MET");
+  @Test public void formatOf_cet_parsesSummerCest() {
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 CET");
+    assertThat(formatter.parse("2011-07-03 10:15:30 CEST", ZonedDateTime::from).getZone())
+        .isEqualTo(ZoneId.of("Europe/Paris"));
   }
 
   @Test public void zoneAbbreviation_resolvesSameZoneInEveryLocale() {

@@ -274,7 +274,6 @@ public final class DateTimeFormats {
                   "US/Pacific", // 2nd part is a region name
                   "Africa/Porto-Novo", // hyphenated city name
                   "America/Port-au-Prince", // twice-hyphenated city name
-                  "CET", // reads as Europe/Paris if treated as a zone name
                   "Etc/UTC",
                   "Etc/GMT",
                   "Etc/GMT+0",
@@ -308,28 +307,17 @@ public final class DateTimeFormats {
           .addAll(forExamples("+0800", "-0800"), "ZZ")
           .addAll(forExamples("+08:00", "-08:00"), "ZZZZZ")
           // GMT+8 / GMT+12 map to O (which requires literal "GMT"). Registering the same shapes
-          // for ZONE_NAME (UTC) and ZONE_ID_ABBREVIATION (CET) prevents them from falling through
-          // to greedy composition (e.g. zzz + x on "PST+12" or VV + x on "CET+12").
+          // for ZONE_NAME (UTC) prevents them from falling through to greedy composition
+          // (e.g. zzz + x on "PST+12").
           .addAll(
               forExamples(
-                  "GMT+8", "GMT-8", "GMT+12", "GMT-12", "UTC+8", "UTC-8", "UTC+12", "UTC-12",
-                  "CET+8", "CET-8", "CET+12", "CET-12"),
+                  "GMT+8", "GMT-8", "GMT+12", "GMT-12", "UTC+8", "UTC-8", "UTC+12", "UTC-12"),
               "O")
           // GMT+0800 (e.g. from JavaScript Date.toString()) maps to 'GMT'xx so the offset is
-          // preserved without shifting local wall time. Registering UTC+0800 and CET+0800 prevents
-          // them from falling through to greedy composition (zzz + ZZ or VV + ZZ).
-          .addAll(
-              forExamples("GMT+0800", "GMT-0800", "UTC+0800", "UTC-0800", "CET+0800", "CET-0800"),
-              "'GMT'xx")
-          .addAll(
-              forExamples(
-                  "GMT+080000", "GMT-080000",
-                  "UTC+080000", "UTC-080000",
-                  "CET+080000", "CET-080000"),
-              "'GMT'xxxx")
-          // CET+08:00 is not a valid ZoneId; mapping it to OOOO prevents it from falling through
-          // to VV + ZZZZZ.
-          .addAll(forExamples("CET+08:00", "CET-08:00"), "OOOO")
+          // preserved without shifting local wall time. Registering UTC+0800 prevents it from
+          // falling through to greedy composition (zzz + ZZ).
+          .addAll(forExamples("GMT+0800", "GMT-0800", "UTC+0800", "UTC-0800"), "'GMT'xx")
+          .addAll(forExamples("GMT+080000", "GMT-080000", "UTC+080000", "UTC-080000"), "'GMT'xxxx")
           .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("周一"), "EEE")
@@ -734,19 +722,9 @@ public final class DateTimeFormats {
      */
     GMT(Locale.ENGLISH, "GMT"),
     /**
-     * Zone abbreviations that are themselves {@link java.time.ZoneId} ids, but whose localized
-     * zone-name reading resolves to a <em>different</em> zone ({@code CET} reads as {@code
-     * Europe/Paris}) or formats back differently ({@code MET} formats as {@code CET}). They must be
-     * read as ids. The other abbreviations that are also ids, such as {@code UTC}, stay in {@link
-     * #ZONE_NAME} because both readings agree in every locale.
-     *
-     * <p>Ids are read by {@code VV}, which is not a localized lookup, so no locale is declared.
-     */
-    ZONE_ID_ABBREVIATION("CET", "EET", "MET", "WET"),
-    /**
-     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
-     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
-     * zone doesn't depend on the JVM default locale.
+     * /** Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads
+     * as {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that
+     * the zone doesn't depend on the JVM default locale.
      *
      * <p>The list is limited to abbreviations that resolve under {@link Locale#ENGLISH} on current
      * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) is read
@@ -755,10 +733,10 @@ public final class DateTimeFormats {
      */
     ZONE_NAME(
         Locale.ENGLISH, "ACDT", "ADT", "AEDT", "AEST", "AET", "AKDT", "AKST", "AKT", "AST", "AWDT",
-        "AWST", "AWT", "CAT", "CDT", "CEST", "CST", "ChST", "EAT", "EDT", "EEST", "EST", "HADT",
-        "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MSK", "MST", "NDT", "NST", "NZDT",
-        "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT", "WEST", "WIB",
-        "WIT", "WITA"),
+        "AWST", "AWT", "CAT", "CDT", "CEST", "CET", "CST", "ChST", "EAT", "EDT", "EEST", "EET",
+        "EST", "HADT", "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MET", "MSK", "MST", "NDT",
+        "NST", "NZDT", "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT",
+        "WEST", "WET", "WIB", "WIT", "WITA"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
