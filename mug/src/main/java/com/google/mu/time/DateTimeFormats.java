@@ -367,6 +367,36 @@ public final class DateTimeFormats {
           .addAll(forExamples("]"), "']'")
           .addAll(forExamples("[UTC]", "[GMT]"), "'['VV']'")
           .addAll(forExamples("PST", "GMT"), "zzz")
+          // DateTimeFormatter.ofLocalizedDateTime(FULL) under zh_CN:
+          // "2026年9月17日星期四 中国标准时间 10:15:30", where the name is the only zone information.
+          .addAll(forExamples("中国标准时间"), "zzzz")
+          // Date.prototype.toString() in JavaScript (ECMA-262 21.4.4.41.3):
+          // "Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Daylight Time)". The parens anchor these
+          // rows; a bare run of WORDs would claim every unrecognized phrase. One example per token
+          // signature. The offset decides the instant, so Phoenix saying "Mountain Standard Time",
+          // which resolves to Denver, still reads right.
+          //
+          // An entry has to cover a class, not a handful of names: each below reads at least 17
+          // zones. (Réunion Time), (Dumont-d’Urville Time), (French Southern & Antarctic Time),
+          // (Hawaii-Aleutian Daylight Time) and (Australian Central Western Standard Time) read 1
+          // to 5 zones each and are left out. The first two could not generalize at all: a letter
+          // outside a-zA-Z is a token of its own, so their entries would pin "R"/"é" and "d"/"’".
+          .addAll(
+              forExamples(
+                  "(Afghanistan Time)", // two words
+                  "(Acre Standard Time)", // three words
+                  "(Australian Central Standard Time)", // four words
+                  "(Atlantic Daylight Time)", // starts with a region name
+                  "(Central Africa Time)", // ends with a region name
+                  "(Mexican Pacific Standard Time)", // region name in the middle
+                  "(GMT+06:00)", // no CLDR name for the zone
+                  "(GMT-06:00)"),
+              "'('zzzz')'")
+          // The same call on a Chinese-locale host:
+          // "Thu Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)". ECMA-262 hardcodes the English
+          // weekday and month, so zzzz would read Chinese while EEE and LLL read English, and a
+          // formatter has one locale.
+          .addAll(forExamples("(中国标准时间)"), "'(中国标准时间)'")
           .addAll(forExamples("Z"), "X")
           .addAll(forExamples("+08", "-08"), "x")
           .addAll(forExamples("+080000", "-080000"), "xxxx")
@@ -821,6 +851,18 @@ public final class DateTimeFormats {
         "EST", "HADT", "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MET", "MSK", "MST", "NDT",
         "NST", "NZDT", "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT",
         "WEST", "WET", "WIB", "WIT", "WITA"),
+    /**
+     * Simplified only, consistent with the rest of the CJK tokens. There is no 週一 or 時 token
+     * either, so a traditional example would fail on its weekday or hour regardless of the zone.
+     *
+     * <p>Just the one name: the parenthesized form is matched literally, and a literal spells out
+     * the name it matches, so each further name would need a row of its own.
+     *
+     * <p>Declared after every English token on purpose. In "Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)"
+     * the name is matched literally and takes its zone from the offset, while {@code LLL} does have
+     * to read "Sep", so the locale has to go to English.
+     */
+    CHINESE_ZONE_NAME(Locale.CHINA, "中国标准时间"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",

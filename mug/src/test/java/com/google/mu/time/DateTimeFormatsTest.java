@@ -789,6 +789,100 @@ public final class DateTimeFormatsTest {
         .contains("unsupported date time example: Mon Jan 02 15:04:05 MST");
   }
 
+  // Verbatim JavaScriptCore Date.prototype.toString() output for Instant.ofEpochMilli(
+  // 1789583563000L), one per distinct zone name shape.
+
+  @Test public void jsDateToString_threeWordZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Wed Sep 16 2026 13:32:43 GMT-0500 (Acre Standard Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_twoWordZoneName_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("Thu Sep 17 2026 00:17:43 GMT+0545 (Nepal Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_fourWordZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Thu Sep 17 2026 04:02:43 GMT+0930 (Australian Central Standard Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_regionLeadingZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Wed Sep 16 2026 15:32:43 GMT-0300 (Atlantic Daylight Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_regionInMiddleOfZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Wed Sep 16 2026 11:32:43 GMT-0700 (Mexican Pacific Standard Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_regionAtEndOfZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant("Wed Sep 16 2026 21:32:43 GMT+0300 (East Africa Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  /**
+   * JavaScriptCore calls Pacific/Pohnpei "Ponape Time"; the JDK calls it "Solomon Islands Time".
+   * The shape is registered, but the name is read against the JDK's data.
+   */
+  @Test public void jsDateToString_zoneNameUnknownToTheJdk_throws() {
+    DateTimeParseException thrown = assertThrows(
+        DateTimeParseException.class,
+        () -> DateTimeFormats.parseToInstant("Thu Sep 17 2026 05:32:43 GMT+1100 (Ponape Time)"));
+    assertThat(thrown).hasMessageThat().contains("could not be parsed at index 35");
+  }
+
+  @Test public void jsDateToString_positiveGmtOffsetInsteadOfZoneName_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("Thu Sep 17 2026 00:32:43 GMT+0600 (GMT+06:00)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @Test public void jsDateToString_negativeGmtOffsetInsteadOfZoneName_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("Wed Sep 16 2026 08:32:43 GMT-1000 (GMT-10:00)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  /**
+   * A Chinese-locale host still spells the weekday and month in English, because ECMA-262 hardcodes
+   * those tables. The string carries two languages.
+   */
+  @Test public void jsDateToString_chineseZoneName_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("Thu Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  /**
+   * Phoenix reports {@code Mountain Standard Time}, whose canonical zone is Denver, which observes
+   * daylight saving. The explicit offset in the same string wins, so the instant is still right.
+   */
+  @Test public void jsDateToString_explicitOffsetWinsOverZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void jsDateToString_unknownZoneNameInParens_throws() {
+    DateTimeException thrown = assertThrows(
+        DateTimeException.class,
+        () -> formatOf("Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Bogus Time)"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "invalid date time example: Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Bogus Time)");
+  }
+
   @SuppressWarnings("DateTimeExampleStringCheck") // TODO: remove after mug-errorprone release
   @Test public void bareGmtFourDigitOffset_roundTrips() {
     DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 GMT+0800");
@@ -1801,6 +1895,87 @@ public final class DateTimeFormatsTest {
                 "2025-08-13T02:10:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
   }
 
+  @Test public void chineseZoneName_shanghai_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011年12月3日星期六 中国标准时间 10:15:30"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Asia/Shanghai")));
+  }
+
+  /** No weekday, so the zone name token is the only thing that can pin the locale. */
+  @Test public void chineseZoneName_withoutWeekday_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011年12月3日 中国标准时间 10:15:30"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Asia/Shanghai")));
+  }
+
+  @Test public void chineseZoneName_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("2011年12月3日星期六 中国标准时间 10:15:30"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Asia/Shanghai"))
+                .toInstant());
+  }
+
+  /** The target reuses the example's digit shape: a two-digit month and a one-digit day. */
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void chineseZoneName_formatOf() {
+    DateTimeFormatter formatter = formatOf("2011年12月3日星期六 中国标准时间 10:15:30");
+    assertThat(ZonedDateTime.parse("2025年12月3日星期三 中国标准时间 00:00:00", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2025, 12, 3, 0, 0, 0), ZoneId.of("Asia/Shanghai")));
+  }
+
+  /**
+   * Only the mainland name is registered: the parenthesized form has to be matched literally, so
+   * each additional name would need a row of its own.
+   */
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void chineseZoneName_hongKong_throws() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("2011年12月3日 香港标准时间 10:15:30"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011年12月3日 香港标准时间 10:15:30");
+  }
+
+  /**
+   * Traditional spellings are out of scope, consistent with the other CJK tokens: there is no 週一 or
+   * 時 either, so a traditional example would fail on its weekday or hour regardless.
+   */
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void traditionalChineseZoneName_rejectedByDesign() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("2011年12月3日 中國標準時間 10:15:30"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011年12月3日 中國標準時間 10:15:30");
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void chineseZoneName_unlistedName_throws() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("2011年12月3日 乌鲁木齐标准时间 10:15:30"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("unsupported date time example: 2011年12月3日 乌鲁木齐标准时间 10:15:30");
+  }
+
+  /**
+   * An English weekday pins {@link Locale#ENGLISH}, which has no reading for a Chinese zone name.
+   * The pattern is still inferred, so the rejection names it.
+   */
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void chineseZoneName_afterEnglishWeekday_throws() {
+    DateTimeException thrown =
+        assertThrows(DateTimeException.class, () -> formatOf("Sat 2011-12-03 10:15:30 中国标准时间"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            "invalid date time example: Sat 2011-12-03 10:15:30 中国标准时间"
+                + " (EEE yyyy-MM-dd HH:mm:ss zzzz)");
+  }
+
   /**
    * A CJK token pins {@link Locale#CHINA} and a zone abbreviation pins {@link Locale#ENGLISH}. When
    * an example carries both, CHINA wins, and the zone reading differs as a result. This is the only
@@ -1826,6 +2001,16 @@ public final class DateTimeFormatsTest {
         .isEqualTo(
             ZonedDateTime.of(
                 LocalDateTime.of(2011, 12, 3, 10, 0), ZoneId.of("America/Los_Angeles")));
+  }
+
+  /**
+   * A parenthesized Chinese zone name is matched literally, so it does not need to be read in
+   * Chinese, while an English month does need to be read in English. The Chinese zone name token is
+   * declared after the English ones so that English wins here.
+   */
+  @Test public void localePrecedence_englishMonthWinsOverParenthesizedChineseZoneName() {
+    assertThat(DateTimeFormats.parseToInstant("Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
   }
 
   /**
