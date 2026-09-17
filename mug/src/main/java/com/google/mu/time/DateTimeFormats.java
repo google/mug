@@ -164,8 +164,18 @@ public final class DateTimeFormats {
   private static final CharPredicate ALPHA =
       CharPredicate.range('a', 'z').orRange('A', 'Z').or('_').precomputeForAscii();
 
-  /** delimiters don't have semantics and are ignored during parsing. */
-  private static final CharPredicate DELIMITER = anyOf(" ,;");
+  /**
+   * Delimiters don't have semantics and are ignored during parsing.
+   *
+   * <p>CLDR 42 normalized the spaces in its patterns, so a localized rendering can separate two
+   * fields with a no-break space: {@code ofLocalizedDateTime(MEDIUM)} under {@code en_US} emits
+   * {@code "Dec 3, 2011, 10:15:30 AM"} whose space before the day period is U+202F NARROW NO-BREAK
+   * SPACE, binding the marker to the time. Every {@code Zs} character is a delimiter so that such
+   * an example reads; it is copied into the pattern verbatim, so the formatter still matches the
+   * exact character it was shown.
+   */
+  private static final CharPredicate DELIMITER =
+      anyOf(" ,;").or(c -> Character.getType(c) == Character.SPACE_SEPARATOR);
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
@@ -249,15 +259,23 @@ public final class DateTimeFormats {
           .add(forExample("12月"), "MM月")
           .add(forExample("3日"), "d日")
           .add(forExample("13日"), "dd日")
+          // "Dec 3, 2011" from ofLocalizedDate(MEDIUM) and DateFormat.getDateInstance() under
+          // en_US. Only the month-first forms need a row: a comma that falls between two entries
+          // is skipped as a leading delimiter, so "Saturday, December 3, 2011" reads as EEEE plus
+          // the row below, and "3 Dec 2011, 10:15:30" (en_GB) already reads today.
           .add(forExample("Jan 11 2011"), "LLL dd yyyy")
+          .add(forExample("Jan 11, 2011"), "LLL dd, yyyy")
           .add(forExample("Jan 1 2011"), "LLL d yyyy")
+          .add(forExample("Jan 1, 2011"), "LLL d, yyyy")
           .add(forExample("Jan  1 2011"), "LLL ppd yyyy")
           .add(forExample("11 Jan 2011"), "dd LLL yyyy")
           .add(forExample("1 Jan 2011"), "d LLL yyyy")
           .add(forExample("2011 Jan 1"), "yyyy LLL d")
           .add(forExample("2011 Jan 11"), "yyyy LLL dd")
           .add(forExample("January 11 2011"), "LLLL dd yyyy")
+          .add(forExample("January 11, 2011"), "LLLL dd, yyyy")
           .add(forExample("January 1 2011"), "LLLL d yyyy")
+          .add(forExample("January 1, 2011"), "LLLL d, yyyy")
           .add(forExample("January  1 2011"), "LLLL ppd yyyy")
           .add(forExample("11 January 2011"), "dd LLLL yyyy")
           .add(forExample("1 January 2011"), "d LLLL yyyy")

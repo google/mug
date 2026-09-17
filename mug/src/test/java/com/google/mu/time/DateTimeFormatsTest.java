@@ -39,6 +39,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -789,6 +790,58 @@ public final class DateTimeFormatsTest {
         .contains("unsupported date time example: Mon Jan 02 15:04:05 MST");
   }
 
+  // Verbatim DateTimeFormatter.ofLocalizedDate/ofLocalizedDateTime output under en_US, which
+  // DateFormat.getDateInstance() also produces. The comma sits between the day and the year, a
+  // position no other locale's rendering uses.
+
+  @Test public void usMediumDate_singleDigitDay_commaBeforeYear() {
+    assumeUsLocale();
+    assertLocalDate("Dec 3, 2011", "LLL d, yyyy").isEqualTo(LocalDate.of(2011, 12, 3));
+  }
+
+  @Test public void usMediumDate_twoDigitDay_commaBeforeYear() {
+    assumeUsLocale();
+    assertLocalDate("Dec 13, 2011", "LLL dd, yyyy").isEqualTo(LocalDate.of(2011, 12, 13));
+  }
+
+  @Test public void usLongDate_singleDigitDay_commaBeforeYear() {
+    assumeUsLocale();
+    assertLocalDate("December 3, 2011", "LLLL d, yyyy").isEqualTo(LocalDate.of(2011, 12, 3));
+  }
+
+  @Test public void usLongDate_twoDigitDay_commaBeforeYear() {
+    assumeUsLocale();
+    assertLocalDate("December 13, 2011", "LLLL dd, yyyy").isEqualTo(LocalDate.of(2011, 12, 13));
+  }
+
+  @Test public void usFullDate_weekdayAndCommaBeforeYear() {
+    assumeUsLocale();
+    assertLocalDate("Saturday, December 3, 2011", "EEEE, LLLL d, yyyy")
+        .isEqualTo(LocalDate.of(2011, 12, 3));
+  }
+
+  // Built from the producer rather than a literal: CLDR separates the time from the day period
+  // with U+202F NARROW NO-BREAK SPACE, which is invisible in a test string.
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void usMediumDateTime_commaBeforeYearAndBeforeTime() {
+    LocalDateTime when = LocalDateTime.of(2011, 12, 3, 10, 15, 30);
+    String example = when.format(
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(Locale.US));
+    assertThat(LocalDateTime.parse(example, formatOf(example))).isEqualTo(when);
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void narrowNoBreakSpace_isADelimiter() {
+    assertLocalDateTime("2011-12-03\u202f10:15:30", "yyyy-MM-dd\u202fHH:mm:ss")
+        .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void noBreakSpace_isADelimiter() {
+    assertLocalDateTime("2011-12-03\u00a010:15:30", "yyyy-MM-dd\u00a0HH:mm:ss")
+        .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
+  }
+
   // Verbatim JavaScriptCore Date.prototype.toString() output for Instant.ofEpochMilli(
   // 1789583563000L), one per distinct zone name shape.
 
@@ -1330,8 +1383,14 @@ public final class DateTimeFormatsTest {
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
-  public void monthOfYear_notSupported() {
-    assertThrows(DateTimeException.class, () -> formatOf("Dec 31, 2023 12:00:00 America/New_York"));
+  public void commaBeforeYear_followedByTimeAndZoneId() {
+    assertThat(
+            ZonedDateTime.parse(
+                "Dec 31, 2023 12:00:00 America/New_York",
+                formatOf("Dec 31, 2023 12:00:00 America/New_York")))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2023, 12, 31, 12, 0, 0), ZoneId.of("America/New_York")));
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")

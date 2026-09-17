@@ -16,16 +16,14 @@
 package com.google.common.labs.parse;
 
 import static com.google.mu.collect.MoreCollections.filter;
-import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.reverseOrder;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.util.stream.BiStream;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +69,10 @@ import java.util.stream.Stream;
 record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>(); // in encounter order
-    private final Map<Integer, Builder<V>> children = new HashMap<>();
+    // lower-case -> upper-case -> digits.
+    // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
+    // c1 to occur more frequently than c2 for more effective short-circuiting.
+    private final SortedMap<Integer, Builder<V>> children = new TreeMap<>(reverseOrder());
     private final Set<V> blocked = new HashSet<>();
     private final AtomicInteger sequence;
 
@@ -137,17 +138,21 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
       if (children.isEmpty()) {
         return new PrefixPruneTree<>(effective.unwrap(), null);
       }
-      var subtrees = BiStream.from(children)
-          .mapValues(child -> child.buildWithInheritance(effective))
-          // lower-case -> upper-case -> digits.
-          // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
-          // c1 to occur more frequently than c2 for more effective short-circuiting.
-          .collect(toMap(() -> new TreeMap<Integer, PrefixPruneTree<V>>(reverseOrder())));
-      if (subtrees.size() == 1 && survivors.isEmpty()) { // collapse lone leaf child
-        PrefixPruneTree<V> loneChild = subtrees.values().iterator().next();
+
+      int[] chars = new int[children.size()];
+      @SuppressWarnings({"rawtypes", "unchecked"}) // generic array of built subtrees
+      PrefixPruneTree<V>[] subtrees = new PrefixPruneTree[chars.length];
+      int i = 0;
+      for (Map.Entry<Integer, Builder<V>> child : children.entrySet()) {
+        chars[i] = child.getKey();
+        subtrees[i] = child.getValue().buildWithInheritance(effective);
+        i++;
+      }
+      if (subtrees.length == 1 && survivors.isEmpty()) { // collapse lone leaf child
+        PrefixPruneTree<V> loneChild = subtrees[0];
         if (loneChild.isLeaf()) return loneChild;
       }
-      return new PrefixPruneTree<>(effective.unwrap(), Trie.from(subtrees));
+      return new PrefixPruneTree<>(effective.unwrap(), Trie.from(chars, subtrees));
     }
   }
 
@@ -181,12 +186,15 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
   private interface Trie<V> {
     PrefixPruneTree<V> child(char c);
 
-    static <V> Trie<V> from(SortedMap<Integer, PrefixPruneTree<V>> children) {
-      return switch (children.size()) {
-        case 1 -> singleChild(children);
-        case 2 -> twoChildren(children);
-        case 3 -> threeChildren(children);
-        default -> forAscii(children);
+    /**
+     * {@code chars} and {@code children} are parallel arrays, ordered as the Builder sorted them.
+     */
+    static <V> Trie<V> from(int[] chars, PrefixPruneTree<V>[] children) {
+      return switch (chars.length) {
+        case 1 -> of(chars[0], children[0]);
+        case 2 -> of(chars[0], children[0], chars[1], children[1]);
+        case 3 -> of(chars[0], children[0], chars[1], children[1], chars[2], children[2]);
+        default -> forAscii(chars, children);
       };
     }
 
@@ -207,32 +215,20 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
       return x -> x == c1 ? child1 : x == c2 ? child2 : x == c3 ? child3 : null;
     }
 
-    static <V> Trie<V> singleChild(Map<Integer, PrefixPruneTree<V>> map) {
-      return of(map.keySet().iterator().next(), map.values().iterator().next());
-    }
-
-    static <V> Trie<V> twoChildren(SortedMap<Integer, PrefixPruneTree<V>> map) {
-      var keys = map.keySet().iterator();
-      var values = map.values().iterator();
-      return of(keys.next(), values.next(), keys.next(), values.next());
-    }
-
-    static <V> Trie<V> threeChildren(SortedMap<Integer, PrefixPruneTree<V>> map) {
-      var keys = map.keySet().iterator();
-      var values = map.values().iterator();
-      return of(keys.next(), values.next(), keys.next(), values.next(), keys.next(), values.next());
-    }
-
     @SuppressWarnings({"rawtypes", "unchecked", "Immutable"})
-    static <V> Trie<V> forAscii(Map<Integer, PrefixPruneTree<V>> map) {
-      var children = new PrefixPruneTree[128];
-      map.forEach((c, v) -> children[c] = v);
-      return c -> c < 128 ? children[c] : null;
+    static <V> Trie<V> forAscii(int[] chars, PrefixPruneTree<V>[] children) {
+      var table = new PrefixPruneTree[128];
+      for (int i = 0; i < chars.length; i++) {
+        table[chars[i]] = children[i];
+      }
+      return c -> c < 128 ? table[c] : null;
     }
   }
 
   private static final class Survivors<V> {
     private final List<Ordered<V>> ordered;
+    // Unwrapped once per Survivors and shared by every node that inherits it.
+    @LazyInit private volatile List<V> unwrapped;
 
     static <V> Survivors<V> none() {
       return new Survivors<>(List.of());
@@ -243,7 +239,16 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
     }
 
     List<V> unwrap() {
-      return isEmpty() ? List.of() : ordered.stream().map(Ordered::value).toList();
+      if (isEmpty()) return List.of();
+      List<V> result = unwrapped;
+      if (result == null) {
+        result = new ArrayList<>(ordered.size());
+        for (Ordered<V> element : ordered) {
+          result.add(element.value);
+        }
+        unwrapped = result = List.copyOf(result);
+      }
+      return result;
     }
 
     Survivors<V> concat(List<Ordered<V>> that) {
