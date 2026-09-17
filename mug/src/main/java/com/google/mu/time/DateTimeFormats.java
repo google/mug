@@ -115,6 +115,33 @@ import com.google.mu.util.stream.BiStream;
  *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
+ * <p><b><em>Warning</em>: three-letter zone abbreviations are lossy.</b> An abbreviation such as
+ * {@code AST}, {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can only
+ * translate it to the {@code "zzz"} format specifier, which JDK {@link DateTimeFormatter} resolves
+ * through CLDR to the group's canonical zone, <b>which may not be the zone that produced the
+ * string!</b> For example:
+ *
+ * <pre>{@code
+ * // Written by a host in Barbados, which stays on AST (-04:00) year round.
+ * // The string denotes 2011-07-15T12:00:00Z.
+ * parseToInstant("Fri Jul 15 08:00:00 AST 2011");
+ * // => 2011-07-15T11:00:00Z. "AST" resolves to America/Halifax, which is on ADT (-03:00) in July.
+ *
+ * // Written by a host in Shanghai, which also prints CST.
+ * // The string denotes 2026-09-17T00:00:00Z.
+ * parseToInstant("Thu Sep 17 08:00:00 CST 2026");
+ * // => 2026-09-17T13:00:00Z. "CST" resolves to America/Chicago: 13 hours off.
+ * }</pre>
+ *
+ * <p>The drift is at most an hour when the group shares one standard offset ({@code AST}, {@code
+ * AEST}, {@code CET}), and can be more than half a day when it doesn't ({@code CST} spans Chicago,
+ * Havana and Shanghai; {@code PST} spans Los Angeles and Manila). Nothing in the string identifies
+ * the writer's zone, so this is not recoverable at parse time.
+ *
+ * <p>Prefer a zone id ({@code 2011-07-15 08:00:00 America/Barbados}) or a numeric offset ({@code
+ * 2011-07-15 08:00:00 -04:00}); both round-trip exactly. Use an abbreviation only when the producer
+ * is known to run in the canonical zone for it.
+ *
  * <p>i18n isn't supported.
  *
  * @since 7.1
