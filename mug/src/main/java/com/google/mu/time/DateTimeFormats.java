@@ -16,11 +16,11 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
@@ -32,6 +32,11 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,7 +49,6 @@ import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -54,12 +58,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -120,8 +118,8 @@ import com.google.mu.util.stream.BiStream;
  * {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can only translate it
  * to the {@code "zzz"} format specifier, which JDK {@link DateTimeFormatter} resolves through CLDR
  * to the group's canonical zone, <b>which may not be the zone that produced the string!</b> Such
- * strings usually come from {@link Date#toString()}, which prints an abbreviation whenever CLDR has
- * one for the host's zone. For example:
+ * strings usually come from {@link java.util.Date#toString() Date.toString()}, which prints an
+ * abbreviation whenever CLDR has one for the host's zone. For example:
  *
  * <pre>{@code
  * // Written by a host in Barbados, which stays on AST (-04:00) year round.
