@@ -44,6 +44,7 @@ import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -115,11 +116,12 @@ import com.google.mu.util.stream.BiStream;
  *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
- * <p><b><em>Warning</em>: three-letter zone abbreviations are lossy.</b> An abbreviation such as
- * {@code AST}, {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can only
- * translate it to the {@code "zzz"} format specifier, which JDK {@link DateTimeFormatter} resolves
- * through CLDR to the group's canonical zone, <b>which may not be the zone that produced the
- * string!</b> For example:
+ * <p><b><em>Warning</em>: zone abbreviations are lossy.</b> An abbreviation such as {@code AST},
+ * {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can only translate it
+ * to the {@code "zzz"} format specifier, which JDK {@link DateTimeFormatter} resolves through CLDR
+ * to the group's canonical zone, <b>which may not be the zone that produced the string!</b> Such
+ * strings usually come from {@link Date#toString()}, which prints an abbreviation whenever CLDR has
+ * one for the host's zone. For example:
  *
  * <pre>{@code
  * // Written by a host in Barbados, which stays on AST (-04:00) year round.
@@ -133,14 +135,27 @@ import com.google.mu.util.stream.BiStream;
  * // => 2026-09-17T13:00:00Z. "CST" resolves to America/Chicago: 13 hours off.
  * }</pre>
  *
- * <p>The drift is at most an hour when the group shares one standard offset ({@code AST}, {@code
- * AEST}, {@code CET}), and can be more than half a day when it doesn't ({@code CST} spans Chicago,
- * Havana and Shanghai; {@code PST} spans Los Angeles and Manila). Nothing in the string identifies
- * the writer's zone, so this is not recoverable at parse time.
+ * <p>The canonical zone of the most common abbreviations:
+ *
+ * <ul>
+ *   <li>{@code PST}, {@code PDT}: {@code America/Los_Angeles}
+ *   <li>{@code MST}, {@code MDT}: {@code America/Denver}
+ *   <li>{@code CST}, {@code CDT}: {@code America/Chicago}
+ *   <li>{@code EST}, {@code EDT}: {@code America/New_York}
+ *   <li>{@code AST}, {@code ADT}: {@code America/Halifax}
+ * </ul>
+ *
+ * <p>The drift is an hour where the group differs only in daylight saving ({@code AEST} spans
+ * Sydney and Brisbane; {@code CET} spans Paris and Algiers), and can exceed half a day where the
+ * same letters are used on different continents ({@code CST} spans Chicago, Havana and Shanghai;
+ * {@code PST} spans Los Angeles and Manila; {@code AST} spans Halifax, Barbados and Riyadh).
+ * Nothing in the string identifies the writer's zone, so this is not recoverable at parse time.
  *
  * <p>Prefer a zone id ({@code 2011-07-15 08:00:00 America/Barbados}) or a numeric offset ({@code
  * 2011-07-15 08:00:00 -04:00}); both round-trip exactly. Use an abbreviation only when the producer
- * is known to run in the canonical zone for it.
+ * is known to run in the canonical zone, or in a zone that follows the same rules ({@code
+ * America/Toronto} round-trips through {@code America/New_York}). {@code GMT}, {@code UTC}, {@code
+ * UT} and {@code GMT±hh:mm} are unambiguous and always exact.
  *
  * <p>i18n isn't supported.
  *
@@ -481,6 +496,10 @@ public final class DateTimeFormats {
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
    * performance and earlier error report in case the format cannot be inferred.
    *
+   * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
+   * see the class-level warning: the abbreviation resolves to CLDR's canonical zone, which may not
+   * be the zone that produced the string.
+   *
    * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid date
    *     time with either zone name or UTC offset.
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
@@ -496,6 +515,10 @@ public final class DateTimeFormats {
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
    * performance and earlier error report in case the format cannot be inferred.
+   *
+   * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
+   * see the class-level warning: the abbreviation resolves to CLDR's canonical zone, which may not
+   * be the zone that produced the string.
    *
    * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
