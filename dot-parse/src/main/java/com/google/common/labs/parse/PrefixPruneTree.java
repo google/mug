@@ -118,13 +118,9 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
     void addBlocklist(BitSet blocklist, V candidate) {
       children.forEach((k, child) -> {
         if (blocklist.get(k)) {
-          child.block(candidate);
+          child.blocked.add(candidate);
         }
       });
-    }
-
-    private void block(V candidate) {
-      blocked.add(candidate);
     }
 
     private Builder<V> child(int c) {
