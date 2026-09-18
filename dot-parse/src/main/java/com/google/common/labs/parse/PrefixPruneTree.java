@@ -24,6 +24,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.concurrent.LazyInit;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -111,13 +112,16 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
     }
 
     /**
-     * Registers that if the next char in the input is {@code c}, the {@code candidate} can be
-     * safely pruned.
+     * Registers that if the next char in the input is in {@code blocklist} (and is the first char
+     * of at least one top-level prefix), the {@code candidate} can be safely pruned.
      */
     @CanIgnoreReturnValue
-    Builder<V> addBlocked(char c, V candidate) {
-      if (c >= 128) return this; // we are unable to block or prune beyond ascii
-      child(c).block(candidate);
+    Builder<V> addBlocked(BitSet blocklist, V candidate) {
+      children.forEach((k, v) -> {
+        if (blocklist.get(k)) {
+          v.block(candidate);
+        }
+      });
       return this;
     }
 
