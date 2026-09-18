@@ -16,11 +16,11 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
@@ -32,6 +32,11 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,12 +62,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -914,6 +913,7 @@ public final class DateTimeFormats {
         "EST", "HADT", "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MET", "MSK", "MST", "NDT",
         "NST", "NZDT", "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT",
         "WEST", "WET", "WIB", "WIT", "WITA"),
+    TIME(Locale.ENGLISH, "Time"),
     /**
      * Simplified only, consistent with the rest of the CJK tokens. There is no 週一 or 時 token
      * either, so a traditional example would fail on its weekday or hour regardless of the zone.

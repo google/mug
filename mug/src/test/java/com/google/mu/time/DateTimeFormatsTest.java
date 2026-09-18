@@ -1015,6 +1015,15 @@ public final class DateTimeFormatsTest {
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void parenthesizedZoneNameWithNumericDateTime_pinsEnglishLocale() {
+    DateTimeFormatter formatter = formatOf("2026-09-16 11:32:43 (Pacific Standard Time)");
+    assertThat(ZonedDateTime.parse("2026-09-16 11:32:43 (Pacific Daylight Time)", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void jsDateToString_unknownZoneNameInParens_throws() {
     DateTimeException thrown = assertThrows(
         DateTimeException.class,
