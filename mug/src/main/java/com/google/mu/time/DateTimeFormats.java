@@ -100,9 +100,8 @@ import java.util.stream.Stream;
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
  * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). An AM/PM marker can follow, as
- * in {@code 1:00 PM}. But a two-digit hour is always read as a 24-hour number, so {@code 10:00 PM}
- * means hour 10 and is rejected as self-contradictory. Use a single-digit example hour if you mean
- * a 12-hour clock.
+ * in {@code 1:00 PM} or {@code 10:00 PM}, in which case a 12-hour clock ({@code h} or {@code hh})
+ * is inferred and 24-hour values such as {@code 15:00 PM} are rejected.
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders (between a pair
@@ -121,11 +120,12 @@ import java.util.stream.Stream;
  * <p><b><em>Warning</em>: zone abbreviations are lossy across timezones.</b> An abbreviation such
  * as {@code AST}, {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can
  * only translate it to the {@code "zzz"} format specifier, preferring {@link
- * ZoneId#systemDefault()} when it belongs to that group, and otherwise resolving through CLDR to
- * the group's canonical zone, <b>which may not be the zone that produced the string!</b> Such
- * strings usually come from {@link java.util.Date#toString() Date.toString()}, which prints an
- * abbreviation whenever CLDR has one for the host's zone. For example, when parsed on a host
- * outside those zones (such as in {@code UTC} or {@code America/Los_Angeles}):
+ * ZoneId#systemDefault()} when it belongs to that group (which also claims the group's daylight or
+ * standard counterpart name, even if the host zone never observes it), and otherwise resolving
+ * through CLDR to the group's canonical zone, <b>which may not be the zone that produced the
+ * string!</b> Such strings usually come from {@link java.util.Date#toString() Date.toString()},
+ * which prints an abbreviation whenever CLDR has one for the host's zone. For example, when parsed
+ * on a host outside those zones (such as in {@code UTC} or {@code America/Los_Angeles}):
  *
  * <pre>{@code
  * // Written by a host in Barbados, which stays on AST (-04:00) year round.
@@ -361,15 +361,21 @@ public final class DateTimeFormats {
           .addAll(forExamples("1 AM"), "h a")
           .addAll(forExamples("1\u202fAM"), "h\u202fa")
           .addAll(forExamples("1AM"), "ha")
-          .addAll(forExamples("10 AM"), "HH a")
-          .addAll(forExamples("10\u202fAM"), "HH\u202fa")
-          .addAll(forExamples("10AM"), "HHa")
+          .addAll(forExamples("10 AM"), "hh a")
+          .addAll(forExamples("10\u202fAM"), "hh\u202fa")
+          .addAll(forExamples("10AM"), "hha")
           .addAll(forExamples("1:00 AM"), "h:mm a")
           .addAll(forExamples("1:00\u202fAM"), "h:mm\u202fa")
           .addAll(forExamples("1:00AM"), "h:mma")
+          .addAll(forExamples("10:00 AM", "10:00 a.m."), "hh:mm a")
+          .addAll(forExamples("10:00\u202fAM"), "hh:mm\u202fa")
+          .addAll(forExamples("10:00AM", "10:00a.m."), "hh:mma")
           .addAll(forExamples("1:00:00 AM"), "h:mm:ss a")
           .addAll(forExamples("1:00:00\u202fAM"), "h:mm:ss\u202fa")
           .addAll(forExamples("1:00:00AM"), "h:mm:ssa")
+          .addAll(forExamples("10:00:00 AM", "10:00:00 a.m."), "hh:mm:ss a")
+          .addAll(forExamples("10:00:00\u202fAM"), "hh:mm:ss\u202fa")
+          .addAll(forExamples("10:00:00AM", "10:00:00a.m."), "hh:mm:ssa")
           // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
           // token: a shape made of WORD alone would claim every unrecognized word, turning typos
           // into bad-zone errors.
@@ -534,7 +540,9 @@ public final class DateTimeFormats {
         .map(Substring.Match::toString)
         .forEach(part -> {
           if (part.equals("zzzz")) {
-            builder.appendZoneText(TextStyle.FULL, preferred);
+            builder.appendZoneText(
+                TextStyle.FULL,
+                new HashSet<>(asList(ZoneId.systemDefault(), ZoneId.of("Asia/Shanghai"))));
           } else if (part.equals("z") || part.equals("zz") || part.equals("zzz")) {
             builder.appendZoneText(TextStyle.SHORT, preferred);
           } else {

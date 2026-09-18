@@ -276,23 +276,23 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void twoDigitHour_upperCaseAmMarker() {
-    assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("09AM", "hha").isEqualTo(LocalTime.of(9, 0, 0));
   }
 
   @Test public void twoDigitHour_upperCasePmMarkerAfterSpace() {
-    assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12 PM", "hh a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void twoDigitHour_lowerCaseAmMarker_disallowed() {
     DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("09am"));
-    assertThat(thrown).hasMessageThat().contains("invalid date time example: 09am (HHa)");
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 09am (hha)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void twoDigitHour_lowerCasePmMarker_disallowed() {
     DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12 pm"));
-    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12 pm (HH a)");
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12 pm (hh a)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
@@ -313,31 +313,29 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void twoDigitHourMinute_upperCaseAmMarker() {
-    assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("09:00AM", "hh:mma").isEqualTo(LocalTime.of(9, 0, 0));
   }
 
   @Test public void twoDigitHourMinute_upperCasePmMarkerAfterSpace() {
-    assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 PM", "hh:mm a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void twoDigitHourMinute_lowerCasePmMarker_disallowed() {
     DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 pm"));
-    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 pm (HH:mm a)");
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 pm (hh:mm a)");
   }
 
-  // 12:00 is hour 12 on a 24-hour dial, which is PM, so an AM marker contradicts it. This is the
-  // 24-hour reading of a two-digit hour, not a 12-hour clock reading midnight as noon.
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
-  public void twoDigitHourMinute_amMarkerContradictsHour_disallowed() {
-    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 AM"));
-    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 AM (HH:mm a)");
+  public void twoDigitHourMinute_midnightAmMarker() {
+    assertLocalTime("12:00 AM", "hh:mm a").isEqualTo(LocalTime.of(0, 0, 0));
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void twoDigitHourMinute_dottedAmMarker_disallowed() {
+    overrideLocale(Locale.US);
     DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("12:00 a.m."));
-    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 a.m. (HH:mm a)");
+    assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 a.m. (hh:mm a)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
@@ -347,13 +345,20 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void twoDigitHourMinuteSecond_upperCaseAmMarker() {
-    assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("09:00:30AM", "hh:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
   }
 
-  // 15:00:30 is hour 15, which is PM, so the marker agrees and the example is accepted. The hour
-  // stays a 24-hour number; the marker is redundant.
-  @Test public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
-    assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
+    assertLocalTime("10:00:30 PM", "hh:mm:ss a").isEqualTo(LocalTime.of(22, 0, 30));
+  }
+
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void twoDigitHourMinuteSecond_24HourWithPmMarker_disallowed() {
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("15:00:30 PM"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("invalid date time example: 15:00:30 PM (hh:mm:ss a)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
@@ -361,15 +366,15 @@ public final class DateTimeFormatsTest {
     DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("09:00:30am"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("invalid date time example: 09:00:30am (HH:mm:ssa)");
+        .contains("invalid date time example: 09:00:30am (hh:mm:ssa)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void twoDigitHourMinuteSecond_lowerCasePmMarker_disallowed() {
-    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("15:00:30 pm"));
+    DateTimeException thrown = assertThrows(DateTimeException.class, () -> formatOf("10:00:30 pm"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("invalid date time example: 15:00:30 pm (HH:mm:ss a)");
+        .contains("invalid date time example: 10:00:30 pm (hh:mm:ss a)");
   }
 
   // "a.m." is a locale-specific spelling: en-CA, fr-CA, nl and ~47 others use it, en-US and en-GB
@@ -378,7 +383,7 @@ public final class DateTimeFormatsTest {
   // zone name would pin ENGLISH and reject the marker -- so the only outcomes are these two.
   @Test public void twoDigitHourMinuteSecond_dottedAmMarker_localeThatSpellsItThatWay() {
     overrideLocale(Locale.CANADA);
-    assertLocalTime("09:00:30a.m.", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("09:00:30a.m.", "hh:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
@@ -388,7 +393,7 @@ public final class DateTimeFormatsTest {
         assertThrows(DateTimeException.class, () -> formatOf("09:00:30a.m."));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("invalid date time example: 09:00:30a.m. (HH:mm:ssa)");
+        .contains("invalid date time example: 09:00:30a.m. (hh:mm:ssa)");
   }
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
@@ -564,6 +569,15 @@ public final class DateTimeFormatsTest {
     DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'it''s napping zzz...'");
     assertThat(LocalDateTime.parse("2026-09-18 11:15:00 it's napping zzz...", formatter))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 11, 15, 0));
+  }
+
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void formatOf_escapedQuoteBeforeZoneAndQuotedLiteral() {
+    overrideTimeZone("Asia/Shanghai");
+    DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> ''<PST> 'zzz'");
+    assertThat(ZonedDateTime.parse("2026-07-16 02:00:00 'CST zzz", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("Asia/Shanghai")));
   }
 
   @Test public void zoneIdInBrackets_utc() {
@@ -1021,6 +1035,15 @@ public final class DateTimeFormatsTest {
         .isEqualTo(
             ZonedDateTime.of(
                 LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void chineseZoneName_defaultZoneNotShanghai_resolvesToAsiaShanghai() {
+    overrideTimeZone("America/Los_Angeles");
+    assertThat(DateTimeFormats.parseZonedDateTime("2011年12月3日星期六 中国标准时间 10:15:30"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("Asia/Shanghai")));
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")
