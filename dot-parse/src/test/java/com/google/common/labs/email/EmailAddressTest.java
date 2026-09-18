@@ -1963,4 +1963,18 @@ public class EmailAddressTest {
     assertThat(e).hasMessageThat().contains("1:1");
     assertThat(e).hasMessageThat().contains("local-part cannot start with a combining mark");
   }
+
+  @Test public void testEmailAddressOf_unquotedLocalPart_enclosingMarkRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("1\u20E3@example.com"));
+    assertThat(e).hasMessageThat().contains("1:15");
+    assertThat(e).hasMessageThat().contains("expecting <<>");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDomain_enclosingMarkRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user@a\u20DD.com"));
+    assertThat(e).hasMessageThat().contains("1:12");
+    assertThat(e).hasMessageThat().contains("expecting <<>");
+  }
 }

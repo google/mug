@@ -112,6 +112,11 @@ import java.util.function.Consumer;
  *   <li><b>Single-Mailbox Enforcement and Multi-@ Local-Parts:</b> Standalone RFC 5322 group
  *       constructs (e.g. {@code group: a@b.com;}) and unquoted multi-@ injections are strictly
  *       disallowed in single-address parsing.
+ *   <li><b>Invisible and Formatting Characters:</b> Control characters ({@code Cc}), line/paragraph
+ *       separators ({@code Zl}, {@code Zp}), and Unicode format characters ({@code Cf} — including
+ *       bidirectional overrides and zero-width joiners {@code ZWJ}/{@code ZWNJ}) are rejected
+ *       across all address fields and display names to prevent visual spoofing and header
+ *       injection.
  * </ul>
  *
  * <h3>Comparison with {@code javax.mail.InternetAddress} (Java / Jakarta Mail)</h3>
@@ -558,41 +563,9 @@ public final class EmailAddress {
   }
 
   private static boolean hasLeadingCombiningMarkInLabel(String domain) {
-    if (hasDirectLeadingCombiningMark(domain)) {
-      return true;
-    }
-    if (hasPunycodeLabel(domain)) {
-      return hasDirectLeadingCombiningMark(IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED));
-    }
-    return false;
-  }
-
-  private static boolean hasDirectLeadingCombiningMark(String s) {
-    if (s.isEmpty()) {
-      return false;
-    }
-    if (isCombiningMark(s.charAt(0))) {
-      return true;
-    }
-    for (int i = 1; i < s.length(); i++) {
-      if (s.charAt(i - 1) == '.' && isCombiningMark(s.charAt(i))) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static boolean hasPunycodeLabel(String domain) {
-    int len = domain.length();
-    for (int i = 0; i <= len - 4; i++) {
-      if ((i == 0 || domain.charAt(i - 1) == '.')
-          && (domain.charAt(i) == 'x' || domain.charAt(i) == 'X')
-          && (domain.charAt(i + 1) == 'n' || domain.charAt(i + 1) == 'N')
-          && domain.charAt(i + 2) == '-' && domain.charAt(i + 3) == '-') {
-        return true;
-      }
-    }
-    return false;
+    return all('.')
+        .split(IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED))
+        .anyMatch(label -> label.length() > 0 && isLeadingCombiningMark(label.charAt(0)));
   }
 
   private static boolean hasValidTopLevelDomain(String domain) {
@@ -608,19 +581,21 @@ public final class EmailAddress {
     return s.startsWith("-") || s.endsWith("-") || s.contains(".-") || s.contains("-.");
   }
 
-  private static final int COMBINING_MARK_TYPES =
-      (1 << Character.NON_SPACING_MARK) | (1 << Character.COMBINING_SPACING_MARK)
-          | (1 << Character.ENCLOSING_MARK);
-
   private static boolean isCombiningMark(char c) {
-    return ((1 << Character.getType(c)) & COMBINING_MARK_TYPES) != 0 && c != '\u034F';
+    int type = Character.getType(c);
+    return (type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK)
+        && c != '\u034F';
+  }
+
+  private static boolean isLeadingCombiningMark(char c) {
+    return isCombiningMark(c) || Character.getType(c) == Character.ENCLOSING_MARK;
   }
 
   private static String normalizeLocalPart(String localPart) {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     String normalized = Normalizer.normalize(localPart, Normalizer.Form.NFC);
     checkArgument(
-        !isCombiningMark(normalized.charAt(0)),
+        !isLeadingCombiningMark(normalized.charAt(0)),
         "local-part cannot start with a combining mark (%s)", normalized);
     checkArgument(
         !ENCODED_WORD.matches(normalized),
