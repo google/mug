@@ -450,6 +450,26 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123000000), ZoneOffset.UTC));
   }
 
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void commaSeparatedMillis_formatOf() {
+    assertThat(LocalDateTime.parse("2026-09-18 10:15:30,123", formatOf("2011-12-03 10:15:30,000")))
+        .isEqualTo(LocalDateTime.of(2026, 9, 18, 10, 15, 30, 123000000));
+  }
+
+  @Test public void commaSeparatedMillis_parseToInstant() {
+    assertThat(DateTimeFormats.parseToInstant("2011-12-03T10:15:30,123Z"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123000000), ZoneOffset.UTC)
+                .toInstant());
+  }
+
+  @Test public void commaSeparatedNanos_parseZonedDateTime() {
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30,123456789+08:00"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123456789), ZoneOffset.ofHours(8)));
+  }
+
   @Test public void isoLocalDateTimeExample() {
     assertThat(LocalDateTime.parse("2023-10-05T15:03:05", formatOf("2023-10-05T15:30:05")))
         .isEqualTo(LocalDateTime.of(2023, 10, 5, 15, 3, 5));
@@ -537,6 +557,13 @@ public final class DateTimeFormatsTest {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03T10:15+01:00[Europe/Paris]"))
         .isEqualTo(
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15), ZoneId.of("Europe/Paris")));
+  }
+
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void formatOf_quotedLiteralContainingZzz() {
+    DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'he is napping zzz...'");
+    assertThat(LocalDateTime.parse("2026-09-18 11:15:00 he is napping zzz...", formatter))
+        .isEqualTo(LocalDateTime.of(2026, 9, 18, 11, 15, 0));
   }
 
   @Test public void zoneIdInBrackets_utc() {

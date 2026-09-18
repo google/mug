@@ -16,6 +16,7 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.between;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -118,12 +119,14 @@ import com.google.mu.util.stream.BiStream;
  *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
- * <p><b><em>Warning</em>: zone abbreviations are lossy.</b> An abbreviation such as {@code AST},
- * {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can only translate it
- * to the {@code "zzz"} format specifier, which JDK {@link DateTimeFormatter} resolves through CLDR
- * to the group's canonical zone, <b>which may not be the zone that produced the string!</b> Such
+ * <p><b><em>Warning</em>: zone abbreviations are lossy across timezones.</b> An abbreviation such
+ * as {@code AST}, {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can
+ * only translate it to the {@code "zzz"} format specifier, preferring {@link
+ * ZoneId#systemDefault()} when it belongs to that group, and otherwise resolving through CLDR to
+ * the group's canonical zone, <b>which may not be the zone that produced the string!</b> Such
  * strings usually come from {@link java.util.Date#toString() Date.toString()}, which prints an
- * abbreviation whenever CLDR has one for the host's zone. For example:
+ * abbreviation whenever CLDR has one for the host's zone. For example, when parsed on a host
+ * outside those zones (such as in {@code UTC} or {@code America/Los_Angeles}):
  *
  * <pre>{@code
  * // Written by a host in Barbados, which stays on AST (-04:00) year round.
@@ -151,13 +154,15 @@ import com.google.mu.util.stream.BiStream;
  * Sydney and Brisbane; {@code CET} spans Paris and Algiers), and can exceed half a day where the
  * same letters are used on different continents ({@code CST} spans Chicago, Havana and Shanghai;
  * {@code PST} spans Los Angeles and Manila; {@code AST} spans Halifax, Barbados and Riyadh).
- * Nothing in the string identifies the writer's zone, so this is not recoverable at parse time.
+ * Nothing in the string identifies the writer's zone, so this is not recoverable when the reader's
+ * {@link ZoneId#systemDefault()} differs from the writer's.
  *
  * <p>Prefer a zone id ({@code 2011-07-15 08:00:00 America/Barbados}) or a numeric offset ({@code
  * 2011-07-15 08:00:00 -04:00}); both round-trip exactly. Use an abbreviation only when the producer
- * is known to run in the canonical zone, or in a zone that follows the same rules ({@code
- * America/Toronto} round-trips through {@code America/New_York}). {@code GMT}, {@code UTC}, {@code
- * UT} and {@code GMT±hh:mm} are unambiguous and always exact.
+ * is known to run in the same {@link ZoneId#systemDefault()}, in the canonical zone, or in a zone
+ * that follows the same rules ({@code America/Toronto} round-trips through {@code
+ * America/New_York}). {@code GMT}, {@code UTC}, {@code UT} and {@code GMT±hh:mm} are unambiguous
+ * and always exact.
  *
  * <p>i18n isn't supported.
  *
@@ -332,6 +337,15 @@ public final class DateTimeFormats {
           .addAll(forExamples("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
           .addAll(forExamples("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
           .addAll(forExamples("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
+          .addAll(forExamples("10:15:30,1"), "HH:mm:ss,S")
+          .addAll(forExamples("10:15:30,12"), "HH:mm:ss,SS")
+          .addAll(forExamples("10:15:30,123"), "HH:mm:ss,SSS")
+          .addAll(forExamples("10:15:30,1234"), "HH:mm:ss,SSSS")
+          .addAll(forExamples("10:15:30,12345"), "HH:mm:ss,SSSSS")
+          .addAll(forExamples("10:15:30,123456"), "HH:mm:ss,SSSSSS")
+          .addAll(forExamples("10:15:30,1234567"), "HH:mm:ss,SSSSSSS")
+          .addAll(forExamples("10:15:30,12345678"), "HH:mm:ss,SSSSSSSS")
+          .addAll(forExamples("10:15:30,123456789"), "HH:mm:ss,SSSSSSSSS")
           .addAll(forExamples("10点"), "HH点")
           .addAll(forExamples("1点"), "H点")
           .addAll(forExamples("10时"), "HH时")
@@ -506,11 +520,11 @@ public final class DateTimeFormats {
         .parse(dateTimeString, query);
   }
 
-  private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS =
-      Stream.of("zzzz", "zzz", "zz", "z")
-          .map(Substring::word)
-          .collect(firstOccurrence())
-          .repeatedly();
+  private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS = Stream.concat(
+          Stream.of(between("'", INCLUSIVE, "'", INCLUSIVE)),
+          Stream.of("zzzz", "zzz", "zz", "z").map(Substring::word))
+      .collect(firstOccurrence())
+      .repeatedly();
 
   private static DateTimeFormatter ofPattern(String pattern) {
     Set<ZoneId> preferred = Collections.singleton(ZoneId.systemDefault());
@@ -571,8 +585,9 @@ public final class DateTimeFormats {
    * performance and earlier error report in case the format cannot be inferred.
    *
    * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
-   * see the class-level warning: the abbreviation resolves to CLDR's canonical zone, which may not
-   * be the zone that produced the string.
+   * see the class-level warning: when {@link ZoneId#systemDefault()} is not in that abbreviation's
+   * group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+   * string.
    *
    * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid date
    *     time with either zone name or UTC offset.
@@ -591,8 +606,9 @@ public final class DateTimeFormats {
    * performance and earlier error report in case the format cannot be inferred.
    *
    * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
-   * see the class-level warning: the abbreviation resolves to CLDR's canonical zone, which may not
-   * be the zone that produced the string.
+   * see the class-level warning: when {@link ZoneId#systemDefault()} is not in that abbreviation's
+   * group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+   * string.
    *
    * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
@@ -886,9 +902,10 @@ public final class DateTimeFormats {
      * zone doesn't depend on the JVM default locale.
      *
      * <p>The list is limited to abbreviations that resolve under {@link Locale#ENGLISH} on current
-     * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) is read
-     * as the JDK's English default, and abbreviations whose default reading has the wrong offset
-     * are deliberately excluded.
+     * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) prefers
+     * {@link ZoneId#systemDefault()} when it belongs to that group and otherwise reads as the JDK's
+     * English default, and abbreviations whose default reading has the wrong offset are
+     * deliberately excluded.
      */
     ZONE_NAME(
         Locale.ENGLISH, "ACDT", "ADT", "AEDT", "AEST", "AET", "AKDT", "AKST", "AKT", "AST", "AWDT",
