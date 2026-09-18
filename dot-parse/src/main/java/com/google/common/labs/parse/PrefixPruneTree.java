@@ -116,9 +116,9 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
      * of at least one top-level prefix), the {@code candidate} can be safely pruned.
      */
     void addBlocklist(BitSet blocklist, V candidate) {
-      children.forEach((k, v) -> {
+      children.forEach((k, child) -> {
         if (blocklist.get(k)) {
-          v.block(candidate);
+          child.block(candidate);
         }
       });
     }
