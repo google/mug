@@ -218,30 +218,30 @@ public final class PrefixPruneTreeTest {
   }
 
   @Test public void testBlockedCandidates_blockedOnExistingPrefixChar() {
-    PrefixPruneTree<String> tree = new PrefixPruneTree.Builder<String>()
+    var builder = new PrefixPruneTree.Builder<String>()
         .addPrefix("", 100, "default")
-        .addPrefix("abc", 100, "candidateA")
-        .addBlocked(bitSetOf('a'), "default")
-        .build();
+        .addPrefix("abc", 100, "candidateA");
+    builder.addBlocklist(bitSetOf('a'), "default");
+    PrefixPruneTree<String> tree = builder.build();
     assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("candidateA");
   }
 
   @Test public void testBlockedCandidates_ignoredIfCharNotInPrefixes() {
-    PrefixPruneTree<String> tree = new PrefixPruneTree.Builder<String>()
+    var builder = new PrefixPruneTree.Builder<String>()
         .addPrefix("", 100, "default")
-        .addPrefix("abc", 100, "candidateA")
-        .addBlocked(bitSetOf('b'), "default")
-        .build();
+        .addPrefix("abc", 100, "candidateA");
+    builder.addBlocklist(bitSetOf('b'), "default");
+    PrefixPruneTree<String> tree = builder.build();
     assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("default");
   }
 
   @Test public void testBlockedCandidates_partiallyBlocked() {
-    PrefixPruneTree<String> tree = new PrefixPruneTree.Builder<String>()
+    var builder = new PrefixPruneTree.Builder<String>()
         .addPrefix("", 100, "default1")
         .addPrefix("", 100, "default2")
-        .addPrefix("a", 100, "candidateA")
-        .addBlocked(bitSetOf('a'), "default1")
-        .build();
+        .addPrefix("a", 100, "candidateA");
+    builder.addBlocklist(bitSetOf('a'), "default1");
+    PrefixPruneTree<String> tree = builder.build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0))
         .containsExactly("default2", "candidateA")
         .inOrder();

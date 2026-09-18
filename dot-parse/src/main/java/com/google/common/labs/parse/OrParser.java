@@ -122,7 +122,7 @@ final class OrParser<T> extends Parser<T> {
     if (builder.numSurvivors() > 0) {
       for (Parser<T> parser : parsers) {
         if (parser.getPrefixes().contains("")) {
-          builder.addBlocked(parser.getBlocklist(), parser);
+          builder.addBlocklist(parser.getBlocklist(), parser);
         }
       }
     }
