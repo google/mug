@@ -73,7 +73,7 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
     // lower-case -> upper-case -> digits.
     // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
     // c1 to occur more frequently than c2 for more effective short-circuiting.
-    private final SortedMap<Integer, Builder<V>> children = new TreeMap<>(reverseOrder());
+    private final SortedMap<Character, Builder<V>> children = new TreeMap<>(reverseOrder());
     private final Set<V> blocked = new HashSet<>();
     private final AtomicInteger sequence;
 
@@ -98,7 +98,7 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
       Builder<V> node = this;
       int length = min(prefix.length(), maxChars);
       for (int i = 0; i < length; i++) {
-        int c = prefix.charAt(i);
+        char c = prefix.charAt(i);
         if (c >= 128) break; // out of range, stop.
         node = node.child(c);
       }
@@ -126,7 +126,7 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
       });
     }
 
-    private Builder<V> child(int c) {
+    private Builder<V> child(char c) {
       return children.computeIfAbsent(c, k -> new Builder<V>(sequence));
     }
 
@@ -144,7 +144,7 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
       @SuppressWarnings({"rawtypes", "unchecked"}) // generic array of built subtrees
       PrefixPruneTree<V>[] subtrees = new PrefixPruneTree[chars.length];
       int i = 0;
-      for (Map.Entry<Integer, Builder<V>> child : children.entrySet()) {
+      for (Map.Entry<Character, Builder<V>> child : children.entrySet()) {
         chars[i] = child.getKey();
         subtrees[i] = child.getValue().buildWithInheritance(effective);
         i++;
