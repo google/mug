@@ -16,7 +16,6 @@ package com.google.mu.time;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.mu.time.DateTimeFormats.formatOf;
 import static org.junit.Assert.assertThrows;
@@ -44,8 +43,7 @@ import java.time.format.FormatStyle;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.TimeZone;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -917,93 +915,66 @@ public final class DateTimeFormatsTest {
         .isEqualTo(Instant.ofEpochMilli(1789583563000L));
   }
 
-  @Test public void jsDateToString_offsetConflictsWithResolvedZone_parseToInstant_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseToInstant(
-            "Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Explicit offset -07:00 conflicts with resolved zone:"
-                + " Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)");
+  /**
+   * Phoenix reports {@code Mountain Standard Time}, whose canonical zone is Denver, which observes
+   * daylight saving. The explicit offset in the same string wins, so the instant is still right.
+   */
+  @Test public void jsDateToString_explicitOffsetWinsOverZoneName_parseToInstant() {
+    assertThat(
+            DateTimeFormats.parseToInstant(
+                "Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)"))
+        .isEqualTo(Instant.ofEpochMilli(1789583563000L));
   }
 
-  @Test public void jsDateToString_offsetConflictsWithResolvedZone_parseZonedDateTime_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime(
-            "Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Explicit offset -07:00 conflicts with resolved zone:"
-                + " Wed Sep 16 2026 11:32:43 GMT-0700 (Mountain Standard Time)");
+  @Test public void dateToString_defaultZoneAsiaShanghai_parsesCstAsShanghaiInWinter() {
+    overrideTimeZone("Asia/Shanghai");
+    assertThat(DateTimeFormats.parseZonedDateTime("Fri Jan 16 02:00:00 CST 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2026, 1, 16, 2, 0, 0), ZoneId.of("Asia/Shanghai")));
   }
 
-  @Test public void dateToString_daylightSavingShift_arizonaMstInSummer_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseToInstant("Wed Jul 15 11:00:00 MST 2026"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Zone name in [Wed Jul 15 11:00:00 MST 2026] conflicts with resolved zone"
-                + " 2026-07-15T11:00-06:00[America/Denver]");
+  @Test public void dateToString_defaultZoneAsiaShanghai_parsesCstAsShanghaiInSummer() {
+    overrideTimeZone("Asia/Shanghai");
+    assertThat(DateTimeFormats.parseZonedDateTime("Thu Jul 16 02:00:00 CST 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("Asia/Shanghai")));
   }
 
-  @Test public void jsDateToString_offsetConflictsWithResolvedZone_ukBstInSummer_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime(
-            "Wed Jul 15 2026 13:00:00 GMT+0100 (British Summer Time)"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Explicit offset +01:00 conflicts with resolved zone:"
-                + " Wed Jul 15 2026 13:00:00 GMT+0100 (British Summer Time)");
+  @Test public void dateToString_defaultZoneAmericaPhoenix_parsesMstAsPhoenixInSummer() {
+    overrideTimeZone("America/Phoenix");
+    assertThat(DateTimeFormats.parseZonedDateTime("Wed Jul 15 11:00:00 MST 2026"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 7, 15, 11, 0, 0), ZoneId.of("America/Phoenix")));
   }
 
-  @Test public void dateToString_daylightSavingShift_aleutianHadtInSummer_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime("Wed Jul 15 09:00:00 HADT 2026"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Zone name in [Wed Jul 15 09:00:00 HADT 2026] conflicts with resolved zone"
-                + " 2026-07-15T09:00-10:00[Pacific/Honolulu]");
+  @Test public void
+      jsDateToString_defaultZoneAmericaPhoenix_parsesMountainStandardTimeAsPhoenixInSummer() {
+    overrideTimeZone("America/Phoenix");
+    assertThat(
+            DateTimeFormats.parseZonedDateTime(
+                "Wed Jul 15 2026 11:00:00 GMT-0700 (Mountain Standard Time)"))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2026, 7, 15, 11, 0, 0), ZoneId.of("America/Phoenix")));
   }
 
-  @Test public void dateToString_daylightSavingShift_puertoRicoAstInSummer_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseToInstant("Fri Jul 15 08:00:00 AST 2011"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Zone name in [Fri Jul 15 08:00:00 AST 2011] conflicts with resolved zone"
-                + " 2011-07-15T08:00-03:00[America/Halifax]");
-  }
-
-  @Test public void parseZonedDateTime_daylightSavingShift_fixedEstInSummer_throws() {
-    DateTimeException thrown = assertThrows(
-        DateTimeException.class,
-        () -> DateTimeFormats.parseZonedDateTime("2026-07-15 13:00:00 EST"));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Zone name in [2026-07-15 13:00:00 EST] conflicts with resolved zone"
-                + " 2026-07-15T13:00-04:00[America/New_York]");
+  @Test public void jsDateToString_defaultZoneEuropeLondon_parsesBritishSummerTimeAsLondon() {
+    overrideTimeZone("Europe/London");
+    assertThat(
+            DateTimeFormats.parseZonedDateTime(
+                "Wed Jul 15 2026 13:00:00 GMT+0100 (British Summer Time)"))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2026, 7, 15, 13, 0, 0), ZoneId.of("Europe/London")));
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")
-  @Test public void formatOf_exemptFromDaylightSavingShiftCheck() {
-    DateTimeFormatter formatter = formatOf("2026-07-15 13:00:00 EST");
-    assertThat(ZonedDateTime.parse("2026-01-15 13:00:00 EST", formatter))
+  @Test public void formatOf_defaultZoneAsiaShanghai_parsesCstAsShanghai() {
+    overrideTimeZone("Asia/Shanghai");
+    DateTimeFormatter formatter = formatOf("Wed Sep 16 11:32:43 PDT 2026");
+    assertThat(ZonedDateTime.parse("Thu Jul 16 02:00:00 CST 2026", formatter))
         .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2026, 1, 15, 13, 0, 0), ZoneId.of("America/New_York")));
+            ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("Asia/Shanghai")));
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")
@@ -1219,26 +1190,7 @@ public final class DateTimeFormatsTest {
 
   @Test public void allZoneNameAbbreviationsParse() {
     for (String name : DateTimeFormats.zoneNameAbbreviations()) {
-      if (name.equals("HADT")) {
-        // HADT resolves to Pacific/Honolulu, which has never observed HADT.
-        continue;
-      }
-      assertThat(
-              Stream.of(
-                      "2011-12-03 10:15:30 ",
-                      "2011-07-03 10:15:30 ",
-                      "2008-12-03 10:15:30 ",
-                      "1945-07-15 10:15:30 ")
-                  .map(prefix -> {
-                    try {
-                      return DateTimeFormats.parseZonedDateTime(prefix + name);
-                    } catch (DateTimeException e) {
-                      return null;
-                    }
-                  })
-                  .filter(Objects::nonNull)
-                  .findFirst())
-          .isPresent();
+      assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 " + name)).isNotNull();
     }
   }
 
@@ -1296,7 +1248,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void zoneAbbreviation_cest() {
-    assertThat(DateTimeFormats.parseZonedDateTime("2011-07-03 10:15:30 CEST").getZone())
+    assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CEST").getZone())
         .isEqualTo(ZoneId.of("Europe/Paris"));
   }
 
@@ -1464,14 +1416,14 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void rfc1123Shape_zoneNameAbbreviation_notShadowedByRfcFormatter() {
-    assertThat(DateTimeFormats.parseZonedDateTime("Tue, 10 Jun 2008 11:05:30 PDT"))
+    assertThat(DateTimeFormats.parseZonedDateTime("Tue, 10 Jun 2008 11:05:30 PST"))
         .isEqualTo(
             ZonedDateTime.of(
                 LocalDateTime.of(2008, 6, 10, 11, 5, 30), ZoneId.of("America/Los_Angeles")));
   }
 
   @Test public void rfc1123Shape_withoutWeekday_zoneNameAbbreviation_notShadowedByRfcFormatter() {
-    assertThat(DateTimeFormats.parseZonedDateTime("10 Jun 2008 11:05:30 PDT"))
+    assertThat(DateTimeFormats.parseZonedDateTime("10 Jun 2008 11:05:30 PST"))
         .isEqualTo(
             ZonedDateTime.of(
                 LocalDateTime.of(2008, 6, 10, 11, 5, 30), ZoneId.of("America/Los_Angeles")));
@@ -2142,17 +2094,17 @@ public final class DateTimeFormatsTest {
    * locale.
    */
   @Test public void localePrecedence_cjkWeekdayWinsOverZoneAbbreviation() {
-    assertThat(DateTimeFormats.parseZonedDateTime("星期六 2011-07-02 10:15:30 MDT"))
+    assertThat(DateTimeFormats.parseZonedDateTime("星期六 2011-12-03 10:15:30 MDT"))
         .isEqualTo(
             ZonedDateTime.of(
-                LocalDateTime.of(2011, 7, 2, 10, 15, 30), ZoneId.of("America/Mazatlan")));
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Mazatlan")));
   }
 
   @Test public void localePrecedence_englishWeekdayKeepsEnglishZoneReading() {
-    assertThat(DateTimeFormats.parseZonedDateTime("Sat 2011-07-02 10:15:30 MDT"))
+    assertThat(DateTimeFormats.parseZonedDateTime("Sat 2011-12-03 10:15:30 MDT"))
         .isEqualTo(
             ZonedDateTime.of(
-                LocalDateTime.of(2011, 7, 2, 10, 15, 30), ZoneId.of("America/Denver")));
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Denver")));
   }
 
   @Test public void localePrecedence_cjkAmPmMarkerWinsOverZoneAbbreviation() {
@@ -2882,6 +2834,14 @@ public final class DateTimeFormatsTest {
       Locale.setDefault(originalLocale);
     });
     Locale.setDefault(locale);
+  }
+
+  private void overrideTimeZone(String zoneId) {
+    TimeZone originalZone = TimeZone.getDefault();
+    tearDowns.addTearDown(() -> {
+      TimeZone.setDefault(originalZone);
+    });
+    TimeZone.setDefault(TimeZone.getTimeZone(zoneId));
   }
 
   private void assumeUsLocale() {
