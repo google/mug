@@ -533,18 +533,21 @@ public final class DateTimeFormats {
       Substring.all(Pattern.compile("'(?:''|[^'])*'|\\bz{1,4}\\b"));
 
   private static DateTimeFormatter ofPattern(String pattern) {
-    Set<ZoneId> preferred = Collections.singleton(ZoneId.systemDefault());
+    ZoneId defaultZone = ZoneId.systemDefault();
     DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
     AMBIGUOUS_ZONE_NAME_PATTERNS
         .cut(pattern)
         .map(Substring.Match::toString)
         .forEach(part -> {
           if (part.equals("zzzz")) {
+            // On JDK <= 22, COMPAT gives Asia/Urumqi the same full name ("中国标准时间") as
+            // Asia/Shanghai, and ZoneTextPrinterParser overwrites non-preferred entries in
+            // iteration order when a non-null preferred set is passed. Including Asia/Shanghai
+            // keeps "中国标准时间" resolving to Asia/Shanghai when the host default is elsewhere.
             builder.appendZoneText(
-                TextStyle.FULL,
-                new HashSet<>(asList(ZoneId.systemDefault(), ZoneId.of("Asia/Shanghai"))));
+                TextStyle.FULL, new HashSet<>(asList(defaultZone, ZoneId.of("Asia/Shanghai"))));
           } else if (part.equals("z") || part.equals("zz") || part.equals("zzz")) {
-            builder.appendZoneText(TextStyle.SHORT, preferred);
+            builder.appendZoneText(TextStyle.SHORT, Collections.singleton(defaultZone));
           } else {
             builder.appendPattern(part);
           }
@@ -933,7 +936,7 @@ public final class DateTimeFormats {
      * the name is matched literally and takes its zone from the offset, while {@code LLL} does have
      * to read "Sep", so the locale has to go to English.
      */
-    CHINESE_ZONE_NAME(Locale.CHINA, "中国标准时间"),
+    CHINA_STANDARD_TIME(Locale.CHINA, "中国标准时间"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
