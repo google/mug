@@ -561,8 +561,8 @@ public final class DateTimeFormatsTest {
 
   @Test @SuppressWarnings("DateTimeExampleStringCheck")
   public void formatOf_quotedLiteralContainingZzz() {
-    DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'he is napping zzz...'");
-    assertThat(LocalDateTime.parse("2026-09-18 11:15:00 he is napping zzz...", formatter))
+    DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'it''s napping zzz...'");
+    assertThat(LocalDateTime.parse("2026-09-18 11:15:00 it's napping zzz...", formatter))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 11, 15, 0));
   }
 
@@ -852,10 +852,20 @@ public final class DateTimeFormatsTest {
   // with U+202F NARROW NO-BREAK SPACE, which is invisible in a test string.
   @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void usMediumDateTime_commaBeforeYearAndBeforeTime() {
-    LocalDateTime when = LocalDateTime.of(2011, 12, 3, 10, 15, 30);
-    String example = when.format(
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(Locale.US));
-    assertThat(LocalDateTime.parse(example, formatOf(example))).isEqualTo(when);
+    DateTimeFormatter usMedium =
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(Locale.US);
+    LocalDateTime exampleTime = LocalDateTime.of(2011, 12, 3, 13, 15, 30);
+    DateTimeFormatter inferred = formatOf(exampleTime.format(usMedium));
+    assertThat(LocalDateTime.parse(exampleTime.format(usMedium), inferred)).isEqualTo(exampleTime);
+    LocalDateTime tenFifteenPm = LocalDateTime.of(2011, 12, 3, 22, 15, 30);
+    assertThat(LocalDateTime.parse(tenFifteenPm.format(usMedium), inferred))
+        .isEqualTo(tenFifteenPm);
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void usShortTime_narrowNoBreakSpaceBeforeAmPm() {
+    assertLocalTime("1:15\u202fPM", "h:mm\u202fa").isEqualTo(LocalTime.of(13, 15, 0));
+    assertLocalTime("1\u202fPM", "h\u202fa").isEqualTo(LocalTime.of(13, 0, 0));
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")

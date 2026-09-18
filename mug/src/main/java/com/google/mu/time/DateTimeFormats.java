@@ -16,7 +16,6 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
-import static com.google.mu.util.Substring.between;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -56,6 +55,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.google.mu.collect.PrefixSearchTable;
@@ -178,7 +178,7 @@ public final class DateTimeFormats {
    *
    * <p>CLDR 42 normalized the spaces in its patterns, so a localized rendering can separate two
    * fields with a no-break space: {@code ofLocalizedDateTime(MEDIUM)} under {@code en_US} emits
-   * {@code "Dec 3, 2011, 10:15:30 AM"} whose space before the day period is U+202F NARROW NO-BREAK
+   * {@code "Dec 3, 2011, 1:15:30 PM"} whose space before the day period is U+202F NARROW NO-BREAK
    * SPACE, binding the marker to the time. Every {@code Zs} character is a delimiter so that such
    * an example reads; it is copied into the pattern verbatim, so the formatter still matches the
    * exact character it was shown.
@@ -360,12 +360,16 @@ public final class DateTimeFormats {
           .addAll(forExamples("下午2:10:10"), "ah:mm:ss")
           .addAll(forExamples("下午2:10"), "ah:mm")
           .addAll(forExamples("1 AM"), "h a")
+          .addAll(forExamples("1\u202fAM"), "h\u202fa")
           .addAll(forExamples("1AM"), "ha")
           .addAll(forExamples("10 AM"), "HH a")
+          .addAll(forExamples("10\u202fAM"), "HH\u202fa")
           .addAll(forExamples("10AM"), "HHa")
           .addAll(forExamples("1:00 AM"), "h:mm a")
+          .addAll(forExamples("1:00\u202fAM"), "h:mm\u202fa")
           .addAll(forExamples("1:00AM"), "h:mma")
           .addAll(forExamples("1:00:00 AM"), "h:mm:ss a")
+          .addAll(forExamples("1:00:00\u202fAM"), "h:mm:ss\u202fa")
           .addAll(forExamples("1:00:00AM"), "h:mm:ssa")
           // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
           // token: a shape made of WORD alone would claim every unrecognized word, turning typos
@@ -520,11 +524,8 @@ public final class DateTimeFormats {
         .parse(dateTimeString, query);
   }
 
-  private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS = Stream.concat(
-          Stream.of(between("'", INCLUSIVE, "'", INCLUSIVE)),
-          Stream.of("zzzz", "zzz", "zz", "z").map(Substring::word))
-      .collect(firstOccurrence())
-      .repeatedly();
+  private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS =
+      Substring.all(Pattern.compile("'(?:''|[^'])*'|\\bz{1,4}\\b"));
 
   private static DateTimeFormatter ofPattern(String pattern) {
     Set<ZoneId> preferred = Collections.singleton(ZoneId.systemDefault());
