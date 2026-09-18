@@ -21,6 +21,7 @@ import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
+import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
@@ -46,6 +47,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.Collections;
@@ -491,15 +495,49 @@ public final class DateTimeFormats {
     }
   }
 
+  private static final DateTimeFormatter SHORT_ZONE_NAME =
+      DateTimeFormatter.ofPattern("zzz", Locale.ENGLISH);
+  private static final DateTimeFormatter LONG_ZONE_NAME =
+      DateTimeFormatter.ofPattern("zzzz", Locale.ENGLISH);
+  private static final DateTimeFormatter GENERIC_ZONE_NAME =
+      DateTimeFormatter.ofPattern("v", Locale.ENGLISH);
+
   private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
-    return lookup(RFC_1123_FORMATTERS, signature)
+    DateTimeFormatter fmt = lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
             .orElseGet(() -> lookup(
                     ISO_DATE_TIME_FORMATTERS,
                     signatureWithoutNanoseconds(dateTimeString).orElse(signature))
-                .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
-        .parse(dateTimeString, query);
+                .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))));
+    return parseAndVerify(fmt, dateTimeString, signature).query(query);
+  }
+
+  private static TemporalAccessor parseAndVerify(
+      DateTimeFormatter formatter, String text, List<?> signature) {
+    TemporalAccessor parsed = formatter.parse(text);
+    if (parsed.query(TemporalQueries.zoneId()) != null
+        && parsed.isSupported(ChronoField.INSTANT_SECONDS)) {
+      ZonedDateTime zdt = ZonedDateTime.from(parsed);
+      if (parsed.isSupported(ChronoField.OFFSET_SECONDS)) {
+        ZoneOffset explicitOffset = ZoneOffset.from(parsed);
+        if (!explicitOffset.equals(zdt.getOffset())) {
+          throw new DateTimeException(
+              "Explicit offset " + explicitOffset + " conflicts with resolved zone: " + text);
+        }
+      } else if (signature.contains(Token.ZONE_NAME)) {
+        String shortName = SHORT_ZONE_NAME.format(zdt);
+        String longName = LONG_ZONE_NAME.format(zdt);
+        String genericName = GENERIC_ZONE_NAME.format(zdt);
+        if (!text.contains(shortName) && !text.contains(longName)
+            && !text.contains(zdt.getZone().getId()) && !word(genericName).in(text).isPresent()
+            && !(shortName.equals("HST") && word("HAST").in(text).isPresent())) {
+          throw new DateTimeException(
+              "Zone name in [" + text + "] conflicts with resolved zone " + zdt);
+        }
+      }
+    }
+    return parsed;
   }
 
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {

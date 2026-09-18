@@ -114,8 +114,11 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
     /**
      * Registers that if the next char in the input is in {@code blocklist} (and is the first char
      * of at least one top-level prefix), the {@code candidate} can be safely pruned.
+     *
+     * <p>Should only be called after all prefixes have been added.
      */
     void addBlocklist(BitSet blocklist, V candidate) {
+      if (blocklist.isEmpty()) return;
       children.forEach((k, child) -> {
         if (blocklist.get(k)) {
           child.blocked.add(candidate);
