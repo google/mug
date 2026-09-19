@@ -6,12 +6,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.collect.Chain.concat;
 import static java.util.Arrays.asList;
-
-import java.util.Iterator;
-import java.util.List;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.testing.IteratorFeature;
@@ -21,6 +16,10 @@ import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.MoreStreams;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import java.util.Iterator;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ChainTest {
@@ -59,25 +58,31 @@ public class ChainTest {
   }
 
   @Test public void concatTwoSequences() {
+    assertChain(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), "foo", "bar", "baz", "zoo");
     assertChain(
-        concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")),
+        concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")), "foo",
+        "bar", "baz", "zoo", "dash");
+    assertChain(
+        concat(Chain.of("zero"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))), "zero",
         "foo", "bar", "baz", "zoo");
-    assertChain(
-        concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")),
-        "foo", "bar", "baz", "zoo", "dash");
-    assertChain(concat(
-        Chain.of("zero"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))),
-        "zero", "foo", "bar", "baz", "zoo");
   }
 
   @Test public void concatTwoSequences_collect() {
-    assertThat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")).stream().collect(toImmutableSet()))
+    assertThat(
+            concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")).stream()
+                .collect(toImmutableSet()))
         .containsExactly("foo", "bar", "baz", "zoo")
         .inOrder();
-    assertThat(concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")).stream().collect(toImmutableSet()))
+    assertThat(
+            concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash"))
+                .stream()
+                .collect(toImmutableSet()))
         .containsExactly("foo", "bar", "baz", "zoo", "dash")
         .inOrder();
-    assertThat(concat(Chain.of("zero", "one"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))).stream().collect(toImmutableSet()))
+    assertThat(
+            concat(Chain.of("zero", "one"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")))
+                .stream()
+                .collect(toImmutableSet()))
         .containsExactly("zero", "one", "foo", "bar", "baz", "zoo")
         .inOrder();
   }
@@ -109,6 +114,23 @@ public class ChainTest {
     assertThat(chain.elements()).isSameInstanceAs(chain.elements());
   }
 
+  @Test public void concat_maxSize() {
+    Chain<Integer> chain = Chain.of(1);
+    for (int i = 0; i < 30; i++) {
+      chain = concat(chain, chain).concat(1);
+    }
+    assertThat(chain.size()).isEqualTo(Integer.MAX_VALUE);
+  }
+
+  @Test public void concat_exceedsMaxSize() {
+    Chain<Integer> chain = Chain.of(1);
+    for (int i = 0; i < 30; i++) {
+      chain = concat(chain, chain).concat(1);
+    }
+    Chain<Integer> maxChain = chain;
+    assertThrows(IllegalArgumentException.class, () -> maxChain.concat(1));
+  }
+
   private static <T> void assertChain(Chain<T> chain, T... expected) {
     // Before materialization
     assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
@@ -126,19 +148,15 @@ public class ChainTest {
     assertThat(chain.getFirst()).isEqualTo(expected[0]);
     assertThat(chain.get(0)).isEqualTo(expected[0]);
     assertThat(chain.get(expected.length - 1)).isEqualTo(expected[expected.length - 1]);
-    IteratorTester<T> tester =
-         new IteratorTester<T>(
-             6,
-             IteratorFeature.UNMODIFIABLE,
-             asList(expected),
-             IteratorTester.KnownOrder.KNOWN_ORDER) {
-           @Override protected Iterator<T> newTargetIterator() {
-             return chain.iterator();
-           }
-         };
-         tester.test();
-         tester.testForEachRemaining();
-     SpliteratorTester.of(chain::spliterator).expect(expected).inOrder();
+    IteratorTester<T> tester = new IteratorTester<T>(
+        6, IteratorFeature.UNMODIFIABLE, asList(expected), IteratorTester.KnownOrder.KNOWN_ORDER) {
+      @Override protected Iterator<T> newTargetIterator() {
+        return chain.iterator();
+      }
+    };
+    tester.test();
+    tester.testForEachRemaining();
+    SpliteratorTester.of(chain::spliterator).expect(expected).inOrder();
   }
 
   @Test public void testEquals() {

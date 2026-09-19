@@ -14,9 +14,11 @@
  *****************************************************************************/
 package com.google.mu.collect;
 
+import static com.google.mu.collect.InternalUtils.checkArgument;
 import static com.google.mu.collect.InternalUtils.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
+import com.google.mu.util.graph.Walker;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,21 +26,19 @@ import java.util.ListIterator;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
-import com.google.mu.util.graph.Walker;
-
 /**
  * Immutable {@link List} implementation that supports O(1) concatenation.
  *
  * <p>At high level, this class provides similar behavior as {@link Stream#concat Stream.concat()}
  * or {@link com.google.common.collect.Iterables#concat Guava Iterables.concat()}, except it's not
- * recursive. That is, if your Chain is the result of 1 million concatenations, you won't run
- * into stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
+ * recursive. That is, if your Chain is the result of 1 million concatenations, you won't run into
+ * stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
  *
  * <p>The expected use case is to concatenate lots of smaller {@code Chain}s using the {@code
  * concat()} methods to create the final Chain. O(n) materialization cost will be (lazily) incurred
- * upon the first time accessing the elements of the final Chain through the {@link List}
- * interface such as {@link List#get}, {@link List#equals}, {@link #toString} etc. You may also
- * want to copy the final Chain into a more conventional List such as {@link
+ * upon the first time accessing the elements of the final Chain through the {@link List} interface
+ * such as {@link List#get}, {@link List#equals}, {@link #toString} etc. You may also want to copy
+ * the final Chain into a more conventional List such as {@link
  * com.google.common.collect.ImmutableList#copyOf Guava ImmutableList}.
  *
  * <p>On the other hand, it's inefficient to materialize, concatenate then materialize the
@@ -51,9 +51,9 @@ import com.google.mu.util.graph.Walker;
  *
  * <p>While bearing a bit of similarity, this class isn't a <a
  * href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent data structure</a>.
- * Besides the O(1) concatenation, it's a traditional immutable {@link java.util.List} supporting
- * no other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists;
- * and random access is also O(1) (after one-time lazy materialization).
+ * Besides the O(1) concatenation, it's a traditional immutable {@link java.util.List} supporting no
+ * other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists; and
+ * random access is also O(1) (after one-time lazy materialization).
  *
  * @since 8.1
  */
@@ -85,20 +85,27 @@ public final class Chain<T> extends AbstractList<T> {
   }
 
   /**
-   * Returns a new Chain concatenating elements from the {@code left} Chain and the
-   * {@code right} Chain, in <em>O(1)</em> time.
+   * Returns a new Chain concatenating elements from the {@code left} Chain and the {@code right}
+   * Chain, in <em>O(1)</em> time.
    *
-   * <p>Encounter order of elements is preserved. That is, {@code concat([1, 2], [3, 4])}
-   * returns {@code [1, 2, 3, 4]}.
+   * <p>Encounter order of elements is preserved. That is, {@code concat([1, 2], [3, 4])} returns
+   * {@code [1, 2, 3, 4]}.
+   *
+   * @throws IllegalArgumentException if the resulting chain size would exceed {@link
+   *     Integer#MAX_VALUE}
    */
   public static <T> Chain<T> concat(Chain<? extends T> left, Chain<? extends T> right) {
-    return new Chain<>(
-        left.head, new Tree<>(left.tail, right.head, right.tail), left.size + right.size);
+    int size = left.size + right.size;
+    checkArgument(size > 0, "size cannot exceed %s", Integer.MAX_VALUE);
+    return new Chain<>(left.head, new Tree<>(left.tail, right.head, right.tail), size);
   }
 
   /**
    * Returns a new Chain concatenating elements from {@code this} Chain followed by {@code
    * lastElement}, in <em>O(1)</em> time.
+   *
+   * @throws IllegalArgumentException if the resulting chain size would exceed {@link
+   *     Integer#MAX_VALUE}
    */
   public Chain<T> concat(T lastElement) {
     return concat(this, of(lastElement));
@@ -115,18 +122,15 @@ public final class Chain<T> extends AbstractList<T> {
   }
 
   /**
-   * Returns a <em>lazy</em> stream of the elements in this list.
-   * The returned stream is lazy in that concatenated chains aren't consumed until the stream
-   * reaches their elements.
+   * Returns a <em>lazy</em> stream of the elements in this list. The returned stream is lazy in
+   * that concatenated chains aren't consumed until the stream reaches their elements.
    */
   @Override public Stream<T> stream() {
     List<T> elements = materialized;
     if (elements != null) {
       return elements.stream();
     }
-    return tail == null
-        ? Stream.of(head)
-        : Stream.concat(Stream.of(head), tail.stream());
+    return tail == null ? Stream.of(head) : Stream.concat(Stream.of(head), tail.stream());
   }
 
   /** Returns the first element. Will override the SequencedCollection method. Takes O(1) time. */
