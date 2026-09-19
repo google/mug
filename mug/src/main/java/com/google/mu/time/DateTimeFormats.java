@@ -16,11 +16,11 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
@@ -32,11 +32,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -62,6 +57,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -315,7 +316,8 @@ public final class DateTimeFormats {
                           .toMap(),
                       " ",
                       BiStream.of(
-                              asList("10:15:30 PST 2011", "10:15:30 GMT 2011"), "HH:mm:ss zzz yyyy",
+                              asList("10:15:30 PST 2011", "10:15:30 GMT 2011"),
+                                  "HH:mm:ss <zzz> yyyy",
                               asList("10:15:30 +0800 2011", "10:15:30 -0800 2011"),
                                   "HH:mm:ss ZZ yyyy",
                               asList("10:15:30 GMT+08:00 2011", "10:15:30 GMT-08:00 2011"),
@@ -411,10 +413,10 @@ public final class DateTimeFormats {
           .addAll(forExamples("["), "'['")
           .addAll(forExamples("]"), "']'")
           .addAll(forExamples("[UTC]", "[GMT]"), "'['VV']'")
-          .addAll(forExamples("PST", "GMT"), "zzz")
+          .addAll(forExamples("PST", "GMT"), "<zzz>")
           // DateTimeFormatter.ofLocalizedDateTime(FULL) under zh_CN:
           // "2026年9月17日星期四 中国标准时间 10:15:30", where the name is the only zone information.
-          .addAll(forExamples("中国标准时间"), "zzzz")
+          .addAll(forExamples("中国标准时间"), "<zzzz>")
           // Date.prototype.toString() in JavaScript (ECMA-262 21.4.4.41.3):
           // "Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Daylight Time)". The parens anchor these
           // rows; a bare run of WORDs would claim every unrecognized phrase. One example per token
@@ -436,7 +438,7 @@ public final class DateTimeFormats {
                   "(Mexican Pacific Standard Time)", // region name in the middle
                   "(GMT+06:00)", // no CLDR name for the zone
                   "(GMT-06:00)"),
-              "'('zzzz')'")
+              "'('<zzzz>')'")
           // The same call on a Chinese-locale host:
           // "Thu Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)". ECMA-262 hardcodes the English
           // weekday and month, so zzzz would read Chinese while EEE and LLL read English, and a
@@ -498,7 +500,8 @@ public final class DateTimeFormats {
         example,
         placeholder -> {
           placeholderCount.incrementAndGet();
-          return inferDateTimePattern(placeholder.skip(1, 1).toString());
+          String snippet = placeholder.skip(1, 1).toString();
+          return inferDateTimePattern(snippet, forExample(snippet));
         });
     try {
       if (placeholderCount.get() > 0) {
@@ -513,8 +516,10 @@ public final class DateTimeFormats {
     } catch (DateTimeParseException | IllegalArgumentException e) {
       // IllegalArgumentException comes from ofPattern(): the verbatim (non-placeholder) part
       // of the example is passed through as-is, so it can contain invalid pattern letters.
+      String displayPattern =
+          AMBIGUOUS_ZONE_NAME_PATTERNS.replaceAllFrom(pattern, m -> m.skip(1, 1).toString());
       throw new DateTimeException(
-          "invalid date time example: " + example + " (" + pattern + ")", e);
+          "invalid date time example: " + example + " (" + displayPattern + ")", e);
     }
   }
 
@@ -530,7 +535,7 @@ public final class DateTimeFormats {
   }
 
   private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS =
-      Substring.all(Pattern.compile("'(?:''|[^'])*'|\\bz{1,4}\\b"));
+      Substring.all(Pattern.compile("<z{1,4}>"));
 
   private static DateTimeFormatter ofPattern(String pattern) {
     ZoneId defaultZone = ZoneId.systemDefault();
@@ -539,14 +544,14 @@ public final class DateTimeFormats {
         .cut(pattern)
         .map(Substring.Match::toString)
         .forEach(part -> {
-          if (part.equals("zzzz")) {
+          if (part.equals("<zzzz>")) {
             // On JDK <= 22, COMPAT gives Asia/Urumqi the same full name ("中国标准时间") as
             // Asia/Shanghai, and ZoneTextPrinterParser overwrites non-preferred entries in
             // iteration order when a non-null preferred set is passed. Including Asia/Shanghai
             // keeps "中国标准时间" resolving to Asia/Shanghai when the host default is elsewhere.
             builder.appendZoneText(
                 TextStyle.FULL, new HashSet<>(asList(defaultZone, ZoneId.of("Asia/Shanghai"))));
-          } else if (part.equals("z") || part.equals("zz") || part.equals("zzz")) {
+          } else if (part.equals("<z>") || part.equals("<zz>") || part.equals("<zzz>")) {
             builder.appendZoneText(TextStyle.SHORT, Collections.singleton(defaultZone));
           } else {
             builder.appendPattern(part);
@@ -646,7 +651,8 @@ public final class DateTimeFormats {
   }
 
   static String inferDateTimePattern(String example) {
-    return inferDateTimePattern(example, forExample(example));
+    return AMBIGUOUS_ZONE_NAME_PATTERNS.replaceAllFrom(
+        inferDateTimePattern(example, forExample(example)), m -> m.skip(1, 1).toString());
   }
 
   static Set<String> zoneNameAbbreviations() {

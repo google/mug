@@ -1029,6 +1029,15 @@ public final class DateTimeFormatsTest {
   }
 
   @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test public void formatOf_zzzOutsidePlaceholder_notModified() {
+    overrideTimeZone("Asia/Shanghai");
+    DateTimeFormatter formatter = formatOf("<Sat 2026/09/19 11:32:43> zzz");
+    assertThat(ZonedDateTime.parse("Thu 2026/07/16 02:00:00 CST", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("America/Chicago")));
+  }
+
+  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void parenthesizedZoneNameWithNumericDateTime_pinsEnglishLocale() {
     DateTimeFormatter formatter = formatOf("2026-09-16 11:32:43 (Pacific Standard Time)");
     assertThat(ZonedDateTime.parse("2026-09-16 11:32:43 (Pacific Daylight Time)", formatter))
