@@ -17,9 +17,11 @@ package com.google.mu.util.stream;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 
+import com.google.mu.function.CheckedConsumer;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,8 +41,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.mu.function.CheckedConsumer;
-
 /**
  * Static utilities pertaining to {@link Stream} in addition to relevant utilities in JDK and Guava.
  *
@@ -48,51 +48,55 @@ import com.google.mu.function.CheckedConsumer;
  */
 public final class MoreStreams {
   /**
-   * Returns a Stream produced by iterative application of {@code step} to the initial
-   * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
-   * elements of step(x) for each x in step(seed), etc.
-   * (If the result stream returned by the {@code step} function is null an empty stream is used,
-   * instead.)
+   * Returns a Stream produced by iterative application of {@code step} to the initial {@code seed},
+   * producing a Stream consisting of seed, elements of step(seed), elements of step(x) for each x
+   * in step(seed), etc. (If the result stream returned by the {@code step} function is null an
+   * empty stream is used, instead.)
    *
-   * <p>While {@code Stream.generate(supplier)} can be used to generate infinite streams,
-   * it's not as easy to generate a <em>finite</em> stream unless the size can be pre-determined.
-   * This method can be used to generate finite streams: just return an empty stream when the
-   * {@code step} determines that there's no more elements to be generated.
+   * <p>While {@code Stream.generate(supplier)} can be used to generate infinite streams, it's not
+   * as easy to generate a <em>finite</em> stream unless the size can be pre-determined. This method
+   * can be used to generate finite streams: just return an empty stream when the {@code step}
+   * determines that there's no more elements to be generated.
    *
-   * <p>A typical group of use cases are BFS traversal algorithms.
-   * For example, to stream the tree nodes in BFS order: <pre>{@code
-   *   Stream<Node> bfs(Node root) {
-   *     return generate(root, node -> node.children().stream());
-   *   }
+   * <p>A typical group of use cases are BFS traversal algorithms. For example, to stream the tree
+   * nodes in BFS order:
+   *
+   * <pre>{@code
+   * Stream<Node> bfs(Node root) {
+   *   return generate(root, node -> node.children().stream());
+   * }
    * }</pre>
    *
-   * It's functionally equivalent to the following common imperative code: <pre>{@code
-   *   List<Node> bfs(Node root) {
-   *     List<Node> result = new ArrayList<>();
-   *     Queue<Node> queue = new ArrayDeque<>();
-   *     queue.add(root);
-   *     while (!queue.isEmpty()) {
-   *       Node node = queue.remove();
-   *       result.add(node);
-   *       queue.addAll(node.children());
-   *     }
-   *     return result;
+   * It's functionally equivalent to the following common imperative code:
+   *
+   * <pre>{@code
+   * List<Node> bfs(Node root) {
+   *   List<Node> result = new ArrayList<>();
+   *   Queue<Node> queue = new ArrayDeque<>();
+   *   queue.add(root);
+   *   while (!queue.isEmpty()) {
+   *     Node node = queue.remove();
+   *     result.add(node);
+   *     queue.addAll(node.children());
    *   }
+   *   return result;
+   * }
    * }</pre>
    *
-   * A BFS 2-D grid traversal algorithm: <pre>{@code
-   *   Stream<Cell> bfs(Cell startingCell) {
-   *     Set<Cell> visited = new HashSet<>();
-   *     visited.add(startingCell);
-   *     return generate(startingCell, c -> c.neighbors().filter(visited::add));
-   *   }
+   * A BFS 2-D grid traversal algorithm:
+   *
+   * <pre>{@code
+   * Stream<Cell> bfs(Cell startingCell) {
+   *   Set<Cell> visited = new HashSet<>();
+   *   visited.add(startingCell);
+   *   return generate(startingCell, c -> c.neighbors().filter(visited::add));
+   * }
    * }</pre>
    *
-   * <p>At every step, 0, 1 or more elements can be generated into the resulting stream.
-   * As discussed above, returning an empty stream leads to eventual termination of the stream;
-   * returning 1-element stream is equivalent to {@code Stream.generate(supplier)};
-   * while returning more than one elements allows a single element to fan out to multiple
-   * elements.
+   * <p>At every step, 0, 1 or more elements can be generated into the resulting stream. As
+   * discussed above, returning an empty stream leads to eventual termination of the stream;
+   * returning 1-element stream is equivalent to {@code Stream.generate(supplier)}; while returning
+   * more than one elements allows a single element to fan out to multiple elements.
    *
    * @since 1.9
    */
@@ -102,14 +106,15 @@ public final class MoreStreams {
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
     queue.add(Stream.of(seed));
     return whileNotNull(queue::poll)
-        .flatMap(seeds -> withSideEffect(
+        .<T>flatMap(seeds -> withSideEffect(
             seeds,
             v -> {
               Stream<? extends T> fanout = step.apply(v);
               if (fanout != null) {
                 queue.add(fanout);
               }
-            }));
+            }))
+        .onClose(() -> queue.forEach(Stream::close));
   }
 
   /**
@@ -209,7 +214,7 @@ public final class MoreStreams {
    * <pre>{@code
    * List<AstNode> merged =
    *     mergeConsecutive(astNodes, LiteralNode.class, (a, b) -> new LiteralNode(a.value + b.value))
-   *         .toList());
+   *         .toList();
    * }</pre>
    *
    * @since 10.2
@@ -326,7 +331,7 @@ public final class MoreStreams {
   /**
    * Dices {@code stream} into smaller chunks each with up to {@code maxSize} elements.
    *
-   * <p>For a sequential stream, the first N-1 chunk's will contain exactly {@code maxSize}
+   * <p>For a sequential stream, the first N-1 chunks will contain exactly {@code maxSize}
    * elements and the last chunk may contain less (but never 0).
    * However for parallel streams, it's possible that the stream is split in roughly equal-sized
    * sub streams before being diced into smaller chunks, which then will result in more than one
@@ -338,7 +343,7 @@ public final class MoreStreams {
    * @param stream the source stream to be diced
    * @param maxSize the maximum size for each chunk
    * @return Stream of diced chunks each being a list of size up to {@code maxSize}
-   * @throws IllegalStateException if {@code maxSize <= 0}
+   * @throws IllegalArgumentException if {@code maxSize <= 0}
    */
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
@@ -354,7 +359,7 @@ public final class MoreStreams {
    * @param spliterator the source spliterator to be diced
    * @param maxSize the maximum size for each chunk
    * @return Spliterator of diced chunks each being a list of size up to {@code maxSize}
-   * @throws IllegalStateException if {@code maxSize <= 0}
+   * @throws IllegalArgumentException if {@code maxSize <= 0}
    */
   public static <T> Spliterator<List<T>> dice(Spliterator<? extends T> spliterator, int maxSize) {
     requireNonNull(spliterator);
@@ -404,7 +409,7 @@ public final class MoreStreams {
    * terminate as soon as the Supplier returns null, in which case the null is treated as the
    * terminal condition and doesn't constitute a stream element.
    *
-   * <p>For sequential iterations, {@code whileNotNll()} is usually more concise than implementing
+   * <p>For sequential iterations, {@code whileNotNull()} is usually more concise than implementing
    * {@link AbstractSpliterator} directly. The latter requires boilerplate that looks like this:
    *
    * <pre>{@code
@@ -518,24 +523,49 @@ public final class MoreStreams {
   }
 
   /**
-   * Consume up to {@code n} elements from {@code stream}, pass them to {@code consumer}
-   * in encounter order, then return the remaining elements in a stream.
+   * Consume up to {@code n} elements from {@code stream}, pass them to {@code consumer} in
+   * encounter order, then return the remaining elements in a stream.
    *
-   * <p>Upon return, to-be-consumed (up to {@code n}) elements have been consumed.
-   * The {@code stream} reference should no longer be used.
-   * Closing the returned stream will close {@code stream}.
+   * <p>Upon return, to-be-consumed (up to {@code n}) elements have been consumed. The {@code
+   * stream} reference should no longer be used. Closing the returned stream will close {@code
+   * stream}.
    *
    * @throws IllegalArgumentException if {@code n} is negative;
    * @since 9.9.5
    */
   public static <T> Stream<T> consume(Stream<T> stream, int n, Consumer<? super T> consumer) {
+    requireNonNull(stream);
+    requireNonNull(consumer);
     if (n < 0) {
       throw new IllegalArgumentException("n (" + n + ") shouldn't be negative");
     }
     Spliterator<T> spliterator = stream.spliterator();
-    requireNonNull(consumer);
-    for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
-    return StreamSupport.stream(spliterator, /* parallel= */ false).onClose(stream::close);
+    try {
+      for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
+    } catch (Throwable e) {
+      try {
+        stream.close();
+      } catch (Throwable suppressed) {
+        e.addSuppressed(suppressed);
+      }
+      throw e;
+    }
+    Spliterator<T> remaining = new AbstractSpliterator<T>(
+        spliterator.estimateSize(),
+        spliterator.characteristics() & ~(Spliterator.SIZED | Spliterator.SUBSIZED)) {
+      @Override public boolean tryAdvance(Consumer<? super T> action) {
+        return spliterator.tryAdvance(action);
+      }
+
+      @Override public void forEachRemaining(Consumer<? super T> action) {
+        spliterator.forEachRemaining(action);
+      }
+
+      @Override public Comparator<? super T> getComparator() {
+        return spliterator.getComparator();
+      }
+    };
+    return StreamSupport.stream(remaining, /* parallel= */ false).onClose(stream::close);
   }
 
   /**
