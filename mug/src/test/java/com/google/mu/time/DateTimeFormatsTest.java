@@ -647,7 +647,6 @@ public final class DateTimeFormatsTest {
 
   /** {@code VV} cannot parse the short spelling, so it stays a localized offset. */
   @Test public void bareGmtShortOffset_staysLocalizedOffset() {
-    assumeUsLocale(); // the O specifier renders "GMT" differently in other locales
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 GMT+8"))
         .isEqualTo(
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneOffset.ofHours(8)));
@@ -1703,7 +1702,6 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void formatOf_12HourFormat() {
-    assumeUsLocale();
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
