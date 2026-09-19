@@ -277,47 +277,48 @@ public final class MoreStreams {
   }
 
   /**
-   * Iterates through {@code stream} <em>only once</em>. It's strongly recommended
-   * to avoid assigning the return value to a variable or passing it to any other method because
-   * the returned {@code Iterable}'s {@link Iterable#iterator iterator()} method can only be called
-   * once. Instead, always use it together with a for-each loop, as in:
+   * Iterates through {@code stream} <em>only once</em>. It's strongly recommended to avoid
+   * assigning the return value to a variable or passing it to any other method because the returned
+   * {@code Iterable}'s {@link Iterable#iterator iterator()} method can only be called once.
+   * Instead, always use it together with a for-each loop, as in:
    *
    * <pre>{@code
-   *   for (Foo foo : iterateOnce(stream)) {
-   *     ...
-   *     if (...) continue;
-   *     if (...) break;
-   *     ...
-   *   }
+   * for (Foo foo : iterateOnce(stream)) {
+   *   ...
+   *   if (...) continue;
+   *   if (...) break;
+   *   ...
+   * }
    * }</pre>
    *
    * The above is equivalent to manually doing:
    *
    * <pre>{@code
-   *   Iterable<Foo> foos = stream::iterator;
-   *   for (Foo foo : foos) {
-   *     ...
-   *   }
+   * Iterable<Foo> foos = stream::iterator;
+   * for (Foo foo : foos) {
+   *   ...
+   * }
    * }</pre>
+   *
    * except using this API eliminates the need for a named variable that escapes the scope of the
    * for-each loop. And code is more readable too.
    *
-   * <p>Note that {@link #iterateThrough iterateThrough()} should be preferred whenever possible
-   * due to the caveats mentioned above. This method is still useful when the loop body needs to
-   * use control flows such as {@code break} or {@code return}.
+   * <p>Note that {@link #iterateThrough iterateThrough()} should be preferred whenever possible due
+   * to the caveats mentioned above. This method is still useful when the loop body needs to use
+   * control flows such as {@code break} or {@code return}.
    */
   public static <T> Iterable<T> iterateOnce(Stream<T> stream) {
     return stream::iterator;
   }
 
   /**
-   * Iterates through {@code stream} sequentially and passes each element to {@code consumer}
-   * with exceptions propagated. For example:
+   * Iterates through {@code stream} sequentially and passes each element to {@code consumer} with
+   * exceptions propagated. For example:
    *
    * <pre>{@code
-   *   void writeAll(Stream<?> stream, ObjectOutput out) throws IOException {
-   *     iterateThrough(stream, out::writeObject);
-   *   }
+   * void writeAll(Stream<?> stream, ObjectOutput out) throws IOException {
+   *   iterateThrough(stream, out::writeObject);
+   * }
    * }</pre>
    */
   public static <T, E extends Throwable> void iterateThrough(
@@ -331,13 +332,13 @@ public final class MoreStreams {
   /**
    * Dices {@code stream} into smaller chunks each with up to {@code maxSize} elements.
    *
-   * <p>For a sequential stream, the first N-1 chunks will contain exactly {@code maxSize}
-   * elements and the last chunk may contain less (but never 0).
-   * However for parallel streams, it's possible that the stream is split in roughly equal-sized
-   * sub streams before being diced into smaller chunks, which then will result in more than one
-   * chunks with less than {@code maxSize} elements.
+   * <p>For a sequential stream, the first N-1 chunks will contain exactly {@code maxSize} elements
+   * and the last chunk may contain less (but never 0). However for parallel streams, it's possible
+   * that the stream is split in roughly equal-sized sub streams before being diced into smaller
+   * chunks, which then will result in more than one chunks with less than {@code maxSize} elements.
    *
-   * <p>This is an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#StreamOps">
+   * <p>This is an <a
+   * href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#StreamOps">
    * intermediary operation</a>.
    *
    * @param stream the source stream to be diced
@@ -368,9 +369,9 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns an infinite {@link Stream} starting from {@code firstIndex}.
-   * Can be used together with {@link BiStream#zip} to iterate over a stream with index.
-   * For example: {@code zip(indexesFrom(0), values)}.
+   * Returns an infinite {@link Stream} starting from {@code firstIndex}. Can be used together with
+   * {@link BiStream#zip} to iterate over a stream with index. For example: {@code
+   * zip(indexesFrom(0), values)}.
    *
    * <p>To get a finite stream, use {@code indexesFrom(...).limit(size)}.
    *
@@ -430,6 +431,12 @@ public final class MoreStreams {
    * <pre>{@code
    * return whileNotNull(() -> hasData ? data : null);
    * }</pre>
+   *
+   * <p>Note that while the JDK stream pipeline does not guarantee at-most-once terminal invocation
+   * of {@link Spliterator#tryAdvance} after it returns {@code false}, {@code whileNotNull()}
+   * guarantees that {@code supplier.get()} is never invoked again once it returns {@code null}.
+   * Thus, {@code supplier} can be, but is not required to be, idempotent after returning {@code
+   * null}.
    *
    * <p>Why null? Why not {@code Optional}? Wrapping every generated element of a stream in an
    * {@link Optional} carries considerable allocation cost. Also, while nulls are in general
@@ -499,9 +506,9 @@ public final class MoreStreams {
   /**
    * Returns a sequential stream with {@code sideEffect} attached on every element.
    *
-   * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
-   * the side effect is allowed to interfere with the source of the stream, and is
-   * guaranteed to be applied in encounter order.
+   * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose, the side effect
+   * is allowed to interfere with the source of the stream, and is guaranteed to be applied in
+   * encounter order.
    *
    * <p>If you have to resort to side effects, use this dedicated method instead of {@code peek()}
    * or any other stream method. From the API specification, all methods defined by {@link Stream}
@@ -515,7 +522,7 @@ public final class MoreStreams {
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
     requireNonNull(sideEffect);
     return StreamSupport.stream(
-        () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false)
+            () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false)
         .onClose(stream::close);
   }
 
