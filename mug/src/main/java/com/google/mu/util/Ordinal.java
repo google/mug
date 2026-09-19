@@ -19,9 +19,8 @@ import java.util.stream.Stream;
 
 /**
  * This class provides type-safe transition between 1-based Ordinal and 0-based indexes that are
- * commonly used to index arrays and lists. This is useful especially to translate between
- * end-user friendly numbers and machine-friendly index numbers, like for example, to report error
- * messages.
+ * commonly used to index arrays and lists. This is useful especially to translate between end-user
+ * friendly numbers and machine-friendly index numbers, like for example, to report error messages.
  *
  * <p>Users should immediately wrap 1-based numbers as {@code Ordinal} instances to take advantage
  * of the static type safety, to avoid 1-off errors and to use the extra utilities in this class.
@@ -31,10 +30,8 @@ import java.util.stream.Stream;
  * @since 4.6
  */
 public final class Ordinal implements Comparable<Ordinal> {
-  private static final Ordinal[] FIRST = IntStream.iterate(1, n -> n + 1)
-      .limit(100)
-      .mapToObj(Ordinal::new)
-      .toArray(Ordinal[]::new);
+  private static final Ordinal[] FIRST =
+      IntStream.iterate(1, n -> n + 1).limit(100).mapToObj(Ordinal::new).toArray(Ordinal[]::new);
 
   /**
    * The maximum ordinal.
@@ -70,10 +67,10 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
 
   /**
-   * Returns instance corresponding to the {@code oneBased} number.
-   * Small integer numbers in the range of {@code [1, 100]} are cached.
+   * Returns instance corresponding to the {@code oneBased} number. Small integer numbers in the
+   * range of {@code [1, 100]} are cached.
    *
-   * @throws IllegalArgumentException if {@code num} is not positive.
+   * @throws IllegalArgumentException if {@code oneBased} is not positive.
    */
   public static Ordinal of(int oneBased) {
     return oneBased > 0 && oneBased <= FIRST.length ? FIRST[oneBased - 1] : new Ordinal(oneBased);
@@ -82,8 +79,8 @@ public final class Ordinal implements Comparable<Ordinal> {
   /**
    * Returns instance corresponding to the ordinal of the Enum object {@code e}.
    *
-   * <p>Note that given {@link Enum#ordinal} is 0-based, an enum with {@code ordinal() == 0}
-   * maps to {@link #first}, or {@code of(1)}.
+   * <p>Note that given {@link Enum#ordinal} is 0-based, an enum with {@code ordinal() == 0} maps to
+   * {@link #first}, or {@code of(1)}.
    *
    * @since 7.0
    */
@@ -92,18 +89,21 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
 
   /**
-   * Returns instance corresponding to the {@code zeroBased} index. That is:
-   * index {@code 0} corresponds to {@code "1st"} and index {@code 1} for {@code "2nd"} etc.
+   * Returns instance corresponding to the {@code zeroBased} index. That is: index {@code 0}
+   * corresponds to {@code "1st"} and index {@code 1} for {@code "2nd"} etc.
    *
-   * @throws IllegalArgumentException if {@code num} is negative.
+   * @throws IllegalArgumentException if {@code zeroBased} is negative or {@code Integer.MAX_VALUE}.
    */
   public static Ordinal fromIndex(int zeroBased) {
+    if (zeroBased < 0 || zeroBased == Integer.MAX_VALUE) {
+      throw new IllegalArgumentException("invalid index: " + zeroBased);
+    }
     return of(zeroBased + 1);
   }
 
   /**
-   * Returns the 0-based index, such that {@code "1st"} will map to 0, thus can be used to
-   * read and write elements in arrays and lists.
+   * Returns the 0-based index, such that {@code "1st"} will map to 0, thus can be used to read and
+   * write elements in arrays and lists.
    */
   public int toIndex() {
     return num - 1;
@@ -123,14 +123,14 @@ public final class Ordinal implements Comparable<Ordinal> {
     return num == 1 ? MAX_VALUE : of(num - 1);
   }
 
-
   /**
    * Returns the distance between {@code this} and {@code that}.
    *
    * <p>Some examples:
+   *
    * <pre>{@code
-   *   1st.minus(2nd) => -1
-   *   5th.minus(2nd) => 3
+   * 1st.minus(2nd) => -1
+   * 5th.minus(2nd) => 3
    * }</pre>
    *
    * @since 7.0
@@ -156,8 +156,8 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
 
   /**
-   * Returns the string representation of this ordinal. For example,
-   * {@code Ordinal.of(1).toString()} returns "1st".
+   * Returns the string representation of this ordinal. For example, {@code
+   * Ordinal.of(1).toString()} returns "1st".
    */
   @Override public String toString() {
     switch (num % 100) {
@@ -176,6 +176,6 @@ public final class Ordinal implements Comparable<Ordinal> {
           default:
             return num + "th";
         }
-      }
+    }
   }
 }

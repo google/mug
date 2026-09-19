@@ -19,16 +19,14 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.testing.EqualsTester;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.common.testing.EqualsTester;
 
 @RunWith(JUnit4.class)
 public class OrdinalTest {
@@ -153,11 +151,15 @@ public class OrdinalTest {
   }
 
   @Test public void fromIndex_overflow() {
-    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MAX_VALUE));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MAX_VALUE));
+    assertThat(thrown.getMessage()).isEqualTo("invalid index: " + Integer.MAX_VALUE);
   }
 
   @Test public void fromIndex_negative() {
-    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-1));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-1));
+    assertThat(thrown.getMessage()).isEqualTo("invalid index: -1");
     assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-2));
     assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MIN_VALUE));
   }
@@ -208,5 +210,8 @@ public class OrdinalTest {
     return Ordinal.of(n).toString();
   }
 
-  private enum Fruit {APPLE, ORANGE}
+  private enum Fruit {
+    APPLE,
+    ORANGE
+  }
 }
