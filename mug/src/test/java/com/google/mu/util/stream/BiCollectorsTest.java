@@ -34,21 +34,19 @@ import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.mu.util.BiOptional;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
@@ -69,17 +67,16 @@ public class BiCollectorsTest {
   }
 
   @Test public void testToMap_keyEncounterOrderRetainedThroughValueCollector() {
-    ImmutableList<Town> towns =
-        ImmutableList.of(
-            new Town("WA", 1),
-            new Town("FL", 2),
-            new Town("WA", 3),
-            new Town("IL", 4),
-            new Town("AZ", 5),
-            new Town("OH", 6),
-            new Town("IN", 7),
-            new Town("CA", 8),
-            new Town("CA", 9));
+    ImmutableList<Town> towns = ImmutableList.of(
+        new Town("WA", 1),
+        new Town("FL", 2),
+        new Town("WA", 3),
+        new Town("IL", 4),
+        new Town("AZ", 5),
+        new Town("OH", 6),
+        new Town("IN", 7),
+        new Town("CA", 8),
+        new Town("CA", 9));
     assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 4, "FL", 2, "IL", 4, "AZ", 5, "OH", 6, "IN", 7, "CA", 17)
         .inOrder();
@@ -92,8 +89,7 @@ public class BiCollectorsTest {
   }
 
   @Test public void testToMap_withSupplier() {
-    LinkedHashMap<String, Integer> map =
-        BiStream.of("one", 1, "two", 2).collect(toLinkedHashMap());
+    LinkedHashMap<String, Integer> map = BiStream.of("one", 1, "two", 2).collect(toLinkedHashMap());
     assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
   }
 
@@ -190,8 +186,7 @@ public class BiCollectorsTest {
   }
 
   @Test public void testCountingDistinct_duplicateEntries_withNulls() {
-    assertThat(BiStream.of(1, null, 1, null).collect(BiCollectors.countingDistinct()))
-        .isEqualTo(1);
+    assertThat(BiStream.of(1, null, 1, null).collect(BiCollectors.countingDistinct())).isEqualTo(1);
     assertThat(BiStream.of(null, null, null, null).collect(BiCollectors.countingDistinct()))
         .isEqualTo(1);
     assertThat(BiStream.of(null, "one", null, "one").collect(BiCollectors.countingDistinct()))
@@ -208,44 +203,62 @@ public class BiCollectorsTest {
   }
 
   @Test public void testSummingInt() {
-    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summingInt((a, b) -> a + b))).isEqualTo(33);
+    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summingInt((a, b) -> a + b)))
+        .isEqualTo(33);
   }
 
   @Test public void testSummingLong() {
-    assertThat(BiStream.of(1L, 10, 2L, 20).collect(BiCollectors.summingLong((a, b) -> a + b))).isEqualTo(33L);
+    assertThat(BiStream.of(1L, 10, 2L, 20).collect(BiCollectors.summingLong((a, b) -> a + b)))
+        .isEqualTo(33L);
   }
 
   @Test public void testSummingDouble() {
-    assertThat(BiStream.of(1, 10D, 2, 20D).collect(BiCollectors.summingDouble((a, b) -> a + b))).isEqualTo(33D);
+    assertThat(BiStream.of(1, 10D, 2, 20D).collect(BiCollectors.summingDouble((a, b) -> a + b)))
+        .isEqualTo(33D);
   }
 
   @Test public void testAveragingInt() {
-    assertThat(BiStream.of(1, 3, 2, 4).collect(BiCollectors.averagingInt((Integer a, Integer b) -> a + b)))
+    assertThat(
+            BiStream.of(1, 3, 2, 4)
+                .collect(BiCollectors.averagingInt((Integer a, Integer b) -> a + b)))
         .isEqualTo(5D);
   }
 
   @Test public void testAveragingLong() {
-    assertThat(BiStream.of(1L, 3, 2L, 4).collect(BiCollectors.averagingLong((Long a, Integer b) -> a + b)))
+    assertThat(
+            BiStream.of(1L, 3, 2L, 4)
+                .collect(BiCollectors.averagingLong((Long a, Integer b) -> a + b)))
         .isEqualTo(5D);
   }
 
   @Test public void testAveragingDouble() {
-    assertThat(BiStream.of(1L, 3, 2L, 4).collect(BiCollectors.averagingDouble((Long a, Integer b) -> a + b)))
+    assertThat(
+            BiStream.of(1L, 3, 2L, 4)
+                .collect(BiCollectors.averagingDouble((Long a, Integer b) -> a + b)))
         .isEqualTo(5D);
   }
 
   @Test public void testSummarizingInt() {
-    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingInt((a, b) -> a + b)).getMin())
+    assertThat(
+            BiStream.of(1, 10, 2, 20)
+                .collect(BiCollectors.summarizingInt((a, b) -> a + b))
+                .getMin())
         .isEqualTo(11);
   }
 
   @Test public void testSummarizingLong() {
-    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingLong((a, b) -> a + b)).getMin())
+    assertThat(
+            BiStream.of(1, 10, 2, 20)
+                .collect(BiCollectors.summarizingLong((a, b) -> a + b))
+                .getMin())
         .isEqualTo(11L);
   }
 
   @Test public void testSummarizingDouble() {
-    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingDouble((a, b) -> a + b)).getMin())
+    assertThat(
+            BiStream.of(1, 10, 2, 20)
+                .collect(BiCollectors.summarizingDouble((a, b) -> a + b))
+                .getMin())
         .isEqualTo(11D);
   }
 
@@ -264,7 +277,8 @@ public class BiCollectorsTest {
   }
 
   @Test public void testGroupingBy_multipleValuesGrouped() {
-    assertKeyValues(BiStream.of(1, "one", 1L, "uno").collect(groupingBy(Object::toString, toList())))
+    assertKeyValues(
+            BiStream.of(1, "one", 1L, "uno").collect(groupingBy(Object::toString, toList())))
         .containsExactly("1", ImmutableList.of("one", "uno"));
   }
 
@@ -272,19 +286,24 @@ public class BiCollectorsTest {
     assertKeyValues(
             BiStream.of(1, 3, 2, 4, 11, 111)
                 .collect(groupingBy((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap)))
-        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
+        .containsExactly(
+            2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
   @Test public void testGroupingBy_toNestedBiStream() {
-    Map<Integer, Map<Integer, Integer>> nested =
-        BiStream.of(1, 3, 2, 4, 11, 111)
-            .collect(groupingBy((a, b) -> b - a))
-            .mapValues(BiStream::toMap)
-            .toMap();
+    Map<Integer, Map<Integer, Integer>> nested = BiStream.of(1, 3, 2, 4, 11, 111)
+        .collect(groupingBy((a, b) -> b - a))
+        .mapValues(BiStream::toMap)
+        .toMap();
     assertThat(nested)
         .containsExactly(
-            2, ImmutableMap.of(1, 3, 2, 4),
-            100, ImmutableMap.of(11, 111));
+            2,
+                ImmutableMap.of(
+                    1, 3,
+                    2, 4),
+            100,
+                ImmutableMap.of(
+                    11, 111));
   }
 
   @Test public void testGroupingBy_withReducer_empty() {
@@ -312,18 +331,16 @@ public class BiCollectorsTest {
   }
 
   @Test public void testPartitioningBy_sameDownstreamCollector() {
-    String result =
-        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
-            .collect(partitioningBy((i, n) -> i % 2 == 1))
-            .andThen((odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap());
+    String result = BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+        .collect(partitioningBy((i, n) -> i % 2 == 1))
+        .andThen((odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap());
     assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
   }
 
   @Test public void testPartitioningBy_differentDownstreamCollectors() {
-    String result =
-        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
-            .collect(partitioningBy((i, n) -> i % 2 == 1, toMap(), counting()))
-            .andThen((odds, evens) -> "odd:" + odds + "; count of even:" + evens);
+    String result = BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+        .collect(partitioningBy((i, n) -> i % 2 == 1, toMap(), counting()))
+        .andThen((odds, evens) -> "odd:" + odds + "; count of even:" + evens);
     assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; count of even:2");
   }
 
@@ -338,9 +355,7 @@ public class BiCollectorsTest {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
     BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
         BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
-    assertThat(salaries.collect(toReverseMap))
-        .containsExactly(100, "Joe", 200, "Tom")
-        .inOrder();
+    assertThat(salaries.collect(toReverseMap)).containsExactly(100, "Joe", 200, "Tom").inOrder();
   }
 
   @Test public void testMapping_twoWay_withBiFunctions() {
@@ -352,13 +367,11 @@ public class BiCollectorsTest {
 
   @Test public void testMapping_twoWay_withBiFunctions_callsMethodsOnce() {
     List<String> calls = new ArrayList<>();
-    BiStream<String, Integer> salaries =
-        BiStream.of("Joe", 100, "Tom", 200)
-            .mapKeys(
-                k -> {
-                  calls.add(k);
-                  return k;
-                });
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200)
+        .mapKeys(k -> {
+          calls.add(k);
+          return k;
+        });
     BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
         BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
     ImmutableMap<Integer, String> reversed = salaries.collect(toReverseMap);
@@ -375,13 +388,11 @@ public class BiCollectorsTest {
 
   @Test public void testMapping_twoWay_withFunctions_callsMethodsOnce() {
     List<String> calls = new ArrayList<>();
-    BiStream<String, Integer> salaries =
-        BiStream.of("Joe", 100, "Tom", 200)
-            .mapKeys(
-                k -> {
-                  calls.add(k);
-                  return k;
-                });
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200)
+        .mapKeys(k -> {
+          calls.add(k);
+          return k;
+        });
     BiCollector<String, Integer, ImmutableMap<String, Integer>> doubled =
         BiCollectors.mapping(k -> k + k, v -> v + v, ImmutableMap::toImmutableMap);
     assertThat(salaries.collect(doubled)).containsExactly("JoeJoe", 200, "TomTom", 400).inOrder();
@@ -390,20 +401,24 @@ public class BiCollectorsTest {
 
   @Test public void testMapping_pairWise() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
-    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
-        BiCollectors.mapping(
-            (k, v) -> BiOptional.of(v, k).orElseThrow(),
-            ImmutableMap::toImmutableMap);
-    assertThat(salaries.collect(toReverseMap))
-        .containsExactly(100, "Joe", 200, "Tom")
-        .inOrder();
+    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap = BiCollectors.mapping(
+        (k, v) -> BiOptional.of(v, k).orElseThrow(), ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(toReverseMap)).containsExactly(100, "Joe", 200, "Tom").inOrder();
   }
 
   @Test public void testFlatMapping_toStream() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
-    assertThat(salaries.collect(BiCollectors.flatMapping((k, c) -> nCopies(c, k).stream(), toList())))
+    assertThat(
+            salaries.collect(BiCollectors.flatMapping((k, c) -> nCopies(c, k).stream(), toList())))
         .containsExactly("Joe", "Tom", "Tom")
         .inOrder();
+  }
+
+  @Test public void testFlatMapping_nullStream() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    assertThat(
+            salaries.collect(BiCollectors.flatMapping((k, c) -> (Stream<String>) null, toList())))
+        .isEmpty();
   }
 
   @Test public void testFlatMapping_toBiStream() {
@@ -412,36 +427,28 @@ public class BiCollectorsTest {
         BiCollectors.flatMapping(
             (String k, Integer c) -> biStream(nCopies(c, k)).mapValues(u -> c),
             ImmutableListMultimap::toImmutableListMultimap));
-    assertThat(result)
-        .containsExactly("Joe", 1, "Tom", 2, "Tom", 2)
-        .inOrder();
+    assertThat(result).containsExactly("Joe", 1, "Tom", 2, "Tom", 2).inOrder();
   }
 
   @Test public void testCollectingAndThen() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
-    Stream<String> result = salaries
-        .collect(collectingAndThen(
-            stream -> stream.mapToObj((name, salary) -> name + ":" + salary)));
-    assertThat(result)
-        .containsExactly("Joe:1", "Tom:2")
-        .inOrder();
+    Stream<String> result = salaries.collect(
+        collectingAndThen(stream -> stream.mapToObj((name, salary) -> name + ":" + salary)));
+    assertThat(result).containsExactly("Joe:1", "Tom:2").inOrder();
   }
 
   @Test public void testCollectingAndThen_fomPair() {
-    String result =
-        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
-            .collect(
-                collectingAndThen(
-                    partitioningBy((i, n) -> i % 2 == 1),
-                    (odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap()));
+    String result = BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+        .collect(
+            collectingAndThen(
+                partitioningBy((i, n) -> i % 2 == 1),
+                (odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap()));
     assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
   }
 
   @Test public void testInverse_toStream() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
-    assertThat(salaries.collect(inverse(toMap())))
-        .containsExactly(1, "Joe", 2, "Tom")
-        .inOrder();
+    assertThat(salaries.collect(inverse(toMap()))).containsExactly(1, "Joe", 2, "Tom").inOrder();
   }
 
   @Test public void testMaxByKey_found() {
@@ -449,57 +456,57 @@ public class BiCollectorsTest {
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMaxByKey_multipleMax_firstWins() {
+  @Test public void testMaxByKey_multipleMax_firstWins() {
     assertThat(BiStream.of(1, "y", 2, "x", 2, "a").collect(maxByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMaxByKey_notFound() {
+  @Test public void testMaxByKey_notFound() {
     assertThat(BiStream.<String, Integer>empty().collect(maxByKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
- @Test public void testMinByKey_found() {
+  @Test public void testMinByKey_found() {
     assertThat(BiStream.of(1, "y", 2, "x").collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMinByKey_multipleMin_firstWins() {
+  @Test public void testMinByKey_multipleMin_firstWins() {
     assertThat(BiStream.of(1, "y", 2, "x", 1, "a").collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMinByKey_notFound() {
+  @Test public void testMinByKey_notFound() {
     assertThat(BiStream.<String, Integer>empty().collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
- @Test public void testMaxByValue_found() {
+  @Test public void testMaxByValue_found() {
     assertThat(BiStream.of(1, "y", 2, "x").collect(maxByValue(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMaxByValue_multipleMax_firstWins() {
+  @Test public void testMaxByValue_multipleMax_firstWins() {
     assertThat(BiStream.of(1, "y", 2, "x", 3, "y").collect(maxByValue(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMaxByValue_notFound() {
+  @Test public void testMaxByValue_notFound() {
     assertThat(BiStream.<String, Integer>empty().collect(maxByValue(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
- @Test public void testMinByValue_found() {
+  @Test public void testMinByValue_found() {
     assertThat(BiStream.of(1, "y", 2, "x").collect(minByValue(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMinByValue_multipleMin_firstWins() {
+  @Test public void testMinByValue_multipleMin_firstWins() {
     assertThat(BiStream.of(1, "y", 2, "x", 3, "x").collect(minByValue(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMinByValue_notFound() {
+  @Test public void testMinByValue_notFound() {
     assertThat(BiStream.<String, Integer>empty().collect(minByValue(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }

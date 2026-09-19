@@ -18,6 +18,15 @@ import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
+import com.google.mu.collect.MoreCollections;
+import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,18 +43,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import com.google.mu.collect.MoreCollections;
-import com.google.mu.function.MapFrom3;
-import com.google.mu.function.MapFrom4;
-import com.google.mu.function.MapFrom5;
-import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom7;
-import com.google.mu.function.MapFrom8;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.Both;
-
 /**
- * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and Guava.
+ * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and
+ * Guava.
  *
  * @since 5.2
  */
@@ -111,7 +111,7 @@ public final class MoreCollectors {
    * <pre>{@code
    * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
    *     .map(Project::getTaskAssignments)
-   *     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
+   *     .collect(flatteningMaps(ImmutableMap::toImmutableMap));
    * }</pre>
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
@@ -178,30 +178,36 @@ public final class MoreCollectors {
 
   /**
    * Returns a collector that collects input elements into a list, which is then arranged by the
-   * {@code arranger} function before being wrapped as <em>immutable</em> list result.
-   * List elements are not allowed to be null.
+   * {@code arranger} function before being wrapped as <em>immutable</em> list result. List elements
+   * are not allowed to be null.
    *
-   * <p>Example usages: <ul>
-   * <li>{@code stream.collect(toListAndThen(Collections::reverse))} to collect to reverse order.
-   * <li>{@code stream.collect(toListAndThen(Collections::shuffle))} to collect and shuffle.
-   * <li>{@code stream.collect(toListAndThen(Collections::sort))} to collect and sort.
+   * <p>Example usages:
+   *
+   * <ul>
+   *   <li>{@code stream.collect(toListAndThen(Collections::reverse))} to collect to reverse order.
+   *   <li>{@code stream.collect(toListAndThen(Collections::shuffle))} to collect and shuffle.
+   *   <li>{@code stream.collect(toListAndThen(Collections::sort))} to collect and sort.
    * </ul>
    */
   public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
     requireNonNull(arranger);
     Collector<T, ?, List<T>> rejectingNulls =
         Collectors.mapping(Objects::requireNonNull, Collectors.toCollection(ArrayList::new));
-    return Collectors.collectingAndThen(rejectingNulls, list -> {
-      arranger.accept(list);
-      return Collections.unmodifiableList(list);
-    });
+    return Collectors.collectingAndThen(
+        rejectingNulls,
+        list -> {
+          arranger.accept(list);
+          return Collections.unmodifiableList(list);
+        });
   }
 
   /**
    * Returns a {@link Collector} that maps the result of {@code upstream} collector using the {@code
    * finisher} BiFunction. Useful when combined with collectors like {@link #partitioningBy}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * collectingAndThen(partitioningBy(Person::isGood), (good, evil) -> ...)
    * }</pre>
    *
@@ -217,12 +223,11 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only two elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 2} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, BiFunction)
-   * MoreCollections.findOnlyElements()} method,
-   * which returns {@link Optional}.
+   * MoreCollections.findOnlyElements()} method, which returns {@link Optional}.
    *
    * @since 6.6
    */
@@ -233,6 +238,7 @@ public final class MoreCollectors {
       @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
+
       @Override int arity() {
         return 2;
       }
@@ -242,21 +248,22 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only three elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 3} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom3)
-   * MoreCollections.findOnlyElements()} method,
-   * which returns {@link Optional}.
+   * MoreCollections.findOnlyElements()} method, which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom3<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(
+      MapFrom3<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
         return mapper.map(list.get(0), list.get(1), list.get(2));
       }
+
       @Override int arity() {
         return 3;
       }
@@ -266,21 +273,22 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only four elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 4} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom4)
-   * MoreCollections.findOnlyElements()} method,
-   * which returns {@link Optional}.
+   * MoreCollections.findOnlyElements()} method, which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom4<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(
+      MapFrom4<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
         return mapper.map(list.get(0), list.get(1), list.get(2), list.get(3));
       }
+
       @Override int arity() {
         return 4;
       }
@@ -290,21 +298,22 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only five elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 5} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom5)
-   * MoreCollections.findOnlyElements()} method,
-   * which returns {@link Optional}.
+   * MoreCollections.findOnlyElements()} method, which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom5<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(
+      MapFrom5<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
         return mapper.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
+
       @Override int arity() {
         return 5;
       }
@@ -314,22 +323,23 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only six elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 6} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom6)
-   * MoreCollections.findOnlyElements()} method,
-   * which returns {@link Optional}.
+   * MoreCollections.findOnlyElements()} method, which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom6<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(
+      MapFrom6<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
         return mapper.map(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
       }
+
       @Override int arity() {
         return 6;
       }
@@ -339,7 +349,7 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only seven elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 7} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom7)
@@ -371,7 +381,7 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects the only eight elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
+   * IllegalArgumentException is thrown.
    *
    * <p>To handle the {@code size() != 8} case, consider to use the {@link
    * MoreCollections#findOnlyElements(java.util.Collection, MapFrom8)
@@ -413,6 +423,7 @@ public final class MoreCollectors {
       @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
+
       @Override int arity() {
         return 1;
       }
@@ -480,7 +491,7 @@ public final class MoreCollectors {
   }
 
   /**
-   * Same as {@link #combining(MapFrom7)}.
+   * Same as {@link #combining(MapFrom8)}.
    *
    * @since 7.2
    */
@@ -542,7 +553,6 @@ public final class MoreCollectors {
    *
    * @param <E> the input element type
    * @param <R> the result type of {@code downstream} collector.
-   *
    * @since 6.0
    */
   public static <E, R> Collector<E, ?, Both<R, R>> partitioningBy(
@@ -611,8 +621,8 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a collector that collects the minimum and maximum elements from the input elements.
-   * the result {@code BiOptional}, if present, contains the pair of {@code (min, max)}.
+   * Returns a collector that collects the minimum and maximum elements from the input elements. the
+   * result {@code BiOptional}, if present, contains the pair of {@code (min, max)}.
    *
    * <p>Null elements are supported as long as {@code comparator} supports them.
    *
@@ -641,7 +651,11 @@ public final class MoreCollectors {
       }
 
       MinMax merge(MinMax that) {
-        that.get().ifPresent((a, b) -> { add(a); add(b); });
+        that.get()
+            .ifPresent((a, b) -> {
+              add(a);
+              add(b);
+            });
         return this;
       }
 
@@ -686,7 +700,7 @@ public final class MoreCollectors {
    *
    * <pre>{@code
    * Stream.of("foo", "quux", "banana", "papaya")
-   *     .collect(greatest(comparingInt(String::length), toImmutableList()))
+   *     .collect(allMax(comparingInt(String::length), toImmutableList()))
    * // returns {"banana", "papaya"}
    * }</pre>
    *
@@ -725,22 +739,24 @@ public final class MoreCollectors {
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
   }
 
-
   private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
     if (cases.size() == 1) {
       return cases.get(0);
     }
-    return Collectors.collectingAndThen(toList(), list -> {
-      int elementsToShow = 1;
-      for (FixedSizeCollector<T, ?, R> c : cases) {
-        if (c.appliesTo(list)) {
-          return c.reduce(list);
-        }
-        elementsToShow = max(elementsToShow, c.arity() + 1);
-      }
-      throw new IllegalArgumentException(
-          "Unexpected input elements " + ShortListCollector.showShortList(list, elementsToShow) + '.');
-    });
+    return Collectors.collectingAndThen(
+        toList(),
+        list -> {
+          int elementsToShow = 1;
+          for (FixedSizeCollector<T, ?, R> c : cases) {
+            if (c.appliesTo(list)) {
+              return c.reduce(list);
+            }
+            elementsToShow = max(elementsToShow, c.arity() + 1);
+          }
+          throw new IllegalArgumentException(
+              "Unexpected input elements " + ShortListCollector.showShortList(list, elementsToShow)
+                  + '.');
+        });
   }
 
   private MoreCollectors() {}

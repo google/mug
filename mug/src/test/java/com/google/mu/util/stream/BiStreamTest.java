@@ -883,6 +883,18 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testGroupingByEach_closesMappedStreams() {
+    List<Integer> closed = new ArrayList<>();
+    assertThat(
+            Stream.of(1, 2)
+                .collect(
+                    groupingByEach(i -> Stream.of(i, i + 1).onClose(() -> closed.add(i)), toList()))
+                .toMap())
+        .containsExactly(1, asList(1), 2, asList(1, 2), 3, asList(2))
+        .inOrder();
+    assertThat(closed).containsExactly(1, 2).inOrder();
+  }
+
   @Test public void testGroupingBy_withCollector() {
     Map<String, Long> groups = Stream.of(1, 1, 2, 3, 3)
         .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
