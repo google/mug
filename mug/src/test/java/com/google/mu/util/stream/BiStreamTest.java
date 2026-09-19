@@ -48,6 +48,7 @@ import com.google.common.truth.MultimapSubject;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -229,6 +230,22 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void groupConsecutiveBy_closesSource() {
+    List<String> closed = new ArrayList<>();
+    biStream(Stream.of(1, 2).onClose(() -> closed.add("src")))
+        .groupConsecutiveBy(identity(), toList())
+        .close();
+    assertThat(closed).containsExactly("src");
+  }
+
+  @Test public void groupConsecutiveBy_reducer_nullValue() {
+    assertThat(
+            BiStream.<String, String>of("k", null)
+                .groupConsecutiveBy(identity(), (a, b) -> a)
+                .values())
+        .containsExactly((String) null);
+  }
+
   @Test public void testGroupConsecutiveIf_withBiCollector() {
     Map<String, Integer> prices = ImmutableMap.of(
         "day1", 10,
@@ -237,7 +254,8 @@ public class BiStreamTest {
         "day4", 9999);
     Stream<Map<String, Integer>> result = BiStream.from(prices)
         .groupConsecutiveIf((d1, p1, d2, p2) -> Math.abs(p1 - p2) < 1000, Collectors::toMap);
-    assertThat(result).containsExactly(
+    assertThat(result)
+        .containsExactly(
             ImmutableMap.of(
                 "day1", 10,
                 "day2", 20),
@@ -254,27 +272,28 @@ public class BiStreamTest {
     // the current consecutive group even if the next element would otherwise be considered "equal".
     Substring.Suffix period = Substring.suffix('.');
     Stream<String> data = Stream.of("foo", "foo", "foo.", "foo.", "foo", "bar");
-    Stream<List<String>> groups = biStream(data).groupConsecutiveIf(
+    Stream<List<String>> groups = biStream(data)
+        .groupConsecutiveIf(
             (t1, t2) ->
                 !period.from(t1).isPresent() && period.removeFrom(t1).equals(period.removeFrom(t2)),
             toList());
-    assertThat(groups).containsExactly(
-            asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
+    assertThat(groups)
+        .containsExactly(asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
         .inOrder();
   }
 
   @Test public void testGroupConsecutiveIf_distinctWithCollector() {
-    assertThat(biStream(Stream.of("a", "b", "a"))
-        .groupConsecutiveIf(String::equals, toList())
-        .distinct())
+    assertThat(
+            biStream(Stream.of("a", "b", "a"))
+                .groupConsecutiveIf(String::equals, toList())
+                .distinct())
         .containsExactly(asList("a"), asList("b"))
         .inOrder();
   }
 
   @Test public void testGroupConsecutiveIf_distinctWithReducer() {
-    assertThat(BiStream.of(1, 10, 2, 10)
-        .groupConsecutiveIf(Integer::equals, Integer::sum)
-        .distinct())
+    assertThat(
+            BiStream.of(1, 10, 2, 10).groupConsecutiveIf(Integer::equals, Integer::sum).distinct())
         .containsExactly(10);
   }
 
@@ -293,7 +312,8 @@ public class BiStreamTest {
     // Make sure nulls are grouped properly
     Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100, null, null);
     final int proximity = 10;
-    Stream<Long> groupSizes = biStream(data).groupConsecutiveIf(
+    Stream<Long> groupSizes = biStream(data)
+        .groupConsecutiveIf(
             (d1, d2) ->
                 d1 == null && d2 == null
                     || d1 != null && d2 != null && Math.abs(d1 - d2) <= proximity,
@@ -351,16 +371,16 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_mapToObj_leftIsParallel() {
-    Stream<String> zipped = BiStream.zip(
-            asList(1, 2, 3).parallelStream(), Stream.of("one", "two", "three"))
-        .mapToObj(Joiner.on(':')::join);
+    Stream<String> zipped =
+        BiStream.zip(asList(1, 2, 3).parallelStream(), Stream.of("one", "two", "three"))
+            .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
   @Test public void testZip_mapToObj_rightIsParallel() {
-    Stream<String> zipped = BiStream.zip(
-            Stream.of(1, 2, 3), asList("one", "two", "three").parallelStream())
-        .mapToObj(Joiner.on(':')::join);
+    Stream<String> zipped =
+        BiStream.zip(Stream.of(1, 2, 3), asList("one", "two", "three").parallelStream())
+            .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
@@ -840,7 +860,8 @@ public class BiStreamTest {
         .collect(
             groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, String::concat))
         .toMap();
-    assertThat(groups).containsExactly(
+    assertThat(groups)
+        .containsExactly(
             'd', "1dog2food",
             'o', "1dog2food2food3fog",
             'g', "1dog3fog",
@@ -853,7 +874,8 @@ public class BiStreamTest {
     Map<Character, List<String>> groups = Stream.of("dog", "food", "fog")
         .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, toList()))
         .toMap();
-    assertThat(groups).containsExactly(
+    assertThat(groups)
+        .containsExactly(
             'd', ImmutableList.of("1dog", "2food"),
             'o', ImmutableList.of("1dog", "2food", "2food", "3fog"),
             'g', ImmutableList.of("1dog", "3fog"),
@@ -1075,7 +1097,8 @@ public class BiStreamTest {
     BiStream<String, Integer> parallel =
         biStream(Object::toString, Stream.of(1, 2, 3, 4, 5).parallel());
     Map<String, Integer> result =
-        parallel.collect(ImmutableMap.<String, Integer>builder(), ImmutableMap.Builder::put)
+        parallel
+            .collect(ImmutableMap.<String, Integer>builder(), ImmutableMap.Builder::put)
             .build();
     assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5).inOrder();
   }
@@ -1274,9 +1297,10 @@ public class BiStreamTest {
   private static IterableSubject assertSequential(Stream<?> stream) {
     assertThat(stream.isParallel()).isFalse();
     ConcurrentMap<Long, Object> threads = new ConcurrentHashMap<>();
-    List<?> list = stream.peek(v -> {
-      threads.put(Thread.currentThread().getId(), v);
-    })
+    List<?> list = stream
+        .peek(v -> {
+          threads.put(Thread.currentThread().getId(), v);
+        })
         .collect(toList());
     assertThat(threads).hasSize(1);
     return assertThat(list);

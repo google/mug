@@ -27,6 +27,8 @@ import static java.util.stream.StreamSupport.intStream;
 import static java.util.stream.StreamSupport.longStream;
 import static java.util.stream.StreamSupport.stream;
 
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,9 +66,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.Both;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -142,7 +141,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *     .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
-   * <p>Entries are collected in encounter order.
+   * <p>Entries are collected in encounter order. Null keys are not allowed.
    *
    * @since 3.3
    */
@@ -161,7 +160,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *     .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
-   * <p>Entries are collected in encounter order.
+   * <p>Entries are collected in encounter order. Null keys are not allowed.
    *
    * @since 3.3
    */
@@ -174,8 +173,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Returns a {@code Collector} that groups the input elements by {@code classifier} and collects
-   * the values mapping to the same key into a {@link List}. Similar but different from
-   * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
+   * the values mapping to the same key into a {@link List}. Similar but different from {@link
+   * Collectors#groupingBy(Function)}, this method collects the groups into {@link BiStream}
    * instead, allowing fluent method chaining. For example:
    *
    * <pre>{@code
@@ -187,9 +186,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * Even if you don't need to chain more methods, using this collector allows you to fluently
    * collect the results into the desired container type. For example {@link #toMap} collects to an
-   * immutable {@code Map}; or {@code collect(Collectors::toConcurrentMap)} if concurrency is needed.
+   * immutable {@code Map}; or {@code collect(Collectors::toConcurrentMap)} if concurrency is
+   * needed.
    *
-   * <p>Entries are collected in encounter order.
+   * <p>Entries are collected in encounter order. Null keys are not allowed.
    *
    * @since 3.0
    */
@@ -202,7 +202,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code Collector} that groups the input elements by {@code classifier} and collects
    * the values mapping to the same key using {@code valueCollector}. Similar but different from
    * {@link Collectors#groupingBy(Function, Collector)}, this method collects the groups into {@link
-   * #BiStream} instead, allowing fluent method chaining. For example:
+   * BiStream} instead, allowing fluent method chaining. For example:
    *
    * <pre>{@code
    * Map<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
@@ -215,10 +215,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * Even if you don't need to chain more methods, using this collector allows you to fluently
    * collect the results into the desired container type. For example {@link #toMap} collects to an
-   * immutable {@code Map}; or you could supply {@code collect(ImmutableBiMap::toImmutableBiMap)}
-   * if {@code BiMap} is needed.
+   * immutable {@code Map}; or you could supply {@code collect(ImmutableBiMap::toImmutableBiMap)} if
+   * {@code BiMap} is needed.
    *
-   * <p>Entries are collected in encounter order.
+   * <p>Entries are collected in encounter order. Null keys are not allowed.
    *
    * @since 3.0
    */
@@ -384,9 +384,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a BiStream of every neighboring pair from {@code elements}.
-   * For example {@code adjacentPairsFrom(1, 2, 3, 4)} will
-   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   * Returns a BiStream of every neighboring pair from {@code elements}. For example {@code
+   * adjacentPairsFrom(1, 2, 3, 4)} will return {@code [{1, 2}, {2, 3}, {3, 4}]}.
    *
    * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
@@ -399,9 +398,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a BiStream of every neighboring pair from {@code collection}.
-   * For example {@code adjacentPairsFrom(List.of(1, 2, 3, 4))} will
-   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   * Returns a BiStream of every neighboring pair from {@code collection}. For example {@code
+   * adjacentPairsFrom(List.of(1, 2, 3, 4))} will return {@code [{1, 2}, {2, 3}, {3, 4}]}.
    *
    * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
@@ -435,9 +433,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code Collector} that splits each input element as a pair and collects them into a
    * {@link BiStream}.
    *
-   * <p>Note that it's more efficient to use {@code BiStream.from(stream, toPair)} than
-   * {@code stream.collect(toBiStream(toPair))}. The latter is intended to be used in the
-   * middle of a long stream pipeline, when performance isn't critical.
+   * <p>Note that it's more efficient to use {@code BiStream.from(stream, toPair)} than {@code
+   * stream.collect(toBiStream(toPair))}. The latter is intended to be used in the middle of a long
+   * stream pipeline, when performance isn't critical.
    *
    * @since 5.1
    */
@@ -447,12 +445,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code Collector} that copies each input element as a pair of itself into an equivalent
-   * {@code BiStream}.
+   * Returns a {@code Collector} that copies each input element as a pair of itself into an
+   * equivalent {@code BiStream}.
    *
-   * <p>Note that it's more efficient to use {@code biStream(stream)} than
-   * {@code stream.collect(toBiStream())}. The latter is intended to be used in the
-   * middle of a long stream pipeline, when performance isn't critical.
+   * <p>Note that it's more efficient to use {@code biStream(stream)} than {@code
+   * stream.collect(toBiStream())}. The latter is intended to be used in the middle of a long stream
+   * pipeline, when performance isn't critical.
    *
    * @since 3.6
    */
@@ -528,7 +526,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8,
+      V v8) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -547,8 +546,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
-      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8,
+      V v8, K k9, V v9) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -568,8 +567,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
-      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8,
+      V v8, K k9, V v9, K k10, V v10) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -679,7 +678,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * #mapKeys} or {@link #mapValues}. For example:
    *
    * <pre>{@code
-   * static import com.google.common.labs.collect.BiStream.biStream;
+   * import static com.google.mu.util.stream.BiStream.biStream;
    *
    * Map<EmployeeId, Employee> employeesById = biStream(employees)
    *     .mapKeys(Employee::id)
@@ -697,7 +696,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * #mapKeys} or {@link #mapValues}. For example:
    *
    * <pre>{@code
-   * static import com.google.common.labs.collect.BiStream.biStream;
+   * import static com.google.mu.util.stream.BiStream.biStream;
    *
    * Map<EmployeeId, Employee> employeesById = biStream(employees)
    *     .mapKeys(Employee::id)
@@ -784,12 +783,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the key value pairs from {@code entries}.
-   * For example {@code BiStream.from(multimap.entries())}.
+   * Returns a {@code BiStream} of the key value pairs from {@code entries}. For example {@code
+   * BiStream.from(multimap.entries())}.
    *
    * @since 4.7
    */
-  public static <K, V> BiStream<K, V> from(Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
+  public static <K, V> BiStream<K, V> from(
+      Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
     return fromEntries(entries.stream());
   }
 
@@ -820,15 +820,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.1
    */
-  public static <K, V> BiStream<K, V> from(
-      Stream<? extends Both<? extends K, ? extends V>> pairs) {
+  public static <K, V> BiStream<K, V> from(Stream<? extends Both<? extends K, ? extends V>> pairs) {
     return from(pairs, BiStream::left, BiStream::right);
   }
 
   /**
    * Returns a stream of the inputs and outputs from repeated applications of the {@code work}
-   * function. The {@code initial} input is passed to {@code work} for the first round, after
-   * which the {@code increment} function is called to determine the input for the next round. This
+   * function. The {@code initial} input is passed to {@code work} for the first round, after which
+   * the {@code increment} function is called to determine the input for the next round. This
    * process repeats until the {@code increment} function returns {@code Optional.empty()}.
    *
    * <p>A common use case is pagination. For example, if you have a list API with pagination
@@ -862,14 +861,15 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *       .flatMapToObj((request, response) -> response.getAllFoos().stream());
    * }
    * }</pre>
+   *
    * @param work the function to repeat. Null outputs are passed through as is.
    * @param initial the initial input to pass to the {@code work} function. Cannot be null.
    * @param increment the function to get the next input given the current input and output.
    * @param <I> the input type
    * @param <O> the output type
-   * @return A BiStream of the inputs and outputs of the {@code work} function. The stream is
-   *     lazy in that {@code work} won't be called until the stream is being consumed; and it
-   *     won't be called again until the second pair of input and output are being consumed, etc.
+   * @return A BiStream of the inputs and outputs of the {@code work} function. The stream is lazy
+   *     in that {@code work} won't be called until the stream is being consumed; and it won't be
+   *     called again until the second pair of input and output are being consumed, etc.
    * @since 5.5
    */
   public static <I, O> BiStream<I, O> repeat(
@@ -879,19 +879,19 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(work);
     requireNonNull(increment);
     return fromEntries(
-        MoreStreams.whileNotNull(
-            new Supplier<Map.Entry<I, O>>() {
-              I nextInput = requireNonNull(initial);
-              @Override public Map.Entry<I, O> get() {
-                I in = nextInput;
-                if (in == null) {
-                  return null;
-                }
-                O out = work.apply(in);
-                nextInput = increment.apply(in, out).orElse(null);
-                return kv(in, out);
-              }
-            }));
+        MoreStreams.whileNotNull(new Supplier<Map.Entry<I, O>>() {
+          I nextInput = requireNonNull(initial);
+
+          @Override public Map.Entry<I, O> get() {
+            I in = nextInput;
+            if (in == null) {
+              return null;
+            }
+            O out = work.apply(in);
+            nextInput = increment.apply(in, out).orElse(null);
+            return kv(in, out);
+          }
+        }));
   }
 
   /**
@@ -936,11 +936,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         return from(entryStream, Map.Entry::getKey, forEntry(valueMapper));
       }
 
-      @Override public BiStream<K, V> limit(int maxSize) { // Stick to this impl where mapToEntry() is cheap
+      @Override public BiStream<K, V> limit(
+          int maxSize) { // Stick to this impl where mapToEntry() is cheap
         return fromEntries(entryStream.limit(maxSize));
       }
 
-      @Override public BiStream<K, V> skip(int n) { // Stick to this impl where mapToEntry() is cheap
+      @Override public BiStream<K, V> skip(
+          int n) { // Stick to this impl where mapToEntry() is cheap
         return fromEntries(entryStream.skip(n));
       }
 
@@ -1009,8 +1011,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the results of applying {@code mapper} function to
-   * the pairs in this {@code BiStream}. If {@code mapper} returns empty, the pair is discarded.
+   * Returns a {@code BiStream} consisting of the results of applying {@code mapper} function to the
+   * pairs in this {@code BiStream}. If {@code mapper} returns empty, the pair is discarded.
    *
    * @since 5.0
    */
@@ -1139,7 +1141,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return flatMapKeys((k, v) -> keyMapper.apply(k));
   }
 
-
   /**
    * Given {@code keyMapping} that maps the keys of type {@code K} to elements of type {@code K2},
    * returns a {@code BiStream} of type {@code <K2, V>}.
@@ -1196,7 +1197,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Map<Doctor, Patient> doctorAndPatients = ...;
    * Map<Hospital, Long> hospitalPatientCounts =
    *    BiStream.from(doctorAndPatients)
-   *        .mapKeysIfPresent(Doctor::optionalAffliatedHospital)
+   *        .mapKeysIfPresent(Doctor::optionalAffiliatedHospital)
    *        .collect(toImmutableMap(counting()));
    * }</pre>
    *
@@ -1298,7 +1299,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Map<Doctor, Patient> doctorAndPatients = ...;
    * ImmutableSetMultimap<Doctor, InsuranceCompany> insurancesPerDoctor =
    *    BiStream.from(doctorAndPatients)
-   *        .mapValuesIfPresent(Partient::optionalInsurarnce)
+   *        .mapValuesIfPresent(Patient::optionalInsurance)
    *        .collect(toImmutableSetMultimap());
    * }</pre>
    *
@@ -1306,7 +1307,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final <V2> BiStream<K, V2> mapValuesIfPresent(
       Function<? super V, ? extends Optional<? extends V2>> valueMapper) {
-    return mapValues(valueMapper).<V2>mapValues(BiStream::orElseNull).filterValues(Objects::nonNull);
+    return mapValues(valueMapper)
+        .<V2>mapValues(BiStream::orElseNull)
+        .filterValues(Objects::nonNull);
   }
 
   /**
@@ -1318,7 +1321,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final <V2> BiStream<K, V2> mapValuesIfPresent(
       BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
-    return mapValues(valueMapper).<V2>mapValues(BiStream::orElseNull).filterValues(Objects::nonNull);
+    return mapValues(valueMapper)
+        .<V2>mapValues(BiStream::orElseNull)
+        .filterValues(Objects::nonNull);
   }
 
   /**
@@ -1370,7 +1375,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * tasks.stream()
-   *      .collect(crossJoining(Arrays.stream(MachineType.values()))
+   *      .collect(crossJoining(Arrays.stream(MachineType.values())))
    *      .skipIf(Worker::blacklistsMachine)
    *      ...
    * }</pre>
@@ -1420,8 +1425,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code other}.
    *
    * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
-   *     about deeply-nested combined streams also apply to this method. In particular, avoid
-   *     calling this method in a loop to combine many streams together.
+   * about deeply-nested combined streams also apply to this method. In particular, avoid calling
+   * this method in a loop to combine many streams together.
    */
   public final BiStream<K, V> append(BiStream<? extends K, ? extends V> other) {
     return fromEntries(Stream.concat(mapToEntry(), other.mapToEntry()));
@@ -1432,8 +1437,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code map}.
    *
    * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
-   *     about deeply-nested combined streams also apply to this method. In particular, avoid
-   *     calling this method in a loop to combine many streams together.
+   * about deeply-nested combined streams also apply to this method. In particular, avoid calling
+   * this method in a loop to combine many streams together.
    *
    * @since 8.7
    */
@@ -1446,8 +1451,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code key} and {@code value}.
    *
    * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
-   *     about deeply-nested combined streams also apply to this method. In particular, avoid
-   *     calling this method in a loop to combine many streams together.
+   * about deeply-nested combined streams also apply to this method. In particular, avoid calling
+   * this method in a loop to combine many streams together.
    */
   public final BiStream<K, V> append(K key, V value) {
     return append(of(key, value));
@@ -1507,8 +1512,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the only the first {@code maxSize} pairs of this
-   * stream.
+   * Returns a {@code BiStream} consisting of only the first {@code maxSize} pairs of this stream.
    */
   public abstract BiStream<K, V> limit(int maxSize);
 
@@ -1566,8 +1570,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         super(Long.MAX_VALUE, characteristics);
       }
 
-      @Override
-      public boolean tryAdvance(Consumer<? super T> action) {
+      @Override public boolean tryAdvance(Consumer<? super T> action) {
         while (from.tryAdvance(temp)) {
           T element = temp.value;
           temp.value = null;
@@ -1579,8 +1582,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         return false;
       }
 
-      @Override
-      public Spliterator<T> trySplit() {
+      @Override public Spliterator<T> trySplit() {
         return null;
       }
     }
@@ -1614,7 +1616,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <T> BiStream<K, V> sortedBy(
       BiFunction<? super K, ? super V, T> sortKeyFunction, Comparator<? super T> comparator) {
     requireNonNull(sortKeyFunction);
-    return sorted(Comparator.comparing((Map.Entry<K, V> e) -> sortKeyFunction.apply(e.getKey(), e.getValue()), comparator));
+    return sorted(
+        Comparator.comparing(
+            (Map.Entry<K, V> e) -> sortKeyFunction.apply(e.getKey(), e.getValue()), comparator));
   }
 
   /**
@@ -1635,7 +1639,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying the {@code entryComparator} comparator between key-value pairs.
    */
   @SuppressWarnings("unchecked") // Immutable Map.Entry<> is covariant.
-  private BiStream<K, V> sorted(Comparator<? super Map.Entry< K, V>> entryComparator) {
+  private BiStream<K, V> sorted(Comparator<? super Map.Entry<K, V>> entryComparator) {
     return fromEntries(((Stream<Map.Entry<K, V>>) mapToEntry()).sorted(entryComparator));
   }
 
@@ -1645,13 +1649,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns an immutable {@link Map} that is the result of collecting the pairs in this stream. If a
-   * duplicate key is encountered, throws an {@link IllegalStateException}.
+   * Returns an immutable {@link Map} that is the result of collecting the pairs in this stream. If
+   * a duplicate key is encountered, throws an {@link IllegalStateException}.
    *
    * <p>While this is a convenient shortcut of {@code collect(Collectors::toMap)}, if you have a
-   * {@code BiStream<SubFoo, SubBar>}, the return type of {@code toMap()} will be
-   * {@code Map<SubFoo, SubBar>}. To collect to {@code Map<Foo, Bar>}, use the equivalent
-   * {@code collect(Collectors::toMap)} or {@code collect(BiCollectors.toMap())}.
+   * {@code BiStream<SubFoo, SubBar>}, the return type of {@code toMap()} will be {@code Map<SubFoo,
+   * SubBar>}. To collect to {@code Map<Foo, Bar>}, use the equivalent {@code
+   * collect(Collectors::toMap)} or {@code collect(BiCollectors.toMap())}.
    */
   public final Map<K, V> toMap() {
     return collect(BiCollectors.toMap());
@@ -1661,9 +1665,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns an object of type {@code R} that is the result of collecting the pairs in this stream
    * using {@code collector}.
    *
-   * <p>Please note that any {@code Collector}-returning factory method can be directly
-   * "method referenced" as {@link BiCollector} if it accepts two {@code Function} parameters
-   * corresponding to the "key" and the "value" parts respectively. For example: {@code
+   * <p>Please note that any {@code Collector}-returning factory method can be directly "method
+   * referenced" as {@link BiCollector} if it accepts two {@code Function} parameters corresponding
+   * to the "key" and the "value" parts respectively. For example: {@code
    * collect(Collectors::toConcurrentMap)}, {@code
    * collect(ImmutableSetMultimap::toImmutableSetMultimap)}, {@code
    * collect(Maps::toImmutableEnumMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)}.
@@ -1678,29 +1682,32 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * syntactic noise.
    *
    * <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
-   * last* step needs to pass the return value of {@code collect()} to a final method call, for
-   * example: <pre>{@code
-   *   return new Ledger(
-   *       BiStream.from(...)
-   *           .mapKeys(...)
-   *           .flatMapValues(...)
-   *           ...
-   *           .collect(toImmutableMap()));
+   * last step needs to pass the return value of {@code collect()} to a final method call, for
+   * example:
+   *
+   * <pre>{@code
+   * return new Ledger(
+   *     BiStream.from(...)
+   *         .mapKeys(...)
+   *         .flatMapValues(...)
+   *         ...
+   *         .collect(toImmutableMap()));
    * }</pre>
    *
    * This syntax breaks the first-thing-first order of the BiStream pipeline by showing the last
-   * step at the top-most line. Alternatively, one can declare a local variable to hold the
-   * return value of {@code collect()}. But sometimes it's undesirable if the intermediary
-   * object's type is implementation-detail-ish or just too verbose.
+   * step at the top-most line. Alternatively, one can declare a local variable to hold the return
+   * value of {@code collect()}. But sometimes it's undesirable if the intermediary object's type is
+   * implementation-detail-ish or just too verbose.
    *
    * <p>Using this method, the above example can be changed to pipeline-friendly syntax with less
    * indentation:
+   *
    * <pre>{@code
-   *   return BiStream.from(...)
-   *       .mapKeys(...)
-   *       .flatMapValues(...)
-   *       ...
-   *       .collect(toImmutableMap(), Ledger::new);
+   * return BiStream.from(...)
+   *     .mapKeys(...)
+   *     .flatMapValues(...)
+   *     ...
+   *     .collect(toImmutableMap(), Ledger::new);
    * }</pre>
    *
    * @since 5.6
@@ -1711,23 +1718,23 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Performs mutable reduction, as in {@code
-   * collect(ImmutableMap.builder(), ImmutableMap.Builder::put)}.
+   * Performs mutable reduction, as in {@code collect(ImmutableMap.builder(),
+   * ImmutableMap.Builder::put)}.
    *
    * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
    * ImmutableMap), you could collect pairs into two repeated proto fields:
    *
    * <pre>{@code
-   *   BiStream.zip(shardRequests, shardResponses)
-   *       .filter(...)
-   *       .collect(
-   *           BatchResponse.newBuilder(),
-   *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp))
-   *       .build();
+   * BiStream.zip(shardRequests, shardResponses)
+   *     .filter(...)
+   *     .collect(
+   *         BatchResponse.newBuilder(),
+   *         (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp))
+   *     .build();
    * }</pre>
    *
-   * <p>While {@link #collect(BiCollector)} may perform parallel reduction if the underlying
-   * stream is parallel, this reduction is guaranteed to be sequential and single-threaded.
+   * <p>While {@link #collect(BiCollector)} may perform parallel reduction if the underlying stream
+   * is parallel, this reduction is guaranteed to be sequential and single-threaded.
    *
    * <p>Returns the populated {@code container} instance.
    *
@@ -1742,7 +1749,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   @Override public abstract void close();
 
-  /** Returns a BiIterator for callers to iterate through the pairs in this stream in encounter order. */
+  /**
+   * Returns a BiIterator for callers to iterate through the pairs in this stream in encounter
+   * order.
+   */
   abstract BiIterator<K, V> iterator();
 
   /**
@@ -1772,14 +1782,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
-   *
    * @since 5.4
    */
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       Function<? super K, ? extends G> classifier,
       Collector<? super V, A, ? extends R> groupCollector) {
-    return this
-        .<G>mapKeys(classifier)
+    return this.<G>mapKeys(classifier)
         .groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
         .mapValues(groupCollector.finisher());
   }
@@ -1795,7 +1803,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <pre>{@code
    * biStream(stockPriceDataSortedByTime)
    *     .groupConsecutiveBy(PriceDatum::day, (a, b) -> a)
-   *     ,toMap();
+   *     .toMap();
    * }</pre>
    *
    * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
@@ -1811,7 +1819,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
-   *
    * @since 5.4
    */
   public final <G> BiStream<G, V> groupConsecutiveBy(
@@ -1828,7 +1835,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * consecutive events by year, then by continuity (happened within 24 hours):
    *
    * <pre>{@code
-   * import static com.google.mu.util.stream.BiiCollectors.collectingAndThen;
+   * import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
    *
    * ImmutableListMultimap<Integer, List<Event>> continuousEventsByYear =
    *     biStream(events)
@@ -1857,14 +1864,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
-   *
    * @since 5.5
    */
   public final <G, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       BiCollector<? super K, ? super V, R> groupCollector) {
-    return this
-        .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
+    return this.<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
         .groupConsecutiveByKeys(groupCollector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
@@ -1899,7 +1904,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public final <R> Stream<R> groupConsecutiveIf(
-      Partitioner<? super K, ? super V> sameGroup, BiCollector<? super K, ? super V, R> groupCollector) {
+      Partitioner<? super K, ? super V> sameGroup,
+      BiCollector<? super K, ? super V, R> groupCollector) {
     requireNonNull(sameGroup);
     return biStream(mapToEntry())
         .groupConsecutiveIf(
@@ -1967,8 +1973,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return groupConsecutiveIf(sameGroup, reducingGroupMembers(groupReducer));
   }
 
-  private <A, R> BiStream<K, R> groupConsecutiveByKeys(
-      Collector<? super V, A, R> groupCollector) {
+  private <A, R> BiStream<K, R> groupConsecutiveByKeys(Collector<? super V, A, R> groupCollector) {
     return groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
         .mapValues(groupCollector.finisher());
   }
@@ -2049,7 +2054,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         hasRunResult = true;
       }
     }
-    return StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL);
+    return StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL).onClose(this::close);
   }
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
@@ -2058,7 +2063,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /** A group has at least 1 member, with 2nd+ members incrementally reduced by {@code reducer}. */
   static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
-    return collectingAndThen(Collectors.reducing(requireNonNull(reducer)), Optional::get);
+    return collectingAndThen(Collectors.reducing(requireNonNull(reducer)), BiStream::orElseNull);
   }
 
   private static <T> Stream<T> nullToEmpty(Stream<T> stream) {
@@ -2102,11 +2107,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       this.toValue = requireNonNull(toValue);
     }
 
-    @Override public final <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
+    @Override public final <T> Stream<T> mapToObj(
+        BiFunction<? super K, ? super V, ? extends T> mapper) {
       return underlying.map(forEntry(mapper));
     }
 
-    @Override public final DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
+    @Override public final DoubleStream mapToDouble(
+        ToDoubleBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return underlying.mapToDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
     }
@@ -2121,11 +2128,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       return underlying.mapToLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override public final <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
+    @Override public final <K2> BiStream<K2, V> mapKeys(
+        Function<? super K, ? extends K2> keyMapper) {
       return from(underlying, toKey.andThen(keyMapper), toValue);
     }
 
-    @Override public final <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
+    @Override public final <V2> BiStream<K, V2> mapValues(
+        Function<? super V, ? extends V2> valueMapper) {
       return from(underlying, toKey, toValue.andThen(valueMapper));
     }
 
@@ -2165,7 +2174,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       return underlying.collect(collector.collectorOf(toKey::apply, toValue::apply));
     }
 
-    @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+    @Override public final <A> A collect(
+        A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
       requireNonNull(accumulator);
       underlying
           .sequential()
@@ -2277,7 +2287,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       return new Spliteration().collectWith(collector);
     }
 
-    @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+    @Override public final <A> A collect(
+        A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
       forEach(accumulator.into(container));
       return container;
     }
@@ -2294,7 +2305,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Temp<K> tempLeft = new Temp<>();
       Temp<V> tempRight = new Temp<>();
       return consumer -> {
-        boolean advanced = leftSpliterator.tryAdvance(tempLeft) && rightSpliterator.tryAdvance(tempRight);
+        boolean advanced =
+            leftSpliterator.tryAdvance(tempLeft) && rightSpliterator.tryAdvance(tempRight);
         if (advanced) {
           consumer.accept(tempLeft.value, tempRight.value);
         }
