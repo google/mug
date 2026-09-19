@@ -453,6 +453,15 @@ public class MoreStreamsTest {
     assertThat(closed).containsExactly(1, 2, 3).inOrder();
   }
 
+  @Test public void whileNotNull_doesNotCallSupplierAfterNull() {
+    Deque<Integer> stack = new ArrayDeque<>(asList(1, 2));
+    Stream<Integer> stream = whileNotNull(() -> {
+      int top = stack.removeFirst();
+      return top == 2 ? null : top;
+    });
+    assertThat(MoreStreams.iterateOnce(stream.map(x -> x))).containsExactly(1);
+  }
+
   @Test public void testGroupConsecutive_byPredicate() {
     assertThat(groupConsecutive(Stream.of(10, 20, 9, 8), (a, b) -> a < b, toList()))
         .containsExactly(asList(10, 20), asList(9), asList(8))

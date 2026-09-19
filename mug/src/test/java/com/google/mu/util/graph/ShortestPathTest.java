@@ -18,22 +18,21 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.graph.ShortestPath.shortestPathsFrom;
 import static com.google.mu.util.graph.ShortestPath.unweightedShortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ShortestPathTest {
@@ -117,13 +116,34 @@ public class ShortestPathTest {
         () -> shortestPathsFrom("foo", this::neighbors).collect(toList()));
   }
 
+  @Test public void nanDistanceDisallowed() {
+    addEdge("foo", "bar", Double.NaN);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> shortestPathsFrom("foo", this::neighbors).collect(toList()));
+  }
+
+  @Test public void unweighted_iteratorWithIntermediateOp() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    assertThat(
+            iterateOnce(
+                unweightedShortestPathsFrom("foo", n -> graph.successors(n).stream())
+                    .map(ShortestPath::to)))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
   @Test public void distanceOverflowDetected() {
     addEdge("foo", "bar", 10);
     addEdge("bar", "baz", Double.MAX_VALUE);
     List<ShortestPath<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap())
+        .isEqualTo(
+            ImmutableMap.of(
+                "foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
     assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
     assertThat(paths.get(2).distance()).isEqualTo(Double.MAX_VALUE);
@@ -147,7 +167,8 @@ public class ShortestPathTest {
 
   @Test public void unnweighted_nullSuccessors() {
     graph.addNode("root");
-    List<ShortestPath<String>> paths = unweightedShortestPathsFrom("root", n -> null).collect(toList());
+    List<ShortestPath<String>> paths =
+        unweightedShortestPathsFrom("root", n -> null).collect(toList());
     assertThat(paths).hasSize(1);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));

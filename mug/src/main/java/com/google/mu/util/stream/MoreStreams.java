@@ -433,8 +433,8 @@ public final class MoreStreams {
    *
    * <p>Why null? Why not {@code Optional}? Wrapping every generated element of a stream in an
    * {@link Optional} carries considerable allocation cost. Also, while nulls are in general
-   * discouraged, they are mainly a problem for users who have to remember to deal with them.
-   * The stream returned by {@code whileNotNull()} on the other hand is guaranteed to never include
+   * discouraged, they are mainly a problem for users who have to remember to deal with them. The
+   * stream returned by {@code whileNotNull()} on the other hand is guaranteed to never include
    * nulls that users have to worry about.
    *
    * <p>If you already have an {@code Optional} from a method return value, you can use {@code
@@ -466,20 +466,29 @@ public final class MoreStreams {
     requireNonNull(supplier);
     return StreamSupport.stream(
         new Spliterator<T>() {
+          private boolean finished;
+
           @Override public boolean tryAdvance(Consumer<? super T> action) {
+            if (finished) {
+              return false;
+            }
             T generated = supplier.get();
             if (generated == null) {
+              finished = true;
               return false;
             }
             action.accept(generated);
             return true;
           }
+
           @Override public int characteristics() {
             return Spliterator.NONNULL | Spliterator.ORDERED;
           }
+
           @Override public long estimateSize() {
             return Long.MAX_VALUE;
           }
+
           @Override public Spliterator<T> trySplit() {
             return null;
           }
