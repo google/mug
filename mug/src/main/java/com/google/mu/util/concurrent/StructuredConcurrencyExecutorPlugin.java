@@ -45,7 +45,7 @@ public abstract class StructuredConcurrencyExecutorPlugin {
      * <p>For example, if you need structured concurrency but not virtual threads, perhaps because
      * your application is a command-line tool or batch-processing pipeline where blocking a few OS
      * threads isn't a problem, you may create a non-virtual-thread plugin at APPLICATION_SPECIFIC
-     * priority so that you don't need to worry about go/virtual-thread-optin.
+     * priority to use a platform thread pool instead.
      */
     APPLICATION_SPECIFIC,
   }

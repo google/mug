@@ -235,13 +235,13 @@ public final class Fanout {
    *     .toMap();
    * }</pre>
    *
-   * Functionally, the {@link Parallelizer#inParallel} collector is very similar to the Java 25
-   * {@code mapConcurrent()} gatherer:
+   * Functionally, the {@link Parallelizer#inParallel} collector is very similar to the Java 24
+   * {@code Gatherers.mapConcurrent()} gatherer:
    *
    * <pre>{@code
-   * List<UserId> userIds = ;
+   * List<UserId> userIds = ...;
    * List<User> users = userIds.stream()
-   *     .gather(mapConcurrent(userService::fetchUser, 10))
+   *     .gather(mapConcurrent(10, userService::fetchUser))
    *     .toList();
    * }</pre>
    *
@@ -312,9 +312,9 @@ public final class Fanout {
   }
 
   private static StructuredConcurrencyExecutorPlugin loadExecutorPlugin() {
-    List<StructuredConcurrencyExecutorPlugin> candidates = Utils.stream(
-            ServiceLoader.load(StructuredConcurrencyExecutorPlugin.class))
-        .collect(allMax(comparing(plugin -> plugin.priority()), toList()));
+    List<StructuredConcurrencyExecutorPlugin> candidates =
+        Utils.stream(ServiceLoader.load(StructuredConcurrencyExecutorPlugin.class))
+            .collect(allMax(comparing(plugin -> plugin.priority()), toList()));
     if (candidates.isEmpty()) {
       logger.info("No StructuredConcurrencyExecutorPlugin found. Using default virtual threads.");
       return new StructuredConcurrencyExecutorPlugin() {
