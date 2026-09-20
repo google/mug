@@ -2425,4 +2425,11 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("((?iu)K|(?-i)\\u212a)+$");
     assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
   }
+
+  @Test public void checkRedosVulnerability_modifierDirectiveInBranch_payloadOmitsDirective() {
+    RegexPattern pattern = RegexPattern.of("((?i)k|(?-i)K)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk!");
+  }
 }
