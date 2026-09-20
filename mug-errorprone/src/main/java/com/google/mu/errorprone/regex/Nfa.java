@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.RegexPatternUtils.Flags;
 import com.google.mu.util.graph.ShortestPath;
@@ -51,6 +52,7 @@ final class Nfa {
       int id,
       int source,
       ImmutableRangeSet<Integer> chars,
+      int singleCodePoint,
       int target,
       RegexPattern astNode,
       List<RegexPattern.Quantified> enclosingQuantifiers,
@@ -61,8 +63,36 @@ final class Nfa {
         ImmutableRangeSet<Integer> chars,
         int target,
         RegexPattern astNode,
+        List<RegexPattern.Quantified> enclosingQuantifiers,
+        Flags flags) {
+      this(
+          id,
+          source,
+          chars,
+          extractSingleCodePoint(chars),
+          target,
+          astNode,
+          enclosingQuantifiers,
+          flags);
+    }
+
+    CharTransition(
+        int id,
+        int source,
+        ImmutableRangeSet<Integer> chars,
+        int target,
+        RegexPattern astNode,
         List<RegexPattern.Quantified> enclosingQuantifiers) {
       this(id, source, chars, target, astNode, enclosingQuantifiers, Flags.NONE);
+    }
+
+    private static int extractSingleCodePoint(ImmutableRangeSet<Integer> chars) {
+      if (chars.isEmpty()) {
+        return -1;
+      }
+      Range<Integer> span = chars.span();
+      int low = span.lowerEndpoint();
+      return (low + 1 == span.upperEndpoint()) ? low : -1;
     }
   }
 
@@ -336,6 +366,9 @@ final class Nfa {
 
   List<CharTransition> reachableCharTransitions(int state) {
     State st = states.get(state);
+    if (st.epsilonTransitions.isEmpty()) {
+      return st.outgoingCharTransitions;
+    }
     if (st.outgoingCharTransitions.isEmpty() && st.epsilonTransitions.size() == 1) {
       return reachableCharTransitions(st.epsilonTransitions.get(0));
     }
@@ -371,8 +404,15 @@ final class Nfa {
   }
 
   boolean canReachAccept(int state) {
-    if (state != acceptState && states.get(state).epsilonTransitions.size() == 1) {
-      return canReachAccept(states.get(state).epsilonTransitions.get(0));
+    if (state == acceptState) {
+      return true;
+    }
+    List<Integer> eps = states.get(state).epsilonTransitions;
+    if (eps.isEmpty()) {
+      return false;
+    }
+    if (eps.size() == 1) {
+      return canReachAccept(eps.get(0));
     }
     return canReachAcceptCache.computeIfAbsent(
         state, s -> epsilonClosure(s).contains(acceptState));

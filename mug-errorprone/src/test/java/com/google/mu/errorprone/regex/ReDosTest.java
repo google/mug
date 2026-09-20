@@ -2411,10 +2411,9 @@ public final class ReDosTest {
     }
     sb.append(")+$");
     RegexPattern pattern = RegexPattern.of(sb.toString());
-    long startNanos = System.nanoTime();
+    Nfa nfa = Nfa.from(pattern);
+    assertThat(VulnerabilityAnalyzer.productGraph(nfa).nodes()).hasSize(nfa.charTransitions.size());
     ReDos.checkRedosVulnerability(pattern);
     ReDos.checkPolynomialBacktracking(pattern);
-    long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
-    assertThat(elapsedMillis).isLessThan(1000L);
   }
 }

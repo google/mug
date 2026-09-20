@@ -1,6 +1,9 @@
 package com.google.mu.errorprone.regex;
 
 import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.Walker;
 import com.google.mu.util.stream.BiStream;
@@ -260,33 +263,41 @@ public final class RegexPatternUtils {
   }
 
   static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern, Flags flags) {
-    return switch (pattern) {
+    RangeSet<Integer> acc = TreeRangeSet.create();
+    collectFirstCharRanges(pattern, flags, acc);
+    return ImmutableRangeSet.copyOf(acc);
+  }
+
+  private static void collectFirstCharRanges(
+      RegexPattern pattern, Flags flags, RangeSet<Integer> acc) {
+    switch (pattern) {
       case RegexPattern.Sequence seq -> {
-        ImmutableRangeSet<Integer> res = CharRanges.EMPTY;
         List<Flags> flagsAt = flagsAt(seq.elements(), flags);
         for (int i = 0; i < seq.elements().size(); i++) {
           RegexPattern elem = seq.elements().get(i);
-          res = CharRanges.union(res, firstCharRangesOf(elem, flagsAt.get(i)));
+          collectFirstCharRanges(elem, flagsAt.get(i), acc);
           if (elem.metadata().minSize() > 0) {
             break;
           }
         }
-        yield res;
       }
-      case RegexPattern.Alternation alt -> alt.alternatives().stream()
-          .map(alternative -> firstCharRangesOf(alternative, flags))
-          .reduce(CharRanges.EMPTY, CharRanges::union);
-      case RegexPattern.Quantified q -> firstCharRangesOf(q.element(), flags);
-      case RegexPattern.Group.NonCapturing g -> firstCharRangesOf(
-          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()));
-      case RegexPattern.Group group -> firstCharRangesOf(group.content(), flags);
-      case RegexPattern.CharSetElement cse -> CharRanges.from(cse, flags);
-      case RegexPattern.Literal lit ->
-          lit.value().isEmpty()
-              ? CharRanges.EMPTY
-              : flags.fold(CharRanges.of(lit.value().codePointAt(0)));
-      default -> CharRanges.EMPTY;
-    };
+      case RegexPattern.Alternation alt -> {
+        for (RegexPattern alternative : alt.alternatives()) {
+          collectFirstCharRanges(alternative, flags, acc);
+        }
+      }
+      case RegexPattern.Quantified q -> collectFirstCharRanges(q.element(), flags, acc);
+      case RegexPattern.Group.NonCapturing g -> collectFirstCharRanges(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), acc);
+      case RegexPattern.Group group -> collectFirstCharRanges(group.content(), flags, acc);
+      case RegexPattern.CharSetElement cse -> acc.addAll(CharRanges.from(cse, flags));
+      case RegexPattern.Literal lit -> {
+        if (!lit.value().isEmpty()) {
+          acc.addAll(flags.fold(CharRanges.of(lit.value().codePointAt(0))));
+        }
+      }
+      default -> {}
+    }
   }
 
   static boolean isUnboundedQuantified(RegexPattern pattern) {
@@ -320,30 +331,37 @@ public final class RegexPatternUtils {
   }
 
   static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern, Flags flags) {
-    return switch (pattern) {
+    RangeSet<Integer> acc = TreeRangeSet.create();
+    collectCharRanges(pattern, flags, acc);
+    return ImmutableRangeSet.copyOf(acc);
+  }
+
+  private static void collectCharRanges(
+      RegexPattern pattern, Flags flags, RangeSet<Integer> acc) {
+    switch (pattern) {
       case RegexPattern.Sequence seq -> {
-        ImmutableRangeSet<Integer> res = CharRanges.EMPTY;
         List<Flags> flagsAt = flagsAt(seq.elements(), flags);
         for (int i = 0; i < seq.elements().size(); i++) {
-          res = CharRanges.union(res, charRangesOf(seq.elements().get(i), flagsAt.get(i)));
+          collectCharRanges(seq.elements().get(i), flagsAt.get(i), acc);
         }
-        yield res;
       }
-      case RegexPattern.Alternation alt -> alt.alternatives().stream()
-          .map(alternative -> charRangesOf(alternative, flags))
-          .reduce(CharRanges.EMPTY, CharRanges::union);
-      case RegexPattern.Quantified q -> charRangesOf(q.element(), flags);
-      case RegexPattern.Group.NonCapturing g -> charRangesOf(
-          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()));
-      case RegexPattern.Group group -> charRangesOf(group.content(), flags);
-      case RegexPattern.CharSetElement cse -> CharRanges.from(cse, flags);
-      case RegexPattern.Literal lit -> flags.fold(
-          lit.value()
-              .codePoints()
-              .mapToObj(CharRanges::of)
-              .reduce(CharRanges.EMPTY, CharRanges::union));
-      default -> CharRanges.EMPTY;
-    };
+      case RegexPattern.Alternation alt -> {
+        for (RegexPattern alternative : alt.alternatives()) {
+          collectCharRanges(alternative, flags, acc);
+        }
+      }
+      case RegexPattern.Quantified q -> collectCharRanges(q.element(), flags, acc);
+      case RegexPattern.Group.NonCapturing g -> collectCharRanges(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), acc);
+      case RegexPattern.Group group -> collectCharRanges(group.content(), flags, acc);
+      case RegexPattern.CharSetElement cse -> acc.addAll(CharRanges.from(cse, flags));
+      case RegexPattern.Literal lit -> {
+        RangeSet<Integer> litRanges = TreeRangeSet.create();
+        lit.value().codePoints().forEach(cp -> litRanges.add(Range.closedOpen(cp, cp + 1)));
+        acc.addAll(flags.fold(ImmutableRangeSet.copyOf(litRanges)));
+      }
+      default -> {}
+    }
   }
 
   public static List<RegexPattern.Group> capturingGroupsIn(RegexPattern root) {

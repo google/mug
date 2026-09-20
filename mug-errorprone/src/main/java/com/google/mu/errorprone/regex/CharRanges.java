@@ -31,8 +31,21 @@ final class CharRanges {
           .add(closedOpen((int) 'a', 'z' + 1))
           .build();
 
+  private static final ImmutableRangeSet<Integer>[] ASCII_RANGES = buildAsciiRanges();
+
+  @SuppressWarnings("unchecked")
+  private static ImmutableRangeSet<Integer>[] buildAsciiRanges() {
+    ImmutableRangeSet<Integer>[] table = new ImmutableRangeSet[128];
+    for (int i = 0; i < 128; i++) {
+      table[i] = ImmutableRangeSet.of(only(i));
+    }
+    return table;
+  }
+
   static ImmutableRangeSet<Integer> of(int codePoint) {
-    return ImmutableRangeSet.of(only(codePoint));
+    return (codePoint >= 0 && codePoint < 128)
+        ? ASCII_RANGES[codePoint]
+        : ImmutableRangeSet.of(only(codePoint));
   }
 
   static boolean intersects(RangeSet<Integer> a, RangeSet<Integer> b) {
