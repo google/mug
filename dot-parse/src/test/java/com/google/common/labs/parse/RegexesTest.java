@@ -46,12 +46,16 @@ public class RegexesTest {
     assertThat(prefixes("a*bc")).containsExactly("a", "bc");
     assertThat(prefixes("a?bc")).containsExactly("a", "bc");
     assertThat(prefixes("(a|b)*cd")).containsExactly("a", "b", "cd");
-    assertThat(prefixes("(a|bc)?de*fg")).containsExactly("a", "bc", "de", "fg");
+    assertThat(prefixes("(a|bc)?d*fg")).containsExactly("a", "bc", "d", "fg");
   }
 
   @Test public void prefixesOf_alternation() {
     assertThat(prefixes("a|b")).containsExactly("a", "b");
     assertThat(prefixes("a|\\w")).containsExactly("");
+  }
+
+  @Test public void prefixesOf_alternation_prefixFree() {
+    assertThat(prefixes("a|ab")).containsExactly("a");
   }
 
   @Test public void prefixesOf_group() {
@@ -130,6 +134,23 @@ public class RegexesTest {
     assertThat(prefixes("^")).containsExactly("");
     assertThat(prefixes("(?=a)")).containsExactly("");
     assertThat(prefixes("(a)\\1")).containsExactly("a");
+  }
+
+  @Test public void prefixesOf_standaloneDirectiveAtStart_givesUp() {
+    assertThat(prefixes("(?i)abc")).containsExactly("");
+  }
+
+  @Test public void prefixesOf_standaloneDirectiveCrossingAlternation_givesUp() {
+    // `b` is case insensitive too, so neither alternative can be pruned on.
+    assertThat(prefixes("x(?i)a|b")).containsExactly("");
+  }
+
+  @Test public void prefixesOf_standaloneDirectiveInLastAlternative_keepsEarlierPrefixes() {
+    assertThat(prefixes("a|bx(?i)c")).containsExactly("a", "bx");
+  }
+
+  @Test public void prefixesOf_scopedDirectiveInAlternative_keepsSiblingPrefixes() {
+    assertThat(prefixes("x(?:(?i)a)|b")).containsExactly("x", "b");
   }
 
   @Test public void maxSize_literal() {

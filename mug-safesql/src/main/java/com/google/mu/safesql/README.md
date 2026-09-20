@@ -1,4 +1,4 @@
-# SafeSql: The Only Injection-Safe SQL Templates for Java
+# SafeSql: Injection-Safe SQL Templates for Java
 
 ## Introduction
 
@@ -34,21 +34,23 @@ relying on it alone is often insufficient thanks to **dynamic SQL construction**
 When query components like table names or `ORDER BY` clauses are built from user input using raw string concatenation
 (or `JdbcTemplate`, or MyBatis `${}` interpolation, jooq's escape hatch etc.) a wide-open door for injection is created.
 
-* **NotPetya (2017) – Up to $10 Billion:** This ransomware attack, which exploited initial vulnerabilities that could include web application flaws, caused unprecedented global disruption and staggering financial losses for giants like Maersk and FedEx.
-* **Equifax (2017) – Over $1.4 Billion:** A failure to patch a known web application vulnerability exposed sensitive data for 147 million people, leading to massive settlements, fines, and enduring reputational damage.
+* **Heartland Payment Systems (2008) – ~130 million card numbers:** SQL injection against a corporate web form gave the attackers the foothold they later used to reach the payment processing network. Heartland paid roughly $145 million in settlements and fines.
+* **Sony Pictures (2011) – ~1 million user accounts:** A single unauthenticated SQL injection against `sonypictures.com` dumped a user database whose passwords were stored in plaintext.
+* **TalkTalk (2015) – 156,959 customers:** SQL injection against a forgotten legacy web page. The ICO issued what was then a record £400,000 fine; the total cost to the business ran into tens of millions of pounds.
+* **MOVEit Transfer (2023) – [CVE-2023-34362](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a):** A SQL injection zero-day in a widely deployed managed file transfer product, exploited at scale by the Cl0p group against thousands of downstream organizations.
 
-These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistake, they always do.
+These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistakes, they always do.
 
 #### How Does SafeSql Prevent SQLi?
 
-`SafeSql` delivers **100% strong SQL injection safety**, eliminating human errors as a cause of injection.
-It achieves this through an easily enforceable, "safe by construction" approach:
+`SafeSql` is designed to eliminate human error as a cause of SQL injection.
+It does so through an easily enforceable, "safe by construction" approach:
 
 1.  **Forbid Unsafe APIs:** Change your database access layer to only accept `SafeSql` as queries, never raw `String`s.
     * This closes all other doors to SQLi. If the `SafeSql` library is safe, your entire codebase is safe.
 
-2.  **Provably Safe by Construction Guarantees:**
-    * The SQL template string is required to be a `@CompileTimeConstant`, enforced by ErrorProne.
+2.  **Safe by Construction:**
+    * The SQL template string is required to be a `@CompileTimeConstant`, enforced by the ErrorProne check (see the precondition below).
         * Use dynamic `String` as SQL template $\to$ **Compilation Error.**
     * By default, all parameters passed to the template are automatically sent as JDBC `PreparedStatement` parameters.
         * Pass untrusted `String` where identifier/dynamic SQL needed $\to$ **JDBC Runtime Error.**
@@ -56,9 +58,35 @@ It achieves this through an easily enforceable, "safe by construction" approach:
         * Pass a string with malicious characters $\to$ **Immediate Runtime Exception.**
     * Subqueries are only embedded from other `SafeSql` objects or enums that are already provably safe from injection.
 
-There is simply no way to accidentally inject malicious code. If `SafeSql` compiles and runs, it's provably safe from SQLi.
+#### Precondition: the ErrorProne check must be on the compiler path
 
-No other SQL framework offers **100% guaranteed safety**.
+The `@CompileTimeConstant` requirement is enforced by ErrorProne, **not** by the `mug-safesql` jar.
+Both `error_prone_core` and `mug-errorprone` must be on your build's `annotationProcessorPaths`:
+
+```xml
+<annotationProcessorPaths>
+  <path>
+    <groupId>com.google.errorprone</groupId>
+    <artifactId>error_prone_core</artifactId>
+    <version>${error_prone.version}</version>
+  </path>
+  <path>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-errorprone</artifactId>
+    <version>${mug.version}</version>
+  </path>
+</annotationProcessorPaths>
+```
+
+Without it, `@CompileTimeConstant` is advisory only: `SafeSql.of(request.getSql())` compiles, and the
+template string is back to being guarded by code review. Treat this build configuration as part of
+the security boundary and enforce it the way you'd enforce any other build invariant.
+
+The runtime protections — `PreparedStatement` parameter binding, identifier validation, and
+`SafeSql`-only subquery composition — apply either way.
+
+With the check in place, there is no way to accidentally inject malicious code through a `SafeSql`
+template: if it compiles and the `SafeSql` object is constructed, the query is safe from injection.
 
 
 ### 2. Dynamic `IN` Clauses with Collections
@@ -188,7 +216,59 @@ Manual escaping is repetitive and easy to forget, leading to unpredictable resul
 SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", userName);
 ```
 SafeSql escapes any special characters in parameters used within `LIKE` expressions automatically.
-You don’t have to think about escaping rules or risk mistakes—user input is always treated literally.
+You don’t have to think about escaping rules or risk mistakes.
+
+#### When escaping applies
+
+Escaping is triggered by the wildcards **you write in the template**, not by the operator.
+Writing `'%{name}%'` (or `'%{name}'`, or `'{name}%'`) says “the value is a literal substring”,
+so SafeSql escapes `%`, `_` and `^` in the value and appends `ESCAPE '^'`.
+Both `LIKE` and `ILIKE` (the case-insensitive variant in PostgreSQL, H2 and CockroachDB) are
+recognized:
+
+```java {.good}
+SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", "50%_off");
+// SELECT * FROM users WHERE name LIKE ? ESCAPE '^'   parameter: %50^%^_off%
+// matches names containing the literal text "50%_off"
+```
+
+A placeholder written **alone**, with no wildcards around it, is not a literal fragment — the
+value *is* the pattern. SafeSql passes it through unchanged, so wildcards in the value stay live:
+
+```java {.good}
+SafeSql.of("SELECT * FROM users WHERE name LIKE '{pattern}'", "ann%");
+// SELECT * FROM users WHERE name LIKE ?              parameter: ann%
+// matches names starting with "ann"
+```
+
+This is the escape hatch for applications that build their own `LIKE` patterns. Both forms go
+through `PreparedStatement`, so both are equally injection-safe; the only difference is whether
+`%` and `_` in the value act as wildcards or as ordinary characters.
+
+> [!IMPORTANT]
+> If the pattern comes from an end user, use the `'%{name}%'` form. The bare `'{pattern}'` form
+> lets the caller control matching, which can be abused for expensive leading-wildcard scans.
+
+#### SQL Server bracket wildcards are not escaped
+
+SafeSql escapes `%`, `_` and `^` — the wildcards defined by standard SQL. It does **not** escape
+`[`, which SQL Server (and Sybase) additionally treat as the start of a character class such as
+`[a-z]` or `[^abc]`. On those databases a search term containing `[` is interpreted as a pattern
+rather than as literal text.
+
+There is no injection risk — the value is still a `PreparedStatement` parameter — but the match
+may be wrong. If you target SQL Server and your search terms can contain `[`, escape the value
+yourself and pass the finished pattern through the bare-placeholder form:
+
+```java {.good}
+// build the whole pattern outside the template, including the wildcards
+String pattern = "%" + term.replace("^", "^^").replace("[", "^[")
+    .replace("%", "^%").replace("_", "^_") + "%";
+SafeSql.of("SELECT * FROM users WHERE name LIKE '{pattern}' ESCAPE '^'", pattern);
+```
+
+Because the placeholder stands alone, SafeSql leaves the value untouched and adds no `ESCAPE`
+clause of its own, so you control both the pattern and the escape character.
 
 ---
 
@@ -231,7 +311,7 @@ preparedStatement.setString(2, userId);
 new NamedParameterJdbcTemplate(dataSource)
     .queryForList(
         "SELECT * FROM users WHERE id = :id AND name = :name",
-        Map.of("nmae", userName, "id", userId));  // type!
+        Map.of("nmae", userName, "id", userId));  // typo!
 ```
 This kind of error won’t always be caught during development, and can be difficult to debug.
 
@@ -301,8 +381,9 @@ construction—areas where mistakes are easy to make and hard to find otherwise.
 
 ## Security Best Practices
 
-No additional best practices are needed: if your code compiles and the `SafeSql` object is succesfully constructed,
-your SQL is safe from injection.
+With the [ErrorProne check](#precondition-the-errorprone-check-must-be-on-the-compiler-path) in place,
+no additional best practices are needed: if your code compiles and the `SafeSql` object is
+successfully constructed, your SQL is safe from injection.
 
 But just as a tip to avoid running into safety-related runtime errors during test: remember to identifier-quote
 (double-quote or backtick-quote) your `"{table_name}"`.

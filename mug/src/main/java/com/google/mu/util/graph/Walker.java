@@ -55,13 +55,12 @@ public abstract class Walker<N> {
   Walker() {}
 
   /**
-   * Returns a {@code BinaryTreeWalker} for walking in the binary tree topology
-   * as observed by {@code getLeft} and {@code getRight} functions. Both functions
-   * return null to indicate that there is no left or right child.
+   * Returns a {@code BinaryTreeWalker} for walking in the binary tree topology as observed by
+   * {@code getLeft} and {@code getRight} functions. Both functions return null to indicate that
+   * there is no left or right child.
    *
-   * <p>It's guaranteed that for any given node, {@code getLeft} and {@code getRight}
-   * are called lazily, only when the left or the right child is traversed. They are called at
-   * most once for each node.
+   * <p>It's guaranteed that for any given node, {@code getLeft} and {@code getRight} are called
+   * lazily as nodes are traversed, and at most once per node.
    *
    * @since 4.2
    */
@@ -76,10 +75,9 @@ public abstract class Walker<N> {
    *
    * <p>{@code inTree()} is more efficient than {@link #inGraph inGraph()} because it doesn't need
    * to remember nodes that are already visited. On the other hand, the returned {@code Walker} can
-   * walk in cycles if the {@code findChildren} function unexpectedly represents a cyclic graph.
-   * If you need to guard against cycles just in case, you can use {@link
-   * inGraph(Function, Predicate) inGraph()} with a custom node tracker to check for the critical
-   * precondition:
+   * walk in cycles if the {@code findChildren} function unexpectedly represents a cyclic graph. If
+   * you need to guard against cycles just in case, you can use {@link inGraph(Function, Predicate)
+   * inGraph()} with a custom node tracker to check for the critical precondition:
    *
    * <pre>{@code
    * Set<N> visited = new HashSet<>();
@@ -89,11 +87,14 @@ public abstract class Walker<N> {
    * });
    * }</pre>
    *
-   * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
-   * idempotent, stateless and immutable.
+   * <p>Streams returned by {@code findChildren} are closed automatically once their elements have
+   * been traversed, or when the returned traversal stream is closed.
    *
-   * @param findChildren Function to get the child nodes for a given node.
-   *        No children if empty stream or null is returned,
+   * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren}
+   * is idempotent, stateless and immutable.
+   *
+   * @param findChildren Function to get the child nodes for a given node. No children if empty
+   *     stream or null is returned,
    */
   public static <N> Walker<N> inTree(
       Function<? super N, ? extends Stream<? extends N>> findChildren) {
@@ -101,14 +102,17 @@ public abstract class Walker<N> {
   }
 
   /**
-   * Returns a {@code Walker} to walk the graph topology (possibly with cycles) as observed by
-   * the {@code findSuccessors} function, which finds successors of any given graph node.
+   * Returns a {@code Walker} to walk the graph topology (possibly with cycles) as observed by the
+   * {@code findSuccessors} function, which finds successors of any given graph node.
+   *
+   * <p>Streams returned by {@code findSuccessors} are closed automatically once their elements have
+   * been traversed, or when the returned traversal stream is closed.
    *
    * <p>Because the traversal needs to remember which node(s) have been traversed, memory usage is
    * linear to the number of traversed nodes.
    *
-   * @param findSuccessors Function to get the successor nodes for a given node.
-   *        No successor if empty stream or null is returned,
+   * @param findSuccessors Function to get the successor nodes for a given node. No successor if
+   *     empty stream or null is returned,
    */
   public static <N> GraphWalker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {

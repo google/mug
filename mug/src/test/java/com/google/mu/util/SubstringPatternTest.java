@@ -1210,8 +1210,8 @@ public class SubstringPatternTest {
   public void immediatelyBetween_rightInclusive_repetitionStartsFromLookahead() {
     Substring.Pattern pattern =
         Substring.first("bar").immediatelyBetween("of", EXCLUSIVE, "o", INCLUSIVE);
-    assertPattern(pattern, "ofbarofbaro").finds("baro");
-    assertPattern(pattern, "ofbarofbarofbarofbaro").finds("baro", "baro");
+    assertPattern(pattern, "ofbarofbaro").finds("baro", "baro");
+    assertPattern(pattern, "ofbarofbarofbarofbaro").finds("baro", "baro", "baro", "baro");
   }
 
   @Test

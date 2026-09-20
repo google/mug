@@ -14,7 +14,13 @@ final class Java9Collectors {
     BiConsumer<A, E> accumulator = collector.accumulator();
     return Collector.of(
         collector.supplier(),
-        (a, input) -> mapper.apply(input).forEachOrdered(e -> accumulator.accept(a, e)),
+        (a, input) -> {
+          try (Stream<? extends E> stream = mapper.apply(input)) {
+            if (stream != null) {
+              stream.forEachOrdered(e -> accumulator.accept(a, e));
+            }
+          }
+        },
         collector.combiner(),
         collector.finisher(),
         collector.characteristics().toArray(new Characteristics[0]));
@@ -25,7 +31,11 @@ final class Java9Collectors {
     BiConsumer<A, ? super T> accumulator = collector.accumulator();
     return Collector.of(
         collector.supplier(),
-        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        (a, input) -> {
+          if (filter.test(input)) {
+            accumulator.accept(a, input);
+          }
+        },
         collector.combiner(),
         collector.finisher(),
         collector.characteristics().toArray(new Characteristics[0]));

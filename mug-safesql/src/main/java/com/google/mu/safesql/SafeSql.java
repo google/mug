@@ -17,10 +17,10 @@ package com.google.mu.safesql;
 import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
 import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
 import static com.google.mu.util.CharPredicate.is;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.word;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
@@ -30,6 +30,31 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Spliterators;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import javax.sql.DataSource;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -45,28 +70,6 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Spliterators;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import javax.sql.DataSource;
 
 /**
  * An injection-safe <em>dynamic SQL</em>, constructed using compile-time enforced templates.
@@ -112,7 +115,7 @@ import javax.sql.DataSource;
  * <pre>{@code
  * SafeSql sql = SafeSql.of(
  *     """
- *     SELECT id FROM Users
+ *     SELECT id FROM Employees
  *     WHERE firstName = {first_name} AND lastName IN ({last_names})
  *     """,
  *     firstName, lastNamesList);
@@ -166,7 +169,7 @@ import javax.sql.DataSource;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>11.0</version>
+ *               <version>11.1</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -221,7 +224,7 @@ import javax.sql.DataSource;
  *           {aliases? -> AND name IN (aliases?)}
  *       """,
  *       asList(columns),
- *       criteria.userId()),
+ *       criteria.userId(),
  *       criteria.firstName(),
  *       criteria.aliases());
  * }
@@ -232,7 +235,7 @@ import javax.sql.DataSource;
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the right hand side
  * query snippet is only rendered if the {@code Optional} parameter corresponding to the "foo?"
- * placeholder is present, or the {@code Collection} paameter corresponding to it isn't empty, in
+ * placeholder is present, or the {@code Collection} parameter corresponding to it isn't empty, in
  * which case the value of the Optional or Collection will be used in the right hand side snippet as
  * if it were a regular template argument.
  *
@@ -310,7 +313,7 @@ import javax.sql.DataSource;
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  * identifiers). SafeSql will sanity-check the string(s) to ensure injection safety.
  *
- * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
+ * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the generated
  * SQL will be:
  *
  * <pre>{@code
@@ -325,7 +328,7 @@ import javax.sql.DataSource;
  *
  * <p>Note that with straight JDBC API, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive syntax
- * is actually incorect:
+ * is actually incorrect:
  *
  * <pre>{@code
  * String searchTerm = ...;
@@ -344,7 +347,7 @@ import javax.sql.DataSource;
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
- * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor SQL
+ * they'll be interpreted as wildcards and escape characters, opening it up to a form of minor SQL
  * injection despite already using the parameterized SQL.
  *
  * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
@@ -555,7 +558,7 @@ public final class SafeSql {
    *     SafeSql.when(isSuperUser, ", user_email"));
    * }</pre>
    *
-   * @param condition the guard condition to determine if {@code template} should be renderd
+   * @param condition the guard condition to determine if {@code template} should be rendered
    * @param template the template to render if {@code condition} is true
    * @param params see {@link #of(String, Object...)} for discussion on the template arguments
    */
@@ -1670,8 +1673,13 @@ public final class SafeSql {
             private Optional<String> suffixIfLikedStartingWith(
                 String prefix, Substring.Match placeholder) {
               String left = "'" + prefix;
+              // ILIKE is the case-insensitive variant in PostgreSQL, H2 and CockroachDB.
+              String operator =
+                  context.lookbehind("LIKE " + left, placeholder) ? "LIKE"
+                      : context.lookbehind("ILIKE " + left, placeholder) ? "ILIKE"
+                      : null;
               return Optionals.optionally(
-                  context.lookbehind("LIKE " + left, placeholder),
+                  operator != null,
                   () -> {
                     context.rejectEscapeAfter(placeholder);
                     return biStream(allowedAffixes())
@@ -1681,7 +1689,7 @@ public final class SafeSql {
                         .peek((fragment, suffix) -> builder.appendSql(fragment))
                         .map((fragment, suffix) -> suffix)
                         .orElseThrow(() -> new IllegalArgumentException(
-                            "unsupported wildcard in LIKE " + left + placeholder));
+                            "unsupported wildcard in " + operator + " " + left + placeholder));
                   });
             }
 
@@ -1729,7 +1737,8 @@ public final class SafeSql {
                   }
                   return;
                 }
-                if (value instanceof Number || value.getClass().isArray()
+                if (value instanceof Number || value instanceof UUID
+                    || value.getClass().isArray()
                     || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
                         value.getClass().getPackageName())) {
                   String rhs = validateOptionalOperatorRhs(conditional);
@@ -1842,6 +1851,13 @@ public final class SafeSql {
               builder.appendSql(" ESCAPE '^'");
             } else {
               checkMissingPlaceholderQuotes(placeholder);
+              // Must come after the Liker branch: LIKE '%{foo}%' is enclosed by ' too,
+              // but is legitimately turned into a parameter by Liker.
+              String enclosedBy = outline.getEnclosedBy(placeholder);
+              checkArgument(
+                  enclosedBy.isEmpty(),
+                  "Placeholder %s cannot be a JDBC parameter when enclosed by %s",
+                  placeholder, enclosedBy);
               builder.appendSql(scanner.nextFragment()).addParameter(value);
             }
           });

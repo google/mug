@@ -477,14 +477,7 @@ public final class Substring {
       }
 
       @Override Pattern lookaround(String lookbehind, String lookahead) {
-        // first(lookbehind + str).skip(lookbehind) is more efficient with native String#indexOf().
-        //
-        // Can't use first(lookbehind + str + lookbehind).skip(lookbehind, lookahead)
-        // because skip().repeatedly() will repeat after `lookahead`.
-        // between(lookbehind, lookahead).repeatedly() should repeat _at_ `lookahead`.
-        return lookbehind.isEmpty()
-            ? super.lookaround(lookbehind, lookahead)
-            : first(lookbehind + str).skip(lookbehind.length(), 0).followedBy(lookahead);
+        return firstWithLookaround(lookbehind, str, lookahead);
       }
 
       @Override public String toString() {
@@ -502,10 +495,7 @@ public final class Substring {
       }
 
       @Override Pattern lookaround(String lookbehind, String lookahead) {
-        // first(lookbehind + char).skip(lookbehind) is more efficient with native String#indexOf().
-        return lookbehind.isEmpty()
-            ? super.lookaround(lookbehind, lookahead)
-            : first(lookbehind + character).skip(lookbehind.length(), 0).followedBy(lookahead);
+        return firstWithLookaround(lookbehind, Character.toString(character), lookahead);
       }
 
       @Override public String toString() {
@@ -763,7 +753,7 @@ public final class Substring {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input, int fromIndex) {
-        if (fromIndex > input.length()) return Stream.empty();
+        checkFromIndex(fromIndex, input);
         Matcher matcher = regexPattern.matcher(input);
         if (!matcher.find(fromIndex)) return Stream.empty();
         int groups = matcher.groupCount();
@@ -783,6 +773,9 @@ public final class Substring {
               int end = matcher.end(g);
               if (start >= next) {
                 next = end;
+                // Advance past this group before returning. `next` alone can't do it because a
+                // zero-width group leaves `next` unchanged, which would re-emit it forever.
+                g++;
                 return Match.backtrackable(1, input, start, end - start);
               }
             }
@@ -834,26 +827,37 @@ public final class Substring {
         return null;
       }
 
-      /** Delegate to native regex backtracking, which can be more efficient for regex patterns. */
+      /**
+       * Delegates to native regex backtracking, which can be more efficient for regex patterns.
+       *
+       * <p>Only for group 0 and when the regex has no flags: for a capturing group, the lookaround
+       * applies to the group, and flags must not apply to the lookaround strings; neither can be
+       * expressed by rewriting the regex.
+       */
       @Override Pattern lookaround(String lookbehind, String lookahead) {
-        StringBuilder builder = new StringBuilder();
-        if (!lookbehind.isEmpty()) {
-          builder.append("(?<=").append(quote(lookbehind)).append(")");
+        if (group != 0 || regexPattern.flags() != 0) {
+          return super.lookaround(lookbehind, lookahead);
         }
-        builder.append("(").append(regexPattern).append(")");
-        if (!lookahead.isEmpty()) {
-          builder.append("(?=").append(quote(lookahead)).append(")");
-        }
-        return first(compile(builder.toString()), group);
+        return first(
+            compileAround(
+                lookbehind.isEmpty() ? "" : "(?<=" + quote(lookbehind) + ")",
+                regexPattern,
+                lookahead.isEmpty() ? "" : "(?=" + quote(lookahead) + ")"));
       }
 
-      /** Delegate to native regex backtracking, which can be more efficient for regex patterns. */
+      /**
+       * Attempts to delegate to native regex backtracking, which can be more efficient for regex
+       * patterns.
+       */
       @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
+        if (group != 0 || regexPattern.flags() != 0) {
+          return super.negativeLookaround(lookbehind, lookahead);
+        }
         if (lookahead.isEmpty()) { // negative lookbehind
-          return first(compile("(?<!" + quote(lookbehind) + ")" + regexPattern));
+          return first(compileAround("(?<!" + quote(lookbehind) + ")", regexPattern, ""));
         }
         if (lookbehind.isEmpty()) { // negative lookahead
-          return first(compile(regexPattern + "(?!" + quote(lookahead) + ")"));
+          return first(compileAround("", regexPattern, "(?!" + quote(lookahead) + ")"));
         }
         // Regex has no negative front-and-back lookaround
         return super.negativeLookaround(lookbehind, lookahead);
@@ -863,6 +867,20 @@ public final class Substring {
         return "first(\"" + regexPattern + "\", " + group + ")";
       }
     };
+  }
+
+  /**
+   * Compiles {@code prefix + regexPattern + suffix} with {@code regexPattern} wrapped in a
+   * non-capturing group so that alternations bind correctly. {@code regexPattern} must have no
+   * flags ({@link java.util.regex.Pattern#flags} also reports inline flags like {@code (?i)}, which
+   * the group would otherwise scope differently from the original regex).
+   */
+  private static java.util.regex.Pattern compileAround(
+      String prefix, java.util.regex.Pattern regexPattern, String suffix) {
+    if (regexPattern.flags() != 0) {
+      throw new IllegalArgumentException("regex flags not supported: " + regexPattern);
+    }
+    return compile(prefix + "(?:" + regexPattern.pattern() + ")" + suffix);
   }
 
   /**
@@ -1273,7 +1291,9 @@ public final class Substring {
      * returning a {@code Match} if successful, or {@code empty()} otherwise.
      *
      * <p>Note that it treats {@code fromIndex} as the beginning of the string, so patterns like
-     * {@link #prefix}, {@link #BEGINNING} will attempt to match from this index.
+     * {@link #prefix}, {@link #BEGINNING} will attempt to match from this index. Lookarounds and
+     * boundaries ({@link #precededBy}, {@link #separatedBy}, {@link Substring#word(String)} etc.)
+     * are still allowed to inspect the characters before {@code fromIndex}.
      *
      * @throws IndexOutOfBoundsException if fromIndex is negative or greater than {@code
      *     string.length()}
@@ -1625,15 +1645,22 @@ public final class Substring {
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring be
      * immediately preceded by the {@code lookbehind} string and immediately followed by the {@code
-     * after} string.
+     * lookahead} string.
      *
      * <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
      * satisfied. That is, {@code word().immediatelyBetween("(", ")")} will find the "bar" substring
      * inside the parenthesis from "foo (bar)".
      *
-     * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
-     * empty string as the {@code lookahead} string, as in: {@code word().immediatelyBetween(":",
-     * "")}.
+     * <p>Not all patterns backtrack: {@link Substring#before}, {@link Substring#after}, {@link
+     * Substring#upToIncluding} and {@link #toEnd}, as well as the anchored patterns ({@link
+     * Substring#prefix}, {@link Substring#suffix}, {@link Substring#leading}, {@link
+     * Substring#trailing}, {@link Substring#BEGINNING}, {@link Substring#END}), are attempted only
+     * once; {@link Substring#consecutive} and {@link Substring#word} backtrack past the entire run
+     * of matched characters. The lookaround is allowed to inspect characters before the index the
+     * match is searched from.
+     *
+     * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, use
+     * {@link #precededBy}.
      *
      * @since 6.2
      */
@@ -1669,8 +1696,21 @@ public final class Substring {
       Pattern original = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
-          Match match = withLookaround.match(input, fromIndex);
-          return match == null ? null : match.expand(behind, ahead);
+          for (int i = fromIndex; i <= input.length(); ) {
+            Match match = withLookaround.match(input, i);
+            if (match == null) return null;
+            // first("bar").immediatelyBetween("of", INCLUSIVE, "o", INCLUSIVE)
+            //      .repeatedly().from("ofbarofbaro"):
+            // 1. fromIndex = 0, behind = 2, match.index() = 2
+            //    => expand the match by 2
+            //    => "ofbaro", match.index() = 0
+            // 2. fromIndex = 6, behind = 2, match.index() = 7
+            //    => match.index() - behind < fromIndex (overlaps with previous match),
+            //    => must backtrack to the next index: match.index() + 1 = 8
+            if (match.index() - behind >= fromIndex) return match.expand(behind, ahead);
+            i = match.backtrackFrom(i);
+          }
+          return null;
         }
 
         @Override public String toString() {
@@ -1683,15 +1723,15 @@ public final class Substring {
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
      * be immediately preceded by the {@code lookbehind} string and immediately followed by the
-     * {@code after} string.
+     * {@code lookahead} string.
      *
      * <p>Similar to regex negative lookarounds, the returned pattern will backtrack until the
      * negative lookaround is satisfied. That is, {@code word().notImmediatelyBetween("(", ")")}
-     * will find the "bar" substring from "(foo) bar".
+     * will find the "bar" substring from "(foo) bar". See {@link #immediatelyBetween(String,
+     * String)} for which patterns backtrack.
      *
      * <p>If you need negative lookahead only, use {@link #notFollowedBy} instead; for negative
-     * lookbehind only, pass an empty string as the {@code lookahead} string, as in: {@code
-     * word().notImmediatelyBetween(":", "")}.
+     * lookbehind only, use {@link #notPrecededBy}.
      *
      * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
      * using {@link #separatedBy}. The following code finds "911" but only if it's at the beginning
@@ -1716,12 +1756,13 @@ public final class Substring {
      * Returns an otherwise equivalent pattern except it requires the matched substring be
      * immediately followed by the {@code lookahead} string.
      *
-     * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
-     * lookahead is satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring
-     * from "To Joe:".
+     * <p>Similar to regex lookahead, the returned pattern will backtrack until the lookahead is
+     * satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring from "To
+     * Joe:". See {@link #immediatelyBetween(String, String)} for which patterns backtrack.
      *
-     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #immediatelyBetween}
-     * instead.
+     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link
+     * #immediatelyBetween(String, String)} instead. For "between inclusive", use {@link
+     * #immediatelyBetween(String, BoundStyle, String, BoundStyle)}.
      *
      * @since 6.2
      */
@@ -1734,8 +1775,9 @@ public final class Substring {
      * be immediately followed by the {@code lookahead} string.
      *
      * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
-     * negative lookahead is satisfied. That is, {@code word().notFollowedBy(" ")} will find the
-     * "Joe" substring from "To Joe:".
+     * negative lookahead is satisfied. For example, {@code word().notFollowedBy(" ")} will find the
+     * "Joe" substring from "To Joe:". See {@link #immediatelyBetween(String, String)} for which
+     * patterns backtrack.
      *
      * <p>If you need negative lookbehind, or both negative lookahead and lookbehind, use {@link
      * #notImmediatelyBetween} instead.
@@ -1758,11 +1800,16 @@ public final class Substring {
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring be
-     * immediately preceded by the {@code lookahead} string.
+     * immediately preceded by the {@code lookbehind} string.
      *
      * <p>Similar to regex lookbehind, the returned pattern will backtrack until the lookbehind is
      * satisfied. That is, {@code word().precededBy(": ")} will find the "Please" substring from
-     * "Amy: Please come in".
+     * "Amy: Please come in". See {@link #immediatelyBetween(String, String)} for which patterns
+     * backtrack.
+     *
+     * <p>If you need lookahead, or both lookahead and lookbehind, use {@link
+     * #immediatelyBetween(String, String)} instead. For "between inclusive", use {@link
+     * #immediatelyBetween(String, BoundStyle, String, BoundStyle)}.
      *
      * @since 6.2
      */
@@ -1776,7 +1823,8 @@ public final class Substring {
      *
      * <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
      * negative lookbehind is satisfied. For example, {@code word().notPrecededBy("(")} will find
-     * the "bar" substring from "(foo+bar)".
+     * the "bar" substring from "(foo+bar)". See {@link #immediatelyBetween(String, String)} for
+     * which patterns backtrack.
      *
      * @since 6.2
      */
@@ -3011,7 +3059,13 @@ public final class Substring {
       int newLength = length() + toLeft + toRight;
       int newEndIndex = newStartIndex + newLength;
       int newRepetitionStartIndex = max(repetitionStartIndex, newEndIndex);
-      return new Match(context, newStartIndex, newLength, backtrackIndex, newRepetitionStartIndex);
+      // backtrackIndex is an offset from the un-expanded start index. Callers backtrack in terms of
+      // where the _expanded_ match starts, so shift it left by the same amount, or else the
+      // characters between the expanded and un-expanded start are skipped on the retry.
+      int newBacktrackIndex =
+          backtrackIndex == Integer.MAX_VALUE ? Integer.MAX_VALUE : backtrackIndex - toLeft;
+      return new Match(
+          context, newStartIndex, newLength, newBacktrackIndex, newRepetitionStartIndex);
     }
 
     Match trim() {
@@ -3096,6 +3150,28 @@ public final class Substring {
         }
       };
     }
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code str} immediately between
+   * {@code lookbehind} and {@code lookahead}, using a single native {@link String#indexOf} search.
+   */
+  private static Pattern firstWithLookaround(String lookbehind, String str, String lookahead) {
+    String target = lookbehind + str + lookahead;
+    return new Pattern() {
+      @Override Match match(String input, int fromIndex) {
+        // The lookbehind is allowed to look before fromIndex, but the match must not start before
+        // it. The repetition restarts _at_ the lookahead, not after it.
+        int index = input.indexOf(target, max(0, fromIndex - lookbehind.length()));
+        return index < 0
+            ? null
+            : Match.backtrackable(1, input, index + lookbehind.length(), str.length());
+      }
+
+      @Override public String toString() {
+        return "first('" + str + "').immediatelyBetween('" + lookbehind + "', '" + lookahead + "')";
+      }
+    };
   }
 
   private static int checkNumChars(int maxChars) {

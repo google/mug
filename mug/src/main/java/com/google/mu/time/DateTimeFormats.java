@@ -16,33 +16,37 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
+import static com.google.mu.util.stream.BiStream.crossJoining;
 import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Comparator.comparingInt;
+import static java.util.Comparator.naturalOrder;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.format.TextStyle;
 import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +55,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -89,8 +100,9 @@ import java.util.stream.Stream;
  * year month day}, {@code month day year} or {@code day month year}) are supported.
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
- * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). AM/PM and 12-hour numbers are
- * not supported. Though you can explicitly specify them together with placeholders (see below).
+ * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). An AM/PM marker can follow, as
+ * in {@code 1:00 PM} or {@code 10:00 PM}, in which case a 12-hour clock ({@code h} or {@code hh})
+ * is inferred and 24-hour values such as {@code 15:00 PM} are rejected.
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders (between a pair
@@ -106,6 +118,52 @@ import java.util.stream.Stream;
  *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
+ * <p><b><em>Warning</em>: zone abbreviations are lossy across timezones.</b> An abbreviation such
+ * as {@code AST}, {@code CST} or {@code PST} is shared by a group of zones. {@link #formatOf} can
+ * only translate it to the {@code "zzz"} format specifier, preferring {@link
+ * ZoneId#systemDefault()} when it belongs to that group (which also claims the group's daylight or
+ * standard counterpart name, even if the host zone never observes it), and otherwise resolving
+ * through CLDR to the group's canonical zone, <b>which may not be the zone that produced the
+ * string!</b> Such strings usually come from {@link java.util.Date#toString() Date.toString()},
+ * which prints an abbreviation whenever CLDR has one for the host's zone. For example, when parsed
+ * on a host outside those zones (such as in {@code UTC} or {@code America/Los_Angeles}):
+ *
+ * <pre>{@code
+ * // Written by a host in Barbados, which stays on AST (-04:00) year round.
+ * // The string denotes 2011-07-15T12:00:00Z.
+ * parseToInstant("Fri Jul 15 08:00:00 AST 2011");
+ * // => 2011-07-15T11:00:00Z. "AST" resolves to America/Halifax, which is on ADT (-03:00) in July.
+ *
+ * // Written by a host in Shanghai, which also prints CST.
+ * // The string denotes 2026-09-17T00:00:00Z.
+ * parseToInstant("Thu Sep 17 08:00:00 CST 2026");
+ * // => 2026-09-17T13:00:00Z. "CST" resolves to America/Chicago: 13 hours off.
+ * }</pre>
+ *
+ * <p>The canonical zone of the most common abbreviations:
+ *
+ * <ul>
+ *   <li>{@code PST}, {@code PDT}: {@code America/Los_Angeles}
+ *   <li>{@code MST}, {@code MDT}: {@code America/Denver}
+ *   <li>{@code CST}, {@code CDT}: {@code America/Chicago}
+ *   <li>{@code EST}, {@code EDT}: {@code America/New_York}
+ *   <li>{@code AST}, {@code ADT}: {@code America/Halifax}
+ * </ul>
+ *
+ * <p>The drift is an hour where the group differs only in daylight saving ({@code AEST} spans
+ * Sydney and Brisbane; {@code CET} spans Paris and Algiers), and can exceed half a day where the
+ * same letters are used on different continents ({@code CST} spans Chicago, Havana and Shanghai;
+ * {@code PST} spans Los Angeles and Manila; {@code AST} spans Halifax, Barbados and Riyadh).
+ * Nothing in the string identifies the writer's zone, so this is not recoverable when the reader's
+ * {@link ZoneId#systemDefault()} differs from the writer's.
+ *
+ * <p>Prefer a zone id ({@code 2011-07-15 08:00:00 America/Barbados}) or a numeric offset ({@code
+ * 2011-07-15 08:00:00 -04:00}); both round-trip exactly. Use an abbreviation only when the producer
+ * is known to run in the same {@link ZoneId#systemDefault()}, in the canonical zone, or in a zone
+ * that follows the same rules ({@code America/Toronto} round-trips through {@code
+ * America/New_York}). {@code GMT}, {@code UTC}, {@code UT} and {@code GMT±hh:mm} are unambiguous
+ * and always exact.
+ *
  * <p>i18n isn't supported.
  *
  * @since 7.1
@@ -115,12 +173,29 @@ public final class DateTimeFormats {
   private static final CharPredicate ALPHA =
       CharPredicate.range('a', 'z').orRange('A', 'Z').or('_').precomputeForAscii();
 
-  /** delimiters don't have semantics and are ignored during parsing. */
-  private static final CharPredicate DELIMITER = anyOf(" ,;");
+  /**
+   * Delimiters don't have semantics and are ignored during parsing.
+   *
+   * <p>CLDR 42 normalized the spaces in its patterns, so a localized rendering can separate two
+   * fields with a no-break space: {@code ofLocalizedDateTime(MEDIUM)} under {@code en_US} emits
+   * {@code "Dec 3, 2011, 1:15:30 PM"} whose space before the day period is U+202F NARROW NO-BREAK
+   * SPACE, binding the marker to the time. Every {@code Zs} character is a delimiter so that such
+   * an example reads; it is copied into the pattern verbatim, so the formatter still matches the
+   * exact character it was shown.
+   */
+  private static final CharPredicate DELIMITER =
+      anyOf(" ,;").or(c -> Character.getType(c) == Character.SPACE_SEPARATOR);
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
-          consecutive(DIGIT), consecutive(ALPHA), first(DateTimeFormats::isSeparator))
+          Stream.of(consecutive(DIGIT)),
+          Token.ALL.keySet().stream()
+              .filter(name -> name.length() > 1)
+              .filter(name -> !ALPHA.matchesAllOf(name))
+              .sorted(comparingInt(String::length).reversed())
+              .map(Substring::first),
+          Stream.of(consecutive(ALPHA), first(DateTimeFormats::isSeparator)))
+      .flatMap(identity())
       .collect(firstOccurrence())
       .repeatedly();
 
@@ -142,16 +217,20 @@ public final class DateTimeFormats {
           forExample("2011-12-03T10:15:30-01:00"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30-01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
-          forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT)
+          // ISO_INSTANT resolves to INSTANT_SECONDS alone, which is not enough to build a
+          // ZonedDateTime or an OffsetDateTime. The zone override supplies the missing zone.
+          // It doesn't change formatting: ISO_INSTANT already prints in UTC by contract.
+          forExample("2011-12-03T10:15:30Z"),
+              DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC))
       .toMap();
 
   /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
   private static final Map<List<?>, DateTimeFormatter> RFC_1123_FORMATTERS = Stream.of(
-          "Tue, 1 Jun 2008 11:05:30 GMT", "Tue, 10 Jun 2008 11:05:30 GMT",
-          "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Tue, 1 Jun 2008 11:05:30 +0800",
-          "Tue, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
+          "Sun, 1 Jun 2008 11:05:30 GMT", "Tue, 10 Jun 2008 11:05:30 GMT",
+          "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Sun, 1 Jun 2008 11:05:30 +0800",
+          "Sun, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
           "Tue, 10 Jun 2008 11:05:30 -0800", "1 Jun 2008 11:05:30 +0800",
-          "10 Jun 2008 11:05:30 +0800")
+          "1 Jun 2008 11:05:30 -0800", "10 Jun 2008 11:05:30 +0800", "10 Jun 2008 11:05:30 -0800")
       .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
 
   private static final Map<List<?>, String> LOCAL_DATE_PATTERNS =
@@ -189,14 +268,24 @@ public final class DateTimeFormats {
           .add(forExample("12月"), "MM月")
           .add(forExample("3日"), "d日")
           .add(forExample("13日"), "dd日")
+          // "Dec 3, 2011" from ofLocalizedDate(MEDIUM) and DateFormat.getDateInstance() under
+          // en_US. Only the month-first forms need a row: a comma that falls between two entries
+          // is skipped as a leading delimiter, so "Saturday, December 3, 2011" reads as EEEE plus
+          // the row below, and "3 Dec 2011, 10:15:30" (en_GB) already reads today.
           .add(forExample("Jan 11 2011"), "LLL dd yyyy")
+          .add(forExample("Jan 11, 2011"), "LLL dd, yyyy")
           .add(forExample("Jan 1 2011"), "LLL d yyyy")
+          .add(forExample("Jan 1, 2011"), "LLL d, yyyy")
+          .add(forExample("Jan  1 2011"), "LLL ppd yyyy")
           .add(forExample("11 Jan 2011"), "dd LLL yyyy")
           .add(forExample("1 Jan 2011"), "d LLL yyyy")
           .add(forExample("2011 Jan 1"), "yyyy LLL d")
           .add(forExample("2011 Jan 11"), "yyyy LLL dd")
           .add(forExample("January 11 2011"), "LLLL dd yyyy")
+          .add(forExample("January 11, 2011"), "LLLL dd, yyyy")
           .add(forExample("January 1 2011"), "LLLL d yyyy")
+          .add(forExample("January 1, 2011"), "LLLL d, yyyy")
+          .add(forExample("January  1 2011"), "LLLL ppd yyyy")
           .add(forExample("11 January 2011"), "dd LLLL yyyy")
           .add(forExample("1 January 2011"), "d LLLL yyyy")
           .add(forExample("2011 January 1"), "yyyy LLLL d")
@@ -204,77 +293,181 @@ public final class DateTimeFormats {
           .build()
           .toMap();
 
-  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS = BiStream.from(
-          LOCAL_DATE_PATTERNS)
-      .mapValues((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
-      .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
-      .toMap();
+  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
+      BiStream.from(LOCAL_DATE_PATTERNS)
+          .mapValues(
+              (signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
+          .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+          .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
           .addAll(LOCAL_DATE_PATTERNS)
-          .add(forExample("T"), "'T'")
-          .add(forExample("10:15"), "HH:mm")
-          .add(forExample("10:15:30"), "HH:mm:ss")
-          .add(forExample("10:15:30.1"), "HH:mm:ss.S")
-          .add(forExample("10:15:30.12"), "HH:mm:ss.SS")
-          .add(forExample("10:15:30.123"), "HH:mm:ss.SSS")
-          .add(forExample("10:15:30.1234"), "HH:mm:ss.SSSS")
-          .add(forExample("10:15:30.12345"), "HH:mm:ss.SSSSS")
-          .add(forExample("10:15:30.123456"), "HH:mm:ss.SSSSSS")
-          .add(forExample("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
-          .add(forExample("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
-          .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
-          .add(forExample("10点"), "HH点")
-          .add(forExample("1点"), "H点")
-          .add(forExample("10时"), "HH时")
-          .add(forExample("1时"), "H时")
-          .add(forExample("15分"), "mm分")
-          .add(forExample("5分"), "m分")
-          .add(forExample("13秒"), "ss秒")
-          .add(forExample("3秒"), "s秒")
-          .add(forExample("上午"), "a")
-          .add(forExample("下午2点"), "ah点")
-          .add(forExample("下午2时"), "ah时")
-          .add(forExample("下午2:10:10"), "ah:mm:ss")
-          .add(forExample("下午2:10"), "ah:mm")
-          .add(forExample("1 AM"), "h a")
-          .add(forExample("1AM"), "ha")
-          .add(forExample("10 AM"), "HH a")
-          .add(forExample("10AM"), "HHa")
-          .add(forExample("1:00 AM"), "h:mm a")
-          .add(forExample("1:00AM"), "h:mma")
-          .add(forExample("1:00:00 AM"), "h:mm:ss a")
-          .add(forExample("1:00:00AM"), "h:mm:ssa")
-          .add(forExample("America/Los_Angeles"), "VV")
-          .add(forExample("PST"), "zzz")
-          .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
-          .add(forExample("Z"), "X")
-          .add(forExample("+08"), "x")
-          .add(forExample("-08"), "x")
-          .add(forExample("+080000"), "xxxx")
-          .add(forExample("-080000"), "xxxx")
-          .add(forExample("+08:00:00"), "xxxxx")
-          .add(forExample("-08:00:00"), "xxxxx")
-          .add(forExample("+0800"), "ZZ")
-          .add(forExample("-0800"), "ZZ")
-          .add(forExample("+08:00"), "ZZZZZ")
-          .add(forExample("-08:00"), "ZZZZZ")
-          .add(forExample("GMT+8"), "O")
-          .add(forExample("GMT-8"), "O")
-          .add(forExample("GMT+12"), "O")
-          .add(forExample("GMT-12"), "O")
-          .add(forExample("GMT+08:00"), "OOOO")
-          .add(forExample("GMT-08:00"), "OOOO")
-          .add(forExample("Fri"), "EEE")
-          .add(forExample("Friday"), "EEEE")
-          .add(forExample("周一"), "EEE")
-          .add(forExample("星期一"), "EEEE")
-          .add(forExample("Jan"), "LLL")
-          .add(forExample("January"), "LLLL")
-          .add(forExample("PM"), "a")
-          .add(forExample("a.m."), "a")
-          .add(forExample("AD"), "G")
+          .addAll(
+              crossJoin(
+                      BiStream.of(
+                              "Dec 03", "LLL dd",
+                              "Dec 3", "LLL d",
+                              "Dec  3", "LLL ppd",
+                              "May 03", "LLLL dd",
+                              "May 3", "LLLL d",
+                              "May  3", "LLLL ppd")
+                          .mapKeys(Collections::singletonList)
+                          .toMap(),
+                      " ",
+                      BiStream.of(
+                              asList("10:15:30 PST 2011", "10:15:30 GMT 2011"),
+                                  "HH:mm:ss <zzz> yyyy",
+                              asList("10:15:30 +0800 2011", "10:15:30 -0800 2011"),
+                                  "HH:mm:ss ZZ yyyy",
+                              asList("10:15:30 GMT+08:00 2011", "10:15:30 GMT-08:00 2011"),
+                                  "HH:mm:ss VV yyyy",
+                              asList("10:15:30 2011"), "HH:mm:ss yyyy")
+                          .toMap())
+                  .mapKeys(DateTimeFormats::forExample)
+                  .toMap())
+          .addAll(forExamples("T"), "'T'")
+          .addAll(forExamples("10:15"), "HH:mm")
+          .addAll(forExamples("10:15:30"), "HH:mm:ss")
+          .addAll(forExamples("10:15:30.1"), "HH:mm:ss.S")
+          .addAll(forExamples("10:15:30.12"), "HH:mm:ss.SS")
+          .addAll(forExamples("10:15:30.123"), "HH:mm:ss.SSS")
+          .addAll(forExamples("10:15:30.1234"), "HH:mm:ss.SSSS")
+          .addAll(forExamples("10:15:30.12345"), "HH:mm:ss.SSSSS")
+          .addAll(forExamples("10:15:30.123456"), "HH:mm:ss.SSSSSS")
+          .addAll(forExamples("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
+          .addAll(forExamples("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
+          .addAll(forExamples("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
+          .addAll(forExamples("10:15:30,1"), "HH:mm:ss,S")
+          .addAll(forExamples("10:15:30,12"), "HH:mm:ss,SS")
+          .addAll(forExamples("10:15:30,123"), "HH:mm:ss,SSS")
+          .addAll(forExamples("10:15:30,1234"), "HH:mm:ss,SSSS")
+          .addAll(forExamples("10:15:30,12345"), "HH:mm:ss,SSSSS")
+          .addAll(forExamples("10:15:30,123456"), "HH:mm:ss,SSSSSS")
+          .addAll(forExamples("10:15:30,1234567"), "HH:mm:ss,SSSSSSS")
+          .addAll(forExamples("10:15:30,12345678"), "HH:mm:ss,SSSSSSSS")
+          .addAll(forExamples("10:15:30,123456789"), "HH:mm:ss,SSSSSSSSS")
+          .addAll(forExamples("10点"), "HH点")
+          .addAll(forExamples("1点"), "H点")
+          .addAll(forExamples("10时"), "HH时")
+          .addAll(forExamples("1时"), "H时")
+          .addAll(forExamples("15分"), "mm分")
+          .addAll(forExamples("5分"), "m分")
+          .addAll(forExamples("13秒"), "ss秒")
+          .addAll(forExamples("3秒"), "s秒")
+          .addAll(forExamples("上午"), "a")
+          .addAll(forExamples("下午2点"), "ah点")
+          .addAll(forExamples("下午2时"), "ah时")
+          .addAll(forExamples("下午2:10:10"), "ah:mm:ss")
+          .addAll(forExamples("下午2:10"), "ah:mm")
+          .addAll(forExamples("1 AM"), "h a")
+          .addAll(forExamples("1\u202fAM"), "h\u202fa")
+          .addAll(forExamples("1AM"), "ha")
+          .addAll(forExamples("10 AM"), "hh a")
+          .addAll(forExamples("10\u202fAM"), "hh\u202fa")
+          .addAll(forExamples("10AM"), "hha")
+          .addAll(forExamples("1:00 AM"), "h:mm a")
+          .addAll(forExamples("1:00\u202fAM"), "h:mm\u202fa")
+          .addAll(forExamples("1:00AM"), "h:mma")
+          .addAll(forExamples("10:00 AM", "10:00 a.m."), "hh:mm a")
+          .addAll(forExamples("10:00\u202fAM"), "hh:mm\u202fa")
+          .addAll(forExamples("10:00AM", "10:00a.m."), "hh:mma")
+          .addAll(forExamples("1:00:00 AM"), "h:mm:ss a")
+          .addAll(forExamples("1:00:00\u202fAM"), "h:mm:ss\u202fa")
+          .addAll(forExamples("1:00:00AM"), "h:mm:ssa")
+          .addAll(forExamples("10:00:00 AM", "10:00:00 a.m."), "hh:mm:ss a")
+          .addAll(forExamples("10:00:00\u202fAM"), "hh:mm:ss\u202fa")
+          .addAll(forExamples("10:00:00AM", "10:00:00a.m."), "hh:mm:ssa")
+          // One entry per zone id signature shape. Each is anchored by a REGION or a ZONE_NAME
+          // token: a shape made of WORD alone would claim every unrecognized word, turning typos
+          // into bad-zone errors.
+          .addAll(
+              forExamples(
+                  "America/Los_Angeles", // region and city
+                  "America/Argentina/Buenos_Aires", // three parts
+                  "US/Pacific", // 2nd part is a region name
+                  "Africa/Porto-Novo", // hyphenated city name
+                  "America/Port-au-Prince", // twice-hyphenated city name
+                  "Etc/UTC",
+                  "Etc/GMT",
+                  "Etc/GMT+0",
+                  "Etc/GMT-0",
+                  "Etc/GMT+10",
+                  "Etc/GMT-10",
+                  // Etc/UTC±N are not valid tzdb ids, but Etc/UTC is. Mapping them to VV prevents
+                  // greedy composition (VV + x) from silently parsing "Etc/UTC+10".
+                  "Etc/UTC+0",
+                  "Etc/UTC-0",
+                  "Etc/UTC+10",
+                  "Etc/UTC-10",
+                  // ZoneId.of("GMT+08:00") and "UTC+08:00" are valid ZoneRegions that VV
+                  // round-trips. OOOO would parse them to plain ZoneOffsets, losing zone identity.
+                  "GMT+08:00",
+                  "GMT-08:00",
+                  "UTC+08:00",
+                  "UTC-08:00"),
+              "VV")
+          // Brackets are literal text, so the zone id inside them matches the entries above on its
+          // own. The exception is a lone zone abbreviation: unbracketed it reads as a zone name
+          // (zzz), but ZonedDateTime only ever brackets a zone id.
+          .addAll(forExamples("["), "'['")
+          .addAll(forExamples("]"), "']'")
+          .addAll(forExamples("[UTC]", "[GMT]"), "'['VV']'")
+          .addAll(forExamples("PST", "GMT"), "<zzz>")
+          // DateTimeFormatter.ofLocalizedDateTime(FULL) under zh_CN:
+          // "2026年9月17日星期四 中国标准时间 10:15:30", where the name is the only zone information.
+          .addAll(forExamples("中国标准时间"), "<zzzz>")
+          // Date.prototype.toString() in JavaScript (ECMA-262 21.4.4.41.3):
+          // "Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Daylight Time)". The parens anchor these
+          // rows; a bare run of WORDs would claim every unrecognized phrase. One example per token
+          // signature. The offset decides the instant, so Phoenix saying "Mountain Standard Time",
+          // which resolves to Denver, still reads right.
+          //
+          // An entry has to cover a class, not a handful of names: each below reads at least 17
+          // zones. (Réunion Time), (Dumont-d’Urville Time), (French Southern & Antarctic Time),
+          // (Hawaii-Aleutian Daylight Time) and (Australian Central Western Standard Time) read 1
+          // to 5 zones each and are left out. The first two could not generalize at all: a letter
+          // outside a-zA-Z is a token of its own, so their entries would pin "R"/"é" and "d"/"’".
+          .addAll(
+              forExamples(
+                  "(Afghanistan Time)", // two words
+                  "(Acre Standard Time)", // three words
+                  "(Australian Central Standard Time)", // four words
+                  "(Atlantic Daylight Time)", // starts with a region name
+                  "(Central Africa Time)", // ends with a region name
+                  "(Mexican Pacific Standard Time)", // region name in the middle
+                  "(GMT+06:00)", // no CLDR name for the zone
+                  "(GMT-06:00)"),
+              "'('<zzzz>')'")
+          // The same call on a Chinese-locale host:
+          // "Thu Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)". ECMA-262 hardcodes the English
+          // weekday and month, so zzzz would read Chinese while EEE and LLL read English, and a
+          // formatter has one locale.
+          .addAll(forExamples("(中国标准时间)"), "'(中国标准时间)'")
+          .addAll(forExamples("Z"), "X")
+          .addAll(forExamples("+08", "-08"), "x")
+          .addAll(forExamples("+080000", "-080000"), "xxxx")
+          .addAll(forExamples("+08:00:00", "-08:00:00"), "xxxxx")
+          .addAll(forExamples("+0800", "-0800"), "ZZ")
+          .addAll(forExamples("+08:00", "-08:00"), "ZZZZZ")
+          // GMT+8 / GMT+12 map to O (which requires literal "GMT"). Registering the same shapes
+          // for ZONE_NAME (UTC) prevents them from falling through to greedy composition
+          // (e.g. zzz + x on "PST+12").
+          .addAll(
+              forExamples(
+                  "GMT+8", "GMT-8", "GMT+12", "GMT-12", "UTC+8", "UTC-8", "UTC+12", "UTC-12"),
+              "O")
+          // GMT+0800 (e.g. from JavaScript Date.toString()) maps to 'GMT'xx so the offset is
+          // preserved without shifting local wall time. Registering UTC+0800 prevents it from
+          // falling through to greedy composition (zzz + ZZ).
+          .addAll(forExamples("GMT+0800", "GMT-0800", "UTC+0800", "UTC-0800"), "'GMT'xx")
+          .addAll(forExamples("GMT+080000", "GMT-080000", "UTC+080000", "UTC-080000"), "'GMT'xxxx")
+          .addAll(forExamples("Fri", "周五"), "EEE")
+          .addAll(forExamples("Friday", "星期五"), "EEEE")
+          .addAll(forExamples("Jan"), "LLL")
+          .addAll(forExamples("January"), "LLLL")
+          .addAll(forExamples("PM", "a.m."), "a")
+          .addAll(forExamples("AD"), "G")
           .build();
 
   /**
@@ -286,66 +479,96 @@ public final class DateTimeFormats {
     List<?> signature = forExample(example);
     DateTimeFormatter rfc = lookup(RFC_1123_FORMATTERS, signature).orElse(null);
     if (rfc != null) return rfc;
-    DateTimeFormatter iso = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
-    if (iso != null) return iso;
+    DateTimeFormatter isoDate = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
+    if (isoDate != null) return isoDate;
     // Ignore the ".nanosecond" part of the time in ISO examples because all ISO
     // time formats allow the nanosecond part optionally, with 1 to 9 digits.
-    return lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(example)))
-        .map(fmt -> {
-          try {
-            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-          } catch (DateTimeParseException e) {
-            throw new DateTimeException("invalid date time example: " + example, e);
-          }
-          return fmt;
-        })
-        .orElseGet(() -> {
-          AtomicInteger placeholderCount = new AtomicInteger();
-          String pattern = PLACEHOLDERS.replaceAllFrom(
-              example,
-              placeholder -> {
-                placeholderCount.incrementAndGet();
-                return inferDateTimePattern(placeholder.skip(1, 1).toString());
-              });
-          try {
-            if (placeholderCount.get() > 0) {
-              // There is at least 1 placeholder. The input isn't a pure datetime "example".
-              // So we can't validate using parse().
-              return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-            }
-            pattern = inferDateTimePattern(example, signature);
-            DateTimeFormatter fmt =
-                inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-            return fmt;
-          } catch (DateTimeParseException e) {
-            throw new DateTimeException(
-                "invalid date time example: " + example + " (" + pattern + ")", e);
-          }
+    DateTimeFormatter isoDateTime =
+        lookup(ISO_DATE_TIME_FORMATTERS, signatureWithoutNanoseconds(example).orElse(signature))
+            .map(fmt -> {
+              try {
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+              } catch (DateTimeParseException e) {
+                throw new DateTimeException("invalid date time example: " + example, e);
+              }
+              return fmt;
+            })
+            .orElse(null);
+    if (isoDateTime != null) return isoDateTime;
+    AtomicInteger placeholderCount = new AtomicInteger();
+    String pattern = PLACEHOLDERS.replaceAllFrom(
+        example,
+        placeholder -> {
+          placeholderCount.incrementAndGet();
+          String snippet = placeholder.skip(1, 1).toString();
+          return inferDateTimePattern(snippet, forExample(snippet));
         });
+    try {
+      if (placeholderCount.get() > 0) {
+        // There is at least 1 placeholder. The input isn't a pure datetime "example".
+        // So we can't validate using parse().
+        return inferLocaleIfNeeded(ofPattern(pattern), signature);
+      }
+      pattern = inferDateTimePattern(example, signature);
+      DateTimeFormatter fmt = inferLocaleIfNeeded(ofPattern(pattern), signature);
+      fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+      return fmt;
+    } catch (DateTimeParseException | IllegalArgumentException e) {
+      // IllegalArgumentException comes from ofPattern(): the verbatim (non-placeholder) part
+      // of the example is passed through as-is, so it can contain invalid pattern letters.
+      String displayPattern =
+          AMBIGUOUS_ZONE_NAME_PATTERNS.replaceAllFrom(pattern, m -> m.skip(1, 1).toString());
+      throw new DateTimeException(
+          "invalid date time example: " + example + " (" + displayPattern + ")", e);
+    }
   }
 
   private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
-            .orElseGet(() ->
-                lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-                    .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
+            .orElseGet(() -> lookup(
+                    ISO_DATE_TIME_FORMATTERS,
+                    signatureWithoutNanoseconds(dateTimeString).orElse(signature))
+                .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
 
+  private static final Substring.RepeatingPattern AMBIGUOUS_ZONE_NAME_PATTERNS =
+      Substring.all(Pattern.compile("<z{1,4}>"));
+
+  private static DateTimeFormatter ofPattern(String pattern) {
+    ZoneId defaultZone = ZoneId.systemDefault();
+    DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
+    AMBIGUOUS_ZONE_NAME_PATTERNS
+        .cut(pattern)
+        .map(Substring.Match::toString)
+        .forEach(part -> {
+          if (part.equals("<zzzz>")) {
+            // On JDK <= 22, COMPAT gives Asia/Urumqi the same full name ("中国标准时间") as
+            // Asia/Shanghai, and ZoneTextPrinterParser overwrites non-preferred entries in
+            // iteration order when a non-null preferred set is passed. Including Asia/Shanghai
+            // keeps "中国标准时间" resolving to Asia/Shanghai when the host default is elsewhere.
+            builder.appendZoneText(
+                TextStyle.FULL, new HashSet<>(asList(defaultZone, ZoneId.of("Asia/Shanghai"))));
+          } else if (part.equals("<z>") || part.equals("<zz>") || part.equals("<zzz>")) {
+            builder.appendZoneText(TextStyle.SHORT, Collections.singleton(defaultZone));
+          } else {
+            builder.appendPattern(part);
+          }
+        });
+    return builder.toFormatter();
+  }
+
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
-    if (signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU)
-        || signature.contains(Token.WU)) {
-      return fmt.withLocale(Locale.CHINA);
-    }
-    if (signature.contains(Token.MONTH_ABBREVIATION) || signature.contains(Token.MONTH)
-        || signature.contains(Token.WEEKDAY_ABBREVIATION) || signature.contains(Token.WEEKDAY)
-        || signature.contains(Token.AM_PM)) {
-      return fmt.withLocale(Locale.ENGLISH);
-    }
-    return fmt;
+    return signature.stream()
+        .filter(Token.class::isInstance)
+        .map(Token.class::cast)
+        .filter(token -> token.locale != null)
+        // Enum natural order is declaration order: the token declared first wins.
+        .min(naturalOrder())
+        .map(token -> fmt.withLocale(token.locale))
+        .orElse(fmt);
   }
 
   /**
@@ -377,6 +600,11 @@ public final class DateTimeFormats {
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
    * performance and earlier error report in case the format cannot be inferred.
    *
+   * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
+   * see the class-level warning: when {@link ZoneId#systemDefault()} is not in that abbreviation's
+   * group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+   * string.
+   *
    * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid date
    *     time with either zone name or UTC offset.
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
@@ -392,6 +620,11 @@ public final class DateTimeFormats {
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
    * performance and earlier error report in case the format cannot be inferred.
+   *
+   * <p>If {@code dateTimeString} carries a zone abbreviation such as {@code PST} or {@code CST},
+   * see the class-level warning: when {@link ZoneId#systemDefault()} is not in that abbreviation's
+   * group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+   * string.
    *
    * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
@@ -418,12 +651,16 @@ public final class DateTimeFormats {
   }
 
   static String inferDateTimePattern(String example) {
-    return inferDateTimePattern(example, forExample(example));
+    return AMBIGUOUS_ZONE_NAME_PATTERNS.replaceAllFrom(
+        inferDateTimePattern(example, forExample(example)), m -> m.skip(1, 1).toString());
+  }
+
+  static Set<String> zoneNameAbbreviations() {
+    return Token.ZONE_NAME.names;
   }
 
   private static DateTimeFormatter inferDateTimeFormatter(String example, List<?> signature) {
-    return inferLocaleIfNeeded(
-        DateTimeFormatter.ofPattern(inferDateTimePattern(example, signature)), signature);
+    return inferLocaleIfNeeded(ofPattern(inferDateTimePattern(example, signature)), signature);
   }
 
   private static String inferDateTimePattern(String example, List<?> signature) {
@@ -440,7 +677,8 @@ public final class DateTimeFormats {
         continue;
       }
 
-      int consumed = PREFIX_TABLE.getAll(remaining)
+      int consumed = PREFIX_TABLE
+          .getAll(remaining)
           .collect(maxByKey(comparingInt(List::size)))
           .map((prefix, fmt) -> {
             builder.append(fmt);
@@ -448,7 +686,7 @@ public final class DateTimeFormats {
           })
           .orElse(0);
       if (consumed <= 0) {
-        consumed = LocalDateRule.resolve(signature)
+        consumed = LocalDateRule.resolve(remaining)
             .map((prefix, fmt) -> {
               builder.append(fmt);
               return prefix.size();
@@ -478,10 +716,11 @@ public final class DateTimeFormats {
    * signature lists being: {@code [2, :, 2]} and {@code [2, :, 2, :, 2]} respectively.
    */
   private static List<?> forExample(String example) {
-    return TOKENIZER.cut(example)
+    return TOKENIZER
+        .cut(example)
         .filter(Substring.Match::isNotEmpty)
         .map(match -> {
-          if (DIGIT.matchesAnyOf(match)) {
+          if (DIGIT.matchesAllOf(match)) {
             return new Numeric(match);
           }
           String name = match.toString();
@@ -495,13 +734,17 @@ public final class DateTimeFormats {
         .collect(toList());
   }
 
-  private static String removeNanosecondsPart(String example) {
-    return consecutive(DIGIT).immediatelyBetween(
-            ":", INCLUSIVE, ".", INCLUSIVE) // the "":ss."" in "HH:mm:ss.nnnnn"
-        .then(leading(DIGIT)) // the digits immediately after the ":ss." are the nanos
+  private static List<List<?>> forExamples(String... examples) {
+    return Stream.of(examples).map(DateTimeFormats::forExample).collect(toList());
+  }
+
+  private static Optional<List<?>> signatureWithoutNanoseconds(String example) {
+    Substring.Pattern nanos = consecutive(DIGIT)
+        .immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE)
+        .then(leading(DIGIT)); // the ""nnnnn"" in "HH:mm:ss.nnnnn"
+    return nanos
         .in(example)
-        .map(nanos -> example.substring(0, nanos.index() - 1) + nanos.after())
-        .orElse(example);
+        .map(part -> forExample(example.substring(0, part.index() - 1) + part.after()));
   }
 
   private static boolean isSeparator(char c) {
@@ -512,19 +755,32 @@ public final class DateTimeFormats {
         || type == Character.CONNECTOR_PUNCTUATION || type == Character.OTHER_PUNCTUATION;
   }
 
+  private static BiStream<String, String> crossJoin(
+      Map<List<String>, String> left, String separator, Map<List<String>, String> right) {
+    return BiStream.from(left)
+        .flatMap((k1s, v1) -> BiStream.from(right)
+            .flatMap((k2s, v2) -> k1s.stream()
+                .collect(crossJoining(k2s.stream()))
+                .mapKeys((k1, k2) -> k1 + separator + k2)
+                .mapValues(unused -> v1 + separator + v2)));
+  }
+
   private static final class LocalDateRule {
     private static final PrefixSearchTable<Object, List<LocalDateRule>> RESOLUTION_TABLE =
         PrefixSearchTable.<Object, List<LocalDateRule>>builder()
-            .add(forExample("10-30-2014"), asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
-            .add(forExample("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
-            .add(forExample("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
-            .add(forExample("10/30/2014"), asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
-            .add(forExample("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
-            .add(forExample("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
+            .addAll(
+                forExamples("10-30-2014"), asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
+            .addAll(forExamples("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
+            .addAll(forExamples("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
+            .addAll(
+                forExamples("10/30/2014"), asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
+            .addAll(forExamples("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
+            .addAll(forExamples("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
-      return RESOLUTION_TABLE.getAll(signature)
+      return RESOLUTION_TABLE
+          .getAll(signature)
           .flatMapValues(rules -> rules.stream()
               .filter(rule -> rule.predicate.test(signature))
               .map(rule -> rule.format))
@@ -532,8 +788,7 @@ public final class DateTimeFormats {
     }
 
     static Optional<DateTimeFormatter> resolveFormat(List<?> signature) {
-      return resolve(signature).filter((prefix, p) -> prefix.size() == 5)
-          .map((prefix, p) -> DateTimeFormatter.ofPattern(p));
+      return resolve(signature).map((prefix, p) -> DateTimeFormatter.ofPattern(p));
     }
 
     private final Predicate<List<?>> predicate;
@@ -609,52 +864,89 @@ public final class DateTimeFormats {
    * Words listed for the same token enum are considered equivalent. That is, you can use "Fri" in
    * the example pattern and it will match "Mon" (but won't match "Monday" as it belongs to a
    * different token enum.
+   *
+   * <p>A token whose text is read through a locale-sensitive lookup declares the locale to read it
+   * in. When an example carries tokens of more than one locale, the one declared first here wins:
+   * see {@code inferLocaleIfNeeded}.
    */
+  @SuppressWarnings("ImmutableEnumChecker")
   private enum Token {
-    WEEKDAY_ABBREVIATION("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-    WEEKDAY("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
-    XINGQI("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
-    ZHOU("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
+    WEEKDAY_ABBREVIATION(Locale.ENGLISH, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+    WEEKDAY(
+        Locale.ENGLISH, "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+        "Sunday"),
+    XINGQI(Locale.CHINA, "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
+    ZHOU(Locale.CHINA, "周一", "周二", "周三", "周四", "周五", "周六", "周日"),
     WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
-    MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+    // "May" is deliberately absent: it's spelled the same abbreviated and in full, and ALL is a
+    // name -> token map, so listing it here too would fail with "Duplicate key: [May]" at class
+    // init. It belongs to MONTH, which means a "May" example always infers LLLL, never LLL.
+    MONTH_ABBREVIATION(
+        Locale.ENGLISH, "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov",
+        "Dec"),
     MONTH(
-        "January", "February", "March", "April", "May", "June", "July", "August", "September",
-        "October", "November", "December"),
+        Locale.ENGLISH, "January", "February", "March", "April", "May", "June", "July", "August",
+        "September", "October", "November", "December"),
     MONTH_CODES("L", "LL", "LLL", "LLLL"),
     YEAR_CODES("yyyy", "YYYY"),
     DAY_CODES("dd", "d"),
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_PM("AM", "PM", "am", "pm"),
-    WU("上午", "下午"),
-    AD_BC("AD", "BC"),
-    GENERIC_ZONE_NAME(
-        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
-        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
+    AM_PM(Locale.ENGLISH, "AM", "PM", "am", "pm"),
+    WU(Locale.CHINA, "上午", "下午"),
+    /**
+     * {@code AD} and {@code BC} are the English spellings of the era, read through {@code G}, a
+     * locale-sensitive text lookup. Unpinned, they would only be readable on a machine whose
+     * default locale spells the era the same way.
+     */
+    AD_BC(Locale.ENGLISH, "AD", "BC"),
+    /**
+     * {@code GMT} is a zone name, but it is also a keyword of the offset syntax: the localized
+     * offset specifier {@code O} requires it as a literal prefix ({@code GMT+8}), and {@link
+     * DateTimeFormatter#RFC_1123_DATE_TIME} accepts it as the only spelling of a zero offset. A key
+     * that spells {@code GMT} therefore means {@code GMT}, not "any zone name" -- otherwise it
+     * would claim {@code UTC+8} and {@code Tue, 10 Jun 2008 11:05:30 UTC}, which those formatters
+     * reject.
+     *
+     * <p>On its own it maps to {@code zzz}, and {@code O} is locale-sensitive too, so it takes the
+     * same {@link Locale#ENGLISH} pin as {@link #ZONE_NAME}.
+     */
+    GMT(Locale.ENGLISH, "GMT"),
+    /**
+     * Zone abbreviations map to {@code zzz}, a locale-sensitive text lookup: {@code PST} reads as
+     * {@code Asia/Manila} under {@code en_GB}. They are read in {@link Locale#ENGLISH} so that the
+     * zone doesn't depend on the JVM default locale.
+     *
+     * <p>The list is limited to abbreviations that resolve under {@link Locale#ENGLISH} on current
+     * JDKs; an abbreviation shared by several zones ({@code CST}: Chicago/Shanghai/Havana) prefers
+     * {@link ZoneId#systemDefault()} when it belongs to that group and otherwise reads as the JDK's
+     * English default, and abbreviations whose default reading has the wrong offset are
+     * deliberately excluded.
+     */
     ZONE_NAME(
-        "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
-        "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
-        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST", "CHOT",
-        "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
-        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
-        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
-        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
-        "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
-        "MAGT", "MAWT", "MDT", "MEST", "MET", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
-        "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT",
-        "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT",
-        "SAKT", "SAMT", "SAST", "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT",
-        "THA", "TJT", "TKT", "TLT", "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT",
-        "VLAT", "VOLT", "VOST", "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT",
-        "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST"),
+        Locale.ENGLISH, "ACDT", "ADT", "AEDT", "AEST", "AET", "AKDT", "AKST", "AKT", "AST", "AWDT",
+        "AWST", "AWT", "CAT", "CDT", "CEST", "CET", "CST", "ChST", "EAT", "EDT", "EEST", "EET",
+        "EST", "HADT", "HAST", "HDT", "HKT", "HST", "JST", "KST", "MDT", "MET", "MSK", "MST", "NDT",
+        "NST", "NZDT", "NZST", "NZT", "PDT", "PKT", "PST", "SAST", "SST", "UCT", "UT", "UTC", "WAT",
+        "WEST", "WET", "WIB", "WIT", "WITA"),
+    TIME(Locale.ENGLISH, "Time"),
+    /**
+     * Simplified only, consistent with the rest of the CJK tokens. There is no 週一 or 時 token
+     * either, so a traditional example would fail on its weekday or hour regardless of the zone.
+     *
+     * <p>Just the one name: the parenthesized form is matched literally, and a literal spells out
+     * the name it matches, so each further name would need a row of its own.
+     *
+     * <p>Declared after every English token on purpose. In "Sep 17 2026 02:32:43 GMT+0800 (中国标准时间)"
+     * the name is matched literally and takes its zone from the offset, while {@code LLL} does have
+     * to read "Sep", so the locale has to go to English.
+     */
+    CHINA_STANDARD_TIME(Locale.CHINA, "中国标准时间"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
         "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
-        "Canada", "Chile", "Cuba", "Egypt", "Eire", "Europe", "GB", "Greenwich", "Hongkong",
-        "Iceland", "Indian", "Iran", "Israel", "Jamaica", "Japan", "Kwajalein", "Libya", "Mexico",
-        "Mideast", "Navajo", "Pacific", "Poland", "Portugal", "Singapore", "SystemV", "Turkey",
-        "US", "Universal", "Zulu"),
+        "Canada", "Chile", "Etc", "Europe", "Indian", "Mexico", "Pacific", "US"),
     NIAN("年"),
     YUE("月"),
     RI("日"),
@@ -667,11 +959,16 @@ public final class DateTimeFormats {
     static final Map<String, Token> ALL =
         biStream(Arrays.stream(Token.values())).flatMapKeys(token -> token.names.stream()).toMap();
 
-    @SuppressWarnings("ImmutableEnumChecker")
     private final Set<String> names;
+    final Locale locale;
 
     private Token(String... names) {
-      this.names = new HashSet<String>(asList(names));
+      this((Locale) null, names);
+    }
+
+    private Token(Locale locale, String... names) {
+      this.locale = locale;
+      this.names = unmodifiableSet(new HashSet<>(asList(names)));
     }
   }
 

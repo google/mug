@@ -35,13 +35,6 @@ final class SafeSqlUtils {
     }
   }
 
-  @FormatMethod static void checkState(
-      boolean good, @FormatString String message, Object... args) {
-    if (!good) {
-      throw new IllegalStateException(String.format(message, args));
-    }
-  }
-
   static <Q, R> Collector<Q, ?, R> skippingEmpty(Collector<Q, ?, R> downstream) {
     return filtering(q -> !q.toString().isEmpty(), downstream);
   }

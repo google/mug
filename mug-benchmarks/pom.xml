@@ -490,6 +490,7 @@
                 <exclude>**/CssBenchmark.java</exclude>
                 <exclude>**/CelParserBenchmark.java</exclude>
                 <exclude>**/EmailAddressBenchmark.java</exclude>
+                <exclude>**/AnyOfInitBenchmark.java</exclude>
                 <exclude>**/WhitespaceBenchmark.java</exclude>
                 <exclude>**/LetterBenchmark.java</exclude>
                 <exclude>**/WordBenchmark.java</exclude>

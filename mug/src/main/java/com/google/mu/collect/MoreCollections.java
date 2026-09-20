@@ -144,7 +144,7 @@ public final class MoreCollections {
   }
 
   /**
-   * If {@code collection} has at least 7 elements, passes the first 6 elements to {@code found}
+   * If {@code collection} has at least 7 elements, passes the first 7 elements to {@code found}
    * function and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -169,7 +169,7 @@ public final class MoreCollections {
   }
 
   /**
-   * If {@code collection} has at least 8 elements, passes the first 6 elements to {@code found}
+   * If {@code collection} has at least 8 elements, passes the first 8 elements to {@code found}
    * function and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -298,7 +298,7 @@ public final class MoreCollections {
   }
 
   /**
-   * If {@code collection} has exactly 7 elements, passes the 6 elements to {@code found} function
+   * If {@code collection} has exactly 7 elements, passes the 7 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -323,7 +323,7 @@ public final class MoreCollections {
   }
 
   /**
-   * If {@code collection} has exactly 8 elements, passes the 6 elements to {@code found} function
+   * If {@code collection} has exactly 8 elements, passes the 8 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -354,14 +354,14 @@ public final class MoreCollections {
    *
    * <p>This method optimizes for small lists: Java stream performs well for medium and large lists
    * but for small lists (in reality, lists with {@code size() <= 64} happen pretty frequently), the
-   * streaming overhead often dominates the cost of {@code smallList.filter(...).toList()}. So if
-   * you have a small list to filter, consider using this method to significantly optimize for the
-   * common case.
+   * streaming overhead often dominates the cost of {@code smallList.stream().filter(...).toList()}.
+   * So if you have a small list to filter, consider using this method to significantly optimize for
+   * the common case.
    *
    * <ul>
    *   <li>For empty lists (n = 0), returns the original list with zero allocation.
-   *   <li>For size {@code <= 64}, if all elements match, returns the original list directly (zero
-   *       allocation).
+   *   <li>If all elements match, returns the original list directly (with zero allocation when
+   *       {@code size() <= 64}).
    *   <li>If only one element matches (or none match), returns a singleton list or empty list
    *       (extremely low allocation).
    *   <li>If only some elements match, returns an unmodifiable list constructed without stream

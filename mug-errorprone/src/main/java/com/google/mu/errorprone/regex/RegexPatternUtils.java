@@ -1,13 +1,54 @@
 package com.google.mu.errorprone.regex;
 
 import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.Walker;
+import com.google.mu.util.stream.BiStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 /** Common AST utilities for traversing and inspecting {@link RegexPattern} trees. */
 public final class RegexPatternUtils {
+  static final int MAX_BOUNDED_REPETITIONS = 5;
+
+  /**
+   * The modifier flags in effect at a point in the AST. A {@code (?i:...)} group scopes them to its
+   * content; a standalone {@code (?i)} directive applies to the elements after it in its sequence,
+   * up to the enclosing group.
+   */
+  record Flags(boolean caseInsensitive, boolean unicodeCase, boolean dotAll) {
+    static final Flags NONE = new Flags(false, false, false);
+
+    Flags(boolean caseInsensitive, boolean unicodeCase) {
+      this(caseInsensitive, unicodeCase, false);
+    }
+
+    Flags updated(
+        List<RegexPattern.ModifierFlag> enabled, List<RegexPattern.ModifierFlag> disabled) {
+      return new Flags(
+          updated(caseInsensitive, RegexPattern.ModifierFlag.CASE_INSENSITIVE, enabled, disabled),
+          updated(unicodeCase, RegexPattern.ModifierFlag.UNICODE_CASE, enabled, disabled),
+          updated(dotAll, RegexPattern.ModifierFlag.DOTALL, enabled, disabled));
+    }
+
+    /** Returns {@code ranges} closed under the case folding these flags imply. */
+    ImmutableRangeSet<Integer> fold(ImmutableRangeSet<Integer> ranges) {
+      return caseInsensitive ? CharRanges.caseFolded(ranges, unicodeCase) : ranges;
+    }
+
+    private static boolean updated(
+        boolean current,
+        RegexPattern.ModifierFlag flag,
+        List<RegexPattern.ModifierFlag> enabled,
+        List<RegexPattern.ModifierFlag> disabled) {
+      return !disabled.contains(flag) && (current || enabled.contains(flag));
+    }
+  }
+
   static RegexPattern unwrapGroup(RegexPattern pattern) {
     while (pattern instanceof RegexPattern.Group group) {
       pattern = group.content();
@@ -15,7 +56,7 @@ public final class RegexPatternUtils {
     return pattern;
   }
 
-  static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
+  public static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
     return switch (pattern) {
       case RegexPattern.Sequence seq -> seq.elements().stream();
       case RegexPattern.Alternation alt -> alt.alternatives().stream();
@@ -33,21 +74,30 @@ public final class RegexPatternUtils {
       RegexPattern.Quantified second) {}
 
   static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(RegexPattern.Sequence seq) {
+    return findOverlappingQuantifiers(seq, Flags.NONE);
+  }
+
+  static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(
+      RegexPattern.Sequence seq, Flags outer) {
     List<RegexPattern> elements = seq.elements();
+    List<Flags> flagsAt = flagsAt(elements, outer);
     for (int i = 0; i < elements.size(); i++) {
       RegexPattern ei = unwrapGroup(elements.get(i));
       if (isUnboundedQuantified(ei)
           && !isReluctantBoundedBy(
-              (RegexPattern.Quantified) ei, elements.subList(i + 1, elements.size()))) {
+              (RegexPattern.Quantified) ei, elements.subList(i + 1, elements.size()),
+              flagsAt.get(i))) {
         for (int j = i + 1; j < elements.size(); j++) {
           RegexPattern ej = unwrapGroup(elements.get(j));
           if (ej instanceof RegexPattern.Anchor) {
             break;
           }
           if (isUnboundedQuantified(ej)) {
-            if (CharRanges.intersects(charRangesOf(ei), charRangesOf(ej))) {
+            if (CharRanges.intersects(
+                charRangesOf(elements.get(i), flagsAt.get(i)),
+                charRangesOf(elements.get(j), flagsAt.get(j)))) {
               if (isTerminalUnconstrainedWildcard(
-                  ei, ej, elements.subList(j + 1, elements.size()))) {
+                  ei, ej, elements.subList(j + 1, elements.size()), flagsAt.get(i), flagsAt.get(j))) {
                 continue;
               }
               return Stream.of(
@@ -64,13 +114,120 @@ public final class RegexPatternUtils {
     return Stream.empty();
   }
 
+  /**
+   * Returns the flags in effect at each element of a sequence. A standalone {@code (?i)} directive
+   * applies to the elements after it, so the flags only change from one index to the next.
+   */
+  static List<Flags> flagsAt(List<RegexPattern> elements, Flags outer) {
+    List<Flags> result = new ArrayList<>(elements.size());
+    Flags current = outer;
+    for (RegexPattern element : elements) {
+      if (element instanceof RegexPattern.ModifierDirective directive) {
+        current =
+            current.updated(directive.enabledModifierFlags(), directive.disabledModifierFlags());
+      }
+      result.add(current);
+    }
+    return result;
+  }
+
+  /** Every sequence under {@code root}, paired with the modifier flags in effect at it. */
+  static BiStream<RegexPattern.Sequence, Flags> sequencesIn(RegexPattern root) {
+    return sequencesIn(root, Flags.NONE);
+  }
+
+  static BiStream<RegexPattern.Sequence, Flags> sequencesIn(RegexPattern root, Flags initialFlags) {
+    BiStream.Builder<RegexPattern.Sequence, Flags> builder = BiStream.builder();
+    collectSequences(root, initialFlags, builder);
+    return builder.build();
+  }
+
+  private static void collectSequences(
+      RegexPattern node, Flags flags, BiStream.Builder<RegexPattern.Sequence, Flags> builder) {
+    switch (node) {
+      case RegexPattern.Sequence seq -> {
+        builder.add(seq, flags);
+        List<Flags> flagsAt = flagsAt(seq.elements(), flags);
+        for (int i = 0; i < seq.elements().size(); i++) {
+          collectSequences(seq.elements().get(i), flagsAt.get(i), builder);
+        }
+      }
+      case RegexPattern.Group.NonCapturing g -> collectSequences(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), builder);
+      default -> childrenOf(node).forEach(child -> collectSequences(child, flags, builder));
+    }
+  }
+
+  /** Every quantified node under {@code root}, paired with the modifier flags in effect at it. */
+  static BiStream<RegexPattern.Quantified, Flags> quantifiedIn(
+      RegexPattern root, Flags initialFlags) {
+    BiStream.Builder<RegexPattern.Quantified, Flags> builder = BiStream.builder();
+    collectQuantified(root, initialFlags, builder);
+    return builder.build();
+  }
+
+  private static void collectQuantified(
+      RegexPattern node, Flags flags, BiStream.Builder<RegexPattern.Quantified, Flags> builder) {
+    switch (node) {
+      case RegexPattern.Quantified q -> {
+        builder.add(q, flags);
+        collectQuantified(q.element(), flags, builder);
+      }
+      case RegexPattern.Sequence seq -> {
+        List<Flags> flagsAt = flagsAt(seq.elements(), flags);
+        for (int i = 0; i < seq.elements().size(); i++) {
+          collectQuantified(seq.elements().get(i), flagsAt.get(i), builder);
+        }
+      }
+      case RegexPattern.Group.NonCapturing g -> collectQuantified(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), builder);
+      default -> childrenOf(node).forEach(child -> collectQuantified(child, flags, builder));
+    }
+  }
+
+  /** Every lookaround node under {@code root}, paired with the modifier flags in effect at it. */
+  static BiStream<RegexPattern.Lookaround, Flags> lookaroundsIn(
+      RegexPattern root, Flags initialFlags) {
+    BiStream.Builder<RegexPattern.Lookaround, Flags> builder = BiStream.builder();
+    collectLookarounds(root, initialFlags, builder);
+    return builder.build();
+  }
+
+  private static void collectLookarounds(
+      RegexPattern node, Flags flags, BiStream.Builder<RegexPattern.Lookaround, Flags> builder) {
+    switch (node) {
+      case RegexPattern.Lookaround l -> {
+        builder.add(l, flags);
+        collectLookarounds(l.target(), flags, builder);
+      }
+      case RegexPattern.Sequence seq -> {
+        List<Flags> flagsAt = flagsAt(seq.elements(), flags);
+        for (int i = 0; i < seq.elements().size(); i++) {
+          collectLookarounds(seq.elements().get(i), flagsAt.get(i), builder);
+        }
+      }
+      case RegexPattern.Group.NonCapturing g -> collectLookarounds(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), builder);
+      default -> childrenOf(node).forEach(child -> collectLookarounds(child, flags, builder));
+    }
+  }
+
   static boolean isTerminalUnconstrainedWildcard(
       RegexPattern ei, RegexPattern ej, List<RegexPattern> subsequent) {
+    return isTerminalUnconstrainedWildcard(ei, ej, subsequent, Flags.NONE, Flags.NONE);
+  }
+
+  static boolean isTerminalUnconstrainedWildcard(
+      RegexPattern ei,
+      RegexPattern ej,
+      List<RegexPattern> subsequent,
+      Flags flagsI,
+      Flags flagsJ) {
     if (unwrapGroup(ej) instanceof RegexPattern.Quantified qj && isUnboundedQuantified(qj)) {
-      ImmutableRangeSet<Integer> charsJ = charRangesOf(qj.element());
-      if (charsJ.equals(CharRanges.ANY) || charsJ.equals(CharRanges.ANY_CHAR)) {
-        ImmutableRangeSet<Integer> charsI = charRangesOf(ei);
-        boolean eiIsAny = charsI.equals(CharRanges.ANY) || charsI.equals(CharRanges.ANY_CHAR);
+      ImmutableRangeSet<Integer> charsJ = charRangesOf(qj.element(), flagsJ);
+      if (charsJ.equals(CharRanges.ANY)) {
+        ImmutableRangeSet<Integer> charsI = charRangesOf(ei, flagsI);
+        boolean eiIsAny = charsI.equals(CharRanges.ANY);
         if (!eiIsAny) {
           return subsequent.stream().noneMatch(RegexPatternUtils::hasAnchorOrConstraint);
         }
@@ -86,92 +243,150 @@ public final class RegexPatternUtils {
   }
 
   static boolean isReluctantBoundedBy(RegexPattern.Quantified q, List<RegexPattern> subsequent) {
+    return isReluctantBoundedBy(q, subsequent, Flags.NONE);
+  }
+
+  static boolean isReluctantBoundedBy(
+      RegexPattern.Quantified q, List<RegexPattern> subsequent, Flags flags) {
     return q.quantifier().isReluctant()
         && subsequent.stream()
             .map(RegexPatternUtils::unwrapGroup)
             .filter(next -> next.metadata().minSize() > 0)
-            .map(RegexPatternUtils::firstCharRangesOf)
+            .map(next -> firstCharRangesOf(next, flags))
             .filter(nextChars -> !nextChars.isEmpty())
-            .anyMatch(
-                nextChars -> !CharRanges.intersects(firstCharRangesOf(q.element()), nextChars));
+            .anyMatch(nextChars ->
+                !CharRanges.intersects(firstCharRangesOf(q.element(), flags), nextChars));
   }
 
   static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern) {
-    return switch (pattern) {
+    return firstCharRangesOf(pattern, Flags.NONE);
+  }
+
+  static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern, Flags flags) {
+    RangeSet<Integer> acc = TreeRangeSet.create();
+    collectFirstCharRanges(pattern, flags, acc);
+    return ImmutableRangeSet.copyOf(acc);
+  }
+
+  private static void collectFirstCharRanges(
+      RegexPattern pattern, Flags flags, RangeSet<Integer> acc) {
+    switch (pattern) {
       case RegexPattern.Sequence seq -> {
-        ImmutableRangeSet<Integer> res = CharRanges.EMPTY;
-        for (RegexPattern elem : seq.elements()) {
-          res = CharRanges.union(res, firstCharRangesOf(elem));
+        List<Flags> flagsAt = flagsAt(seq.elements(), flags);
+        for (int i = 0; i < seq.elements().size(); i++) {
+          RegexPattern elem = seq.elements().get(i);
+          collectFirstCharRanges(elem, flagsAt.get(i), acc);
           if (elem.metadata().minSize() > 0) {
             break;
           }
         }
-        yield res;
       }
-      case RegexPattern.Alternation alt -> alt.alternatives().stream()
-          .map(RegexPatternUtils::firstCharRangesOf)
-          .reduce(CharRanges.EMPTY, CharRanges::union);
-      case RegexPattern.Quantified q -> firstCharRangesOf(q.element());
-      case RegexPattern.Group group -> firstCharRangesOf(group.content());
-      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
-      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.Literal lit ->
-          lit.value().isEmpty() ? CharRanges.EMPTY : CharRanges.of(lit.value().charAt(0));
-      default -> CharRanges.EMPTY;
-    };
+      case RegexPattern.Alternation alt -> {
+        for (RegexPattern alternative : alt.alternatives()) {
+          collectFirstCharRanges(alternative, flags, acc);
+        }
+      }
+      case RegexPattern.Quantified q -> collectFirstCharRanges(q.element(), flags, acc);
+      case RegexPattern.Group.NonCapturing g -> collectFirstCharRanges(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), acc);
+      case RegexPattern.Group group -> collectFirstCharRanges(group.content(), flags, acc);
+      case RegexPattern.CharSetElement cse -> acc.addAll(CharRanges.from(cse, flags));
+      case RegexPattern.Literal lit -> {
+        if (!lit.value().isEmpty()) {
+          acc.addAll(flags.fold(CharRanges.of(lit.value().codePointAt(0))));
+        }
+      }
+      default -> {}
+    }
   }
 
   static boolean isUnboundedQuantified(RegexPattern pattern) {
-    return unwrapGroup(pattern) instanceof RegexPattern.Quantified q
-        && !q.quantifier().isPossessive()
+    return unwrapGroup(pattern) instanceof RegexPattern.Quantified q && isUnbounded(q);
+  }
+
+  static boolean isUnbounded(RegexPattern.Quantified q) {
+    return !q.quantifier().isPossessive()
         && switch (q.quantifier()) {
           case RegexPattern.AtLeast atLeast -> true;
-          case RegexPattern.Limited limited -> limited.max() > 5;
-          default -> false;
+          case RegexPattern.Limited limited ->
+              limited.max() > MAX_BOUNDED_REPETITIONS
+                  && (limited.min() < limited.max()
+                      || q.element().metadata().minSize() < q.element().metadata().maxSize()
+                      || hasInternalBranching(q.element()));
+          case RegexPattern.AtMost atMost -> atMost.max() > MAX_BOUNDED_REPETITIONS;
         };
   }
 
+  private static boolean hasInternalBranching(RegexPattern pattern) {
+    return Walker.inTree(RegexPatternUtils::childrenOf)
+        .preOrderFrom(pattern)
+        .anyMatch(
+            node ->
+                node instanceof RegexPattern.Alternation
+                    || node instanceof RegexPattern.Quantified);
+  }
+
   static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern) {
-    return switch (pattern) {
-      case RegexPattern.Sequence seq -> seq.elements().stream()
-          .map(RegexPatternUtils::charRangesOf)
-          .reduce(CharRanges.EMPTY, CharRanges::union);
-      case RegexPattern.Alternation alt -> alt.alternatives().stream()
-          .map(RegexPatternUtils::charRangesOf)
-          .reduce(CharRanges.EMPTY, CharRanges::union);
-      case RegexPattern.Quantified q -> charRangesOf(q.element());
-      case RegexPattern.Group group -> charRangesOf(group.content());
-      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
-      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.Literal lit ->
-          lit.value().chars().mapToObj(CharRanges::of).reduce(CharRanges.EMPTY, CharRanges::union);
-      default -> CharRanges.EMPTY;
-    };
+    return charRangesOf(pattern, Flags.NONE);
+  }
+
+  static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern, Flags flags) {
+    RangeSet<Integer> acc = TreeRangeSet.create();
+    collectCharRanges(pattern, flags, acc);
+    return ImmutableRangeSet.copyOf(acc);
+  }
+
+  private static void collectCharRanges(
+      RegexPattern pattern, Flags flags, RangeSet<Integer> acc) {
+    switch (pattern) {
+      case RegexPattern.Sequence seq -> {
+        List<Flags> flagsAt = flagsAt(seq.elements(), flags);
+        for (int i = 0; i < seq.elements().size(); i++) {
+          collectCharRanges(seq.elements().get(i), flagsAt.get(i), acc);
+        }
+      }
+      case RegexPattern.Alternation alt -> {
+        for (RegexPattern alternative : alt.alternatives()) {
+          collectCharRanges(alternative, flags, acc);
+        }
+      }
+      case RegexPattern.Quantified q -> collectCharRanges(q.element(), flags, acc);
+      case RegexPattern.Group.NonCapturing g -> collectCharRanges(
+          g.content(), flags.updated(g.enabledModifierFlags(), g.disabledModifierFlags()), acc);
+      case RegexPattern.Group group -> collectCharRanges(group.content(), flags, acc);
+      case RegexPattern.CharSetElement cse -> acc.addAll(CharRanges.from(cse, flags));
+      case RegexPattern.Literal lit -> {
+        RangeSet<Integer> litRanges = TreeRangeSet.create();
+        lit.value().codePoints().forEach(cp -> litRanges.add(Range.closedOpen(cp, cp + 1)));
+        acc.addAll(flags.fold(ImmutableRangeSet.copyOf(litRanges)));
+      }
+      default -> {}
+    }
   }
 
   public static List<RegexPattern.Group> capturingGroupsIn(RegexPattern root) {
     return Walker.inTree(RegexPatternUtils::childrenOf)
         .preOrderFrom(root)
         .filter(
-            p -> p instanceof RegexPattern.Group.Capturing || p instanceof RegexPattern.Group.Named)
+            node ->
+                node instanceof RegexPattern.Group.Capturing
+                    || node instanceof RegexPattern.Group.Named)
         .map(RegexPattern.Group.class::cast)
         .toList();
   }
 
   static boolean referencesGroup(
       RegexPattern.Backreference backref,
-      RegexPattern.Group group,
-      List<RegexPattern.Group> allGroups) {
+      RegexPattern.Group targetGroup,
+      List<RegexPattern.Group> allCapturingGroups) {
     return switch (backref) {
-      case RegexPattern.Backreference.Numbered num -> {
-        int index = num.groupNumber() - 1;
-        yield index >= 0 && index < allGroups.size() && allGroups.get(index).equals(group);
-      }
+      case RegexPattern.Backreference.Numbered num ->
+          num.groupNumber() >= 1
+              && num.groupNumber() <= allCapturingGroups.size()
+              && allCapturingGroups.get(num.groupNumber() - 1) == targetGroup;
       case RegexPattern.Backreference.Named named ->
-          group instanceof RegexPattern.Group.Named namedGroup
-              && namedGroup.name().equals(named.groupName());
+          targetGroup instanceof RegexPattern.Group.Named targetNamed
+              && targetNamed.name().equals(named.groupName());
     };
   }
 

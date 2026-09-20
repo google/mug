@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,6 +49,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @After public void cleanDb() throws Exception {
     SafeSql.of("TRUNCATE TABLE ITEMS").update(connection());
+    SafeSql.of("TRUNCATE TABLE EVENTS").update(connection());
   }
 
   @Override protected DataSource getDataSource() {
@@ -69,6 +71,46 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @Override protected DatabaseOperation getTearDownOperation() {
       return DatabaseOperation.TRUNCATE_TABLE;
+  }
+
+  @Test public void uuidRoundtrip() throws Exception {
+    UUID id = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    assertThat(
+            SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", id, "launch")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select name from EVENTS where id = {id}", id)
+                .query(connection(), String.class))
+        .containsExactly("launch");
+    assertThat(queryColumn(SafeSql.of("select id from EVENTS"), "id")).containsExactly(id);
+  }
+
+  @Test public void uuidGuardPlaceholder_present() throws Exception {
+    UUID launchId = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    UUID shipId = UUID.fromString("a2b3c4d5-6e7f-4081-9a2b-3c4d5e6f7081");
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", launchId, "launch")
+        .update(connection());
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", shipId, "ship")
+        .update(connection());
+    assertThat(
+            SafeSql.of("select name from EVENTS where 1 = 1 {id? -> AND id = id?}", launchId)
+                .query(connection(), String.class))
+        .containsExactly("launch");
+  }
+
+  @Test public void uuidGuardPlaceholder_absent() throws Exception {
+    UUID launchId = UUID.fromString("d1f0b9a2-3c4e-4f5a-8b6c-7d8e9f0a1b2c");
+    UUID shipId = UUID.fromString("a2b3c4d5-6e7f-4081-9a2b-3c4d5e6f7081");
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", launchId, "launch")
+        .update(connection());
+    SafeSql.of("insert into EVENTS(id, name) VALUES({id}, {name})", shipId, "ship")
+        .update(connection());
+    UUID id = null;
+    assertThat(
+            SafeSql.of("select name from EVENTS where 1 = 1 {id? -> AND id = id?}", id)
+                .query(connection(), String.class))
+        .containsExactly("launch", "ship");
   }
 
   @Test public void roundtrip() throws Exception {
@@ -205,6 +247,46 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("foo");
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "f", testId()), "title"))
+        .isEmpty();
+  }
+
+  @Test public void ilikeExpressionIsCaseInsensitiveAndEscapesWildcards() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "FooBar")
+                .update(connection()))
+        .isEqualTo(1);
+    // ILIKE matches case-insensitively...
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title ilike '%{...}%' and id = {id}",
+                "oobar", testId()), "title"))
+        .containsExactly("FooBar");
+    // ...unlike LIKE, which is case-sensitive.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}",
+                "oobar", testId()), "title"))
+        .isEmpty();
+    // The '%' in the value is escaped, so it does not act as a wildcard.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title ilike '%{...}%' and id = {id}",
+                "oo%Ba", testId()), "title"))
+        .isEmpty();
+  }
+
+  @Test public void likeExpressionWithoutWildcardInSql_callerWildcardStaysLive()
+      throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    // No wildcard in the template: the caller's '%' is honored rather than escaped.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}' and id = {id}",
+                "fo%", testId()), "title"))
+        .containsExactly("foo");
+    // Contrast: with a wildcard in the template the same value is matched literally.
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}",
+                "fo%", testId()), "title"))
         .isEmpty();
   }
 
@@ -685,6 +767,17 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("id");
   }
 
+  @Test public void query_withResultType_canonicalNameCollision_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), WithCanonicalNameCollision.class));
+    assertThat(thrown).hasMessageThat().contains("itemUuid");
+    assertThat(thrown).hasMessageThat().contains("item_uuid");
+    assertThat(thrown).hasMessageThat().contains("ITEM_UUID");
+    assertThat(thrown).hasMessageThat().contains("WithCanonicalNameCollision");
+  }
+
   @Test public void query_withResultType_emptyColumnName_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
@@ -1015,6 +1108,40 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(template.with("foo", testId())).containsExactly(new Item(testId(), "foo"));
   }
 
+  @Test public void query_withConstructor_camelCaseParameterName() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, item_uuid) VALUES({id}, {title}, {uuid})",
+                    testId(), /* title */ "bar", /* uuid */ "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), UuidItem.class))
+        .containsExactly(new UuidItem(testId(), "uuid"));
+  }
+
+  static class UuidItem {
+    private final int id;
+    private final String itemUuid;
+
+    UuidItem(int id, String itemUuid) {
+      this.id = id;
+      this.itemUuid = itemUuid;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", itemUuid=" + itemUuid;
+    }
+  }
+
   static class Item {
     private final int id;
     private final String title;
@@ -1073,6 +1200,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   static class WithDuplicateColumnNames {
     WithDuplicateColumnNames(@SqlName("id") int id, @SqlName("id") String id2) {}
+  }
+
+  static class WithCanonicalNameCollision {
+    WithCanonicalNameCollision(String itemUuid, @SqlName("item_uuid") String uuid) {}
   }
 
   static class WithEmptyColumnName {

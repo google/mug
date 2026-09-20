@@ -15,12 +15,16 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
 import static java.lang.Math.min;
+import static java.util.Collections.unmodifiableSet;
 
 import com.google.errorprone.annotations.FormatMethod;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -32,7 +36,6 @@ class Utils {
     }
   }
 
-  @FormatMethod
   static void checkState(boolean condition, String message) {
     if (!condition) {
       throw new IllegalStateException(message);
@@ -74,5 +77,25 @@ class Utils {
       }
     }.from(0);
     return prefixes;
+  }
+
+  /**
+   * Returns a prefix-free set of prefixes where no string is a prefix of any other string in the
+   * set (e.g. {@code ["a", "ab"]} reduces to {@code ["a"]}).
+   *
+   * <p>If any prefix is empty ({@code ""}), returns {@code Set.of("")} because an empty prefix
+   * matches any input and subsumes all other prefixes.
+   */
+  static Set<String> toPrefixFreeSet(Stream<String> prefixes) {
+    List<String> result = new ArrayList<>();
+    for (String prefix : iterateOnce(prefixes.sorted())) {
+      if (prefix.isEmpty()) {
+        return Set.of("");
+      }
+      if (result.isEmpty() || !prefix.startsWith(result.getLast())) {
+        result.add(prefix);
+      }
+    }
+    return unmodifiableSet(new LinkedHashSet<>(result));
   }
 }

@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -166,5 +167,56 @@ public final class PrefixSearchTableTest {
         PrefixSearchTable.<Integer, String>builder().build().toBuilder().build();
     assertThat(table.getAll(asList(1)).toMap()).isEmpty();
     assertThat(table.get(asList(1))).isEmpty();
+  }
+
+  @Test
+  public void addAll_iterableKeysWithSameValue() {
+    PrefixSearchTable<Integer, String> table =
+        PrefixSearchTable.<Integer, String>builder()
+            .addAll(asList(asList(1, 2), asList(3, 4)), "shared")
+            .build();
+    assertThat(table.get(asList(1, 2, 5))).hasValue("shared");
+    assertThat(table.get(asList(3, 4))).hasValue("shared");
+  }
+
+  @Test
+  public void addAll_emptyIterable() {
+    PrefixSearchTable<Integer, String> table =
+        PrefixSearchTable.<Integer, String>builder()
+            .addAll(asList(), "shared")
+            .build();
+    assertThat(table.get(asList(1))).isEmpty();
+  }
+
+  @Test
+  public void addAll_nullKeysIterable_throws() {
+    PrefixSearchTable.Builder<Integer, String> builder = PrefixSearchTable.builder();
+    assertThrows(
+        NullPointerException.class,
+        () -> builder.addAll((Iterable<List<Integer>>) null, "shared"));
+  }
+
+  @Test
+  public void addAll_nullValue_throws() {
+    PrefixSearchTable.Builder<Integer, String> builder = PrefixSearchTable.builder();
+    assertThrows(
+        NullPointerException.class, () -> builder.addAll(asList(asList(1)), null));
+  }
+
+  @Test
+  public void addAll_emptyKeyInIterable_throws() {
+    PrefixSearchTable.Builder<Integer, String> builder = PrefixSearchTable.builder();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.addAll(asList(asList(1), asList()), "shared"));
+  }
+
+  @Test
+  public void addAll_conflictingValue_throws() {
+    PrefixSearchTable.Builder<Integer, String> builder = PrefixSearchTable.builder();
+    builder.add(asList(1, 2), "first");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.addAll(asList(asList(3, 4), asList(1, 2)), "second"));
   }
 }

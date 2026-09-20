@@ -20,6 +20,7 @@ import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
+import com.google.mu.util.stream.BiStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import com.google.mu.util.stream.BiStream;
 
 /**
  * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream.
@@ -184,7 +183,7 @@ public final class ShortestPath<N> {
   }
 
   private static void checkNotNegative(double value, String name) {
-    if (value < 0) throw new IllegalArgumentException(name + " cannot be negative: " + value);
+    if (!(value >= 0)) throw new IllegalArgumentException(name + " cannot be negative: " + value);
   }
 
   private static <F, T> Stream<T> mapOrNull(

@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
+import com.google.mu.util.stream.BiStream;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -47,8 +48,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.mu.util.stream.BiStream;
-
 /**
  * Utility to support <a href="https://en.wikipedia.org/wiki/Structured_concurrency">structured
  * concurrency</a> for <em>IO-bound</em> subtasks of a single unit of work, while limiting the max
@@ -66,80 +65,84 @@ import com.google.mu.util.stream.BiStream;
  * parts of one unit of work. Failure of any sub-task aborts the entire work, automatically. If an
  * exception isn't fatal, the sub-task should catch and handle it.
  *
- * <p>How does it stack against parallel stream itself?
- * The parallel stream counterpart to the above example use case may look like:
- * <pre>  {@code
- *   userDataStream.filter(UserData::isModified).parallel().forEach(userService::save);
+ * <p>How does it stack against parallel stream itself? The parallel stream counterpart to the above
+ * example use case may look like:
+ *
+ * <pre>{@code
+ * userDataStream.filter(UserData::isModified).parallel().forEach(userService::save);
  * }</pre>
  *
- * A few key differences: <ul>
- * <li>A parallel stream doesn't use arbitrary {@link ExecutorService}. It by default uses
- *     either the enclosing {@link ForkJoinPool} or the common {@code ForkJoinPool} instance.
- * <li>By running in a dedicated {@link ForkJoinPool}, a parallel stream can take a custom target
- *     concurrency, but it's not guaranteed to be <em>max</em> concurrency.
- * <li>Parallel streams are for CPU-bound computations; while {@code Parallelizer} deals with
- *     IO-bound operations.
- * <li>{@link #parallelize parallelize()} can be interrupted, and can time out;
- *     parallel streams are uninterruptible.
- * <li>When a task throws, {@code Parallelizer} dismisses pending tasks, and cancels all in-flight
- *     tasks (it's up to the user code to properly handle thread interruptions).
- *     So if a worker thread is waiting on some resource, it'll be interrupted without hanging
- *     the thread forever.
- * <li>{@code Parallelizer} wraps exceptions thrown by the worker threads, making stack trace
- *     clearer.
+ * A few key differences:
+ *
+ * <ul>
+ *   <li>A parallel stream doesn't use arbitrary {@link ExecutorService}. It by default uses either
+ *       the enclosing {@link ForkJoinPool} or the common {@code ForkJoinPool} instance.
+ *   <li>By running in a dedicated {@link ForkJoinPool}, a parallel stream can take a custom target
+ *       concurrency, but it's not guaranteed to be <em>max</em> concurrency.
+ *   <li>Parallel streams are for CPU-bound computations; while {@code Parallelizer} deals with
+ *       IO-bound operations.
+ *   <li>{@link #parallelize parallelize()} can be interrupted, and can time out; parallel streams
+ *       are uninterruptible.
+ *   <li>When a task throws, {@code Parallelizer} dismisses pending tasks, and cancels all in-flight
+ *       tasks (it's up to the user code to properly handle thread interruptions). So if a worker
+ *       thread is waiting on some resource, it'll be interrupted without hanging the thread
+ *       forever.
+ *   <li>{@code Parallelizer} wraps exceptions thrown by the worker threads, making stack trace
+ *       clearer.
  * </ul>
  *
- * <p>And how do you choose between {@code Parallelizer} and {@link ExecutorService}?
- * Could you use something like the following instead?
- * <pre>  {@code
- *   ExecutorService pool = Executors.newFixedThreadPool(3);
- *   try {
- *     List<Future<?>> futures = userData
- *         .filter(...)
- *         .map(() -> pool.submit(() -> userService.save(data)))
- *         .collect(toList());
- *     for (Future<?> future : futures) {
- *       future.get();
- *     }
- *   } finally {
- *     pool.shutdownNow();
+ * <p>And how do you choose between {@code Parallelizer} and {@link ExecutorService}? Could you use
+ * something like the following instead?
+ *
+ * <pre>{@code
+ * ExecutorService pool = Executors.newFixedThreadPool(3);
+ * try {
+ *   List<Future<?>> futures = userData
+ *       .filter(...)
+ *       .map(() -> pool.submit(() -> userService.save(data)))
+ *       .collect(toList());
+ *   for (Future<?> future : futures) {
+ *     future.get();
  *   }
+ * } finally {
+ *   pool.shutdownNow();
+ * }
  * }</pre>
  *
- * Some differences for consideration:<ul>
- * <li><b>Memory Concern</b>
- *     <ul>
- *     <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
- *         of thousands of task input data from a file), it can run out of memory quickly.
- *      <li>Storing all the future objects in a list may also use up too much memory for large
- *          number of sub tasks.
- *     </ul>
- * <li><b>Exception Handling (and fail fast)</b>
- *     <ul>
- *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
- *         won't be affected.
+ * Some differences for consideration:
  *
- *         <p>But for co-dependent sub tasks that were parallelized only for performance reasons
- *         (as in parallel streams), you'll want to abort the whole parallel pipeline upon any
- *         critical exception, the same as if they were run sequentially.
- *
- *         <p>Aborting a parallel pipeline requires complex concurrent logic to coordinate between
- *         the sub tasks and the executor in order to dismiss pending sub tasks and also to cancel
- *         sub tasks that are already running. Otherwise, when an exception is thrown from a sub
- *         task, the other left-over sub tasks will continue to run, some may even hang
- *         indefinitely.
- *     <li>Automatic cancellation propagation. When {@link #parallelize parallelize()} is
- *         interrupted, all running tasks will be automatically canceled; all pending tasks
- *         automatically dismissed.
- *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
- *         left-over sub tasks). Although even knowing whether a sub task has failed isn't trivial.
- *         The above code example uses {@link Future#get}, but it won't help if a sub task
- *         submitted earlier is still running or being blocked, while a later-submitted sub task
- *         has failed.
- *     <li>And, {@code ExecutorService}s are often set up centrally and shared among different
- *         classes and components in the application. You may not have the option to create and
- *         shut down a thread pool of your own.
- *     </ul>
+ * <ul>
+ *   <li><b>Memory Concern</b>
+ *       <ul>
+ *         <li>The thread pool queues all pending tasks. For large streams (like reading hundreds of
+ *             thousands of task input data from a file), it can run out of memory quickly.
+ *         <li>Storing all the future objects in a list may also use up too much memory for large
+ *             number of sub tasks.
+ *       </ul>
+ *   <li><b>Exception Handling (and fail fast)</b>
+ *       <ul>
+ *         <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
+ *             won't be affected.
+ *             <p>But for co-dependent sub tasks that were parallelized only for performance reasons
+ *             (as in parallel streams), you'll want to abort the whole parallel pipeline upon any
+ *             critical exception, the same as if they were run sequentially.
+ *             <p>Aborting a parallel pipeline requires complex concurrent logic to coordinate
+ *             between the sub tasks and the executor in order to dismiss pending sub tasks and also
+ *             to cancel sub tasks that are already running. Otherwise, when an exception is thrown
+ *             from a sub task, the other left-over sub tasks will continue to run, some may even
+ *             hang indefinitely.
+ *         <li>Automatic cancellation propagation. When {@link #parallelize parallelize()} is
+ *             interrupted, all running tasks will be automatically canceled; all pending tasks
+ *             automatically dismissed.
+ *         <li>You may resort to shutting down the executor to achieve similar result (cancelling
+ *             the left-over sub tasks). Although even knowing whether a sub task has failed isn't
+ *             trivial. The above code example uses {@link Future#get}, but it won't help if a sub
+ *             task submitted earlier is still running or being blocked, while a later-submitted sub
+ *             task has failed.
+ *         <li>And, {@code ExecutorService}s are often set up centrally and shared among different
+ *             classes and components in the application. You may not have the option to create and
+ *             shut down a thread pool of your own.
+ *       </ul>
  * </ul>
  *
  * <p>Stream parameters used in this class are always consumed in the calling thread and don't have
@@ -154,23 +157,27 @@ public final class Parallelizer {
   private final int maxConcurrency;
 
   /**
-   * Constructs a {@code Parallelizer} that runs tasks with {@code executor}.
-   * At any given time, at most {@code maxConcurrency} tasks are allowed to be submitted to
-   * {@code executor}.
+   * Constructs a {@code Parallelizer} that runs tasks with {@code executor}. For each {@link
+   * #parallelize} or {@link #inParallel} invocation, at most {@code maxConcurrency} tasks are
+   * allowed to be in flight (submitted to {@code executor} and not yet completed) at any given
+   * time.
    *
-   * <p>Note that a task being submitted to {@code executor} doesn't guarantee immediate
-   * execution, if for example all worker threads in {@code executor} are busy.
+   * <p>Note that {@code maxConcurrency} is enforced per invocation rather than across concurrent
+   * invocations on the same {@code Parallelizer} instance, and that a task being submitted to
+   * {@code executor} doesn't guarantee immediate execution if, for example, all worker threads in
+   * {@code executor} are busy.
    */
   public Parallelizer(ExecutorService executor, int maxConcurrency) {
     this.executor = requireNonNull(executor);
     this.maxConcurrency = maxConcurrency;
-    if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency = " + maxConcurrency);
+    if (maxConcurrency <= 0)
+      throw new IllegalArgumentException("maxConcurrency = " + maxConcurrency);
   }
 
   /**
    * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
-   * finished, or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+   * returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -178,15 +185,15 @@ public final class Parallelizer {
    * @param consumer to be parallelized
    * @throws InterruptedException if the thread is interrupted while waiting.
    */
-  public <T> void parallelize(Stream<? extends T> inputs, Consumer<? super T> consumer)
-      throws InterruptedException {
+  public <T> void parallelize(
+      Stream<? extends T> inputs, Consumer<? super T> consumer) throws InterruptedException {
     parallelize(forAll(inputs, consumer));
   }
 
   /**
    * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
-   * finished, or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+   * returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -194,8 +201,8 @@ public final class Parallelizer {
    * @param consumer to be parallelized
    * @throws InterruptedException if the thread is interrupted while waiting.
    */
-  public <T> void parallelize(Iterator<? extends T> inputs, Consumer<? super T> consumer)
-      throws InterruptedException {
+  public <T> void parallelize(
+      Iterator<? extends T> inputs, Consumer<? super T> consumer) throws InterruptedException {
     parallelize(stream(inputs), consumer);
   }
 
@@ -213,8 +220,7 @@ public final class Parallelizer {
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Stream<? extends T> inputs, Consumer<? super T> consumer,
-      Duration heartbeatTimeout)
+      Stream<? extends T> inputs, Consumer<? super T> consumer, Duration heartbeatTimeout)
       throws TimeoutException, InterruptedException {
     parallelize(inputs, consumer, heartbeatTimeout.toMillis(), TimeUnit.MILLISECONDS);
   }
@@ -234,8 +240,8 @@ public final class Parallelizer {
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Stream<? extends T> inputs, Consumer<? super T> consumer,
-      long heartbeatTimeout, TimeUnit timeUnit)
+      Stream<? extends T> inputs, Consumer<? super T> consumer, long heartbeatTimeout,
+      TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
     parallelize(forAll(inputs, consumer), heartbeatTimeout, timeUnit);
   }
@@ -254,8 +260,7 @@ public final class Parallelizer {
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Iterator<? extends T> inputs, Consumer<? super T> consumer,
-      Duration heartbeatTimeout)
+      Iterator<? extends T> inputs, Consumer<? super T> consumer, Duration heartbeatTimeout)
       throws TimeoutException, InterruptedException {
     parallelize(inputs, consumer, heartbeatTimeout.toMillis(), TimeUnit.MILLISECONDS);
   }
@@ -275,16 +280,16 @@ public final class Parallelizer {
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Iterator<? extends T> inputs, Consumer<? super T> consumer,
-      long heartbeatTimeout, TimeUnit timeUnit)
+      Iterator<? extends T> inputs, Consumer<? super T> consumer, long heartbeatTimeout,
+      TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
     parallelize(stream(inputs), consumer, heartbeatTimeout, timeUnit);
   }
 
   /**
-   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until
-   * either all tasks have finished, or any exception is thrown upon which all pending tasks are
-   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until either
+   * all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -297,9 +302,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until
-   * either all tasks have finished, or any exception is thrown upon which all pending tasks are
-   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until either
+   * all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -312,9 +317,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel and blocks until either all tasks have finished,
-   * or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks until either all tasks have finished, or any
+   * exception is thrown upon which all pending tasks are canceled (but the method returns without
+   * waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
@@ -329,9 +334,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel and blocks uninterruptibly until either all tasks have finished,
-   * timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks until either all tasks have finished, timeout is
+   * triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+   * returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
@@ -347,9 +352,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel and blocks uninterruptibly until either all tasks have finished,
-   * timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks until either all tasks have finished, timeout is
+   * triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+   * returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
@@ -380,8 +385,8 @@ public final class Parallelizer {
 
   /**
    * Runs {@code tasks} in parallel and blocks uninterruptibly until either all tasks have finished,
-   * or any exception is thrown upon which all pending tasks are canceled
-   * (but the method returns without waiting for the tasks to respond to cancellation).
+   * or any exception is thrown upon which all pending tasks are canceled (but the method returns
+   * without waiting for the tasks to respond to cancellation).
    */
   public void parallelizeUninterruptibly(Stream<? extends Runnable> tasks) {
     Flight flight = new Flight();
@@ -461,7 +466,8 @@ public final class Parallelizer {
     private final ConcurrentMap<Object, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
 
-    void checkIn(long timeout, TimeUnit timeUnit)
+    void checkIn(
+        long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
       boolean acquired = semaphore.tryAcquire(timeout, timeUnit);
       propagateExceptions();
@@ -482,48 +488,40 @@ public final class Parallelizer {
           try {
             task.run();
           } finally {
-            done.set(true);  // A
-            onboard.remove(done);  // B
+            done.set(true); // A
+            onboard.remove(done); // B
           }
         } catch (Throwable e) {
-          ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
-          if (toPropagate == null) {
-            if (Thread.currentThread().isInterrupted()) {
-              // If we are cancelled (and interrupted), the exception is likely due to the
-              // cancellation. Don't log the noisy stack trace.
-              logger.info(
-                  String.format(
-                      "worker thread (%s) interrupted - %s",
-                      Thread.currentThread().getName(), e.getMessage()));
+          boolean orphan;
+          synchronized (Flight.this) {
+            if (thrown != null) {
+              thrown.add(e);
+              orphan = false;
             } else {
-              // The main thread propagates exceptions as soon as any task fails.
-              // If a task did not respond in time and yet fails afterwards, the main thread has
-              // already thrown and nothing will propagate this exception.
-              // So just log it as best effort.
-              logger.log(Level.WARNING, "Orphan task failure", e);
+              orphan = true;
             }
-          } else {
-            // Upon race condition, the exception may be added while the main thread is propagating.
-            // It's ok though since the best we could have done is logging.
-            toPropagate.add(e);
+          }
+          if (orphan) {
+            logOrphanFailure(e);
           }
         } finally {
           semaphore.release();
         }
       });
-      onboard.put(done, future);  // C
+      onboard.put(done, future); // C
       checkInFlight();
       // A <: B, C <: D <: E
       // if B <: C => A <: C => done == true => put() <: remove()
       // if C <: B => put() <: remove()
       // remove() could be executed more than once, but it's idempotent.
-      if (done.get()) {  // D
-        onboard.remove(done);  // E
+      if (done.get()) { // D
+        onboard.remove(done); // E
       }
       propagateExceptions();
     }
 
-    void land(long timeout, TimeUnit timeUnit)
+    void land(
+        long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
       for (int i = freeze(); i > 0; i--) checkIn(timeout, timeUnit);
     }
@@ -533,6 +531,14 @@ public final class Parallelizer {
     }
 
     void cancel() {
+      List<Throwable> unpropagated;
+      synchronized (this) {
+        unpropagated = thrown == null ? Collections.emptyList() : new ArrayList<>(thrown);
+        thrown = null;
+      }
+      for (Throwable e : unpropagated) {
+        logOrphanFailure(e);
+      }
       // When we cancel a scheduled-but-not-executed task, we'll leave the semaphore unreleased.
       // But it's okay because the only time we cancel is when we are aborting the whole pipeline
       // and nothing will use the semaphore after that.
@@ -547,16 +553,25 @@ public final class Parallelizer {
     /** If any task has thrown, propagate all task exceptions. */
     private void propagateExceptions() {
       ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
+      if (toPropagate == null || toPropagate.isEmpty()) {
+        return;
+      }
       RuntimeException wrapperException = null;
-      for (Throwable exception : toPropagate) {
-        if (wrapperException == null) {
-          wrapperException = new UncheckedExecutionException(exception);
-        } else {
-          wrapperException.addSuppressed(exception);
+      synchronized (this) {
+        toPropagate = thrown;
+        if (toPropagate == null) {
+          return;
         }
+        for (Throwable exception : toPropagate) {
+          if (wrapperException == null) {
+            wrapperException = new UncheckedExecutionException(exception);
+          } else {
+            wrapperException.addSuppressed(exception);
+          }
+        }
+        thrown = null;
       }
       if (wrapperException != null) {
-        thrown = null;
         throw wrapperException;
       }
     }
@@ -566,13 +581,43 @@ public final class Parallelizer {
       propagateExceptions();
       return remaining;
     }
+
+    private void logOrphanFailure(Throwable e) {
+      if (Thread.currentThread().isInterrupted() || isCausedByInterruption(e)) {
+        // If we are cancelled (and interrupted), the exception is likely due to the
+        // cancellation. Don't log the noisy stack trace.
+        logger.info(
+            String.format(
+                "worker thread (%s) interrupted - %s",
+                Thread.currentThread().getName(), e.getMessage()));
+      } else {
+        // The main thread propagates exceptions as soon as any task fails.
+        // If a task did not respond in time and yet fails afterwards, the main thread has
+        // already thrown and nothing will propagate this exception.
+        // So just log it as best effort.
+        logger.log(Level.WARNING, "Orphan task failure", e);
+      }
+    }
+
+    private boolean isCausedByInterruption(Throwable e) {
+      for (int depth = 0; e != null && depth < 100; e = e.getCause(), depth++) {
+        if (e instanceof InterruptedException
+            || e instanceof StructuredConcurrencyInterruptedException) {
+          return true;
+        }
+      }
+      return false;
+    }
   }
 
   static final class VirtualThread {
     static final ExecutorService executor;
+
     static {
       try {
-        executor = (ExecutorService) Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
+        executor =
+            (ExecutorService)
+                Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
         throw new LinkageError(e.getMessage(), e);
       }
@@ -584,6 +629,7 @@ public final class Parallelizer {
     UncheckedExecutionException(Throwable cause) {
       super(cause);
     }
+
     private static final long serialVersionUID = 1L;
   }
 

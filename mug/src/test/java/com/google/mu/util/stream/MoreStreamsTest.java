@@ -27,10 +27,16 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.testing.NullPointerTester;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -39,15 +45,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class MoreStreamsTest {
@@ -71,6 +71,18 @@ public class MoreStreamsTest {
     Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
     assertThat(generated.limit(10).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+  }
+
+  @Test public void generate_closesConsumedFanoutStreams() {
+    List<String> closed = new ArrayList<>();
+    assertThat(MoreStreams.generate(
+            1,
+            i -> i == 1
+                ? Stream.of(2, 3).onClose(() -> closed.add("fanout"))
+                : Stream.empty())
+        .collect(toList()))
+        .containsExactly(1, 2, 3).inOrder();
+    assertThat(closed).containsExactly("fanout");
   }
 
   @Test public void generateInfiniteStreamWithGuavaIterablesLimit() throws Exception {
@@ -255,6 +267,30 @@ public class MoreStreamsTest {
     assertThat(list).containsExactly(1, 3).inOrder();;
   }
 
+  @Test public void withSideEffect_closesInputWithoutTraversal() {
+    List<String> closed = new ArrayList<>();
+    List<Integer> seen = new ArrayList<>();
+    Stream<Integer> stream = MoreStreams.withSideEffect(
+        Stream.of(1, 2).onClose(() -> closed.add("input")), seen::add);
+    assertThat(closed).isEmpty();
+    stream.close();
+    stream.close();
+    assertThat(closed).containsExactly("input");
+    assertThat(seen).isEmpty();
+  }
+
+  @Test public void withSideEffect_closesInputAfterShortCircuit() {
+    List<String> closed = new ArrayList<>();
+    List<Integer> seen = new ArrayList<>();
+    try (Stream<Integer> stream = MoreStreams.withSideEffect(
+        Stream.of(1, 2).onClose(() -> closed.add("input")), seen::add)) {
+      assertThat(stream.limit(1).collect(toList())).containsExactly(1);
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
+    assertThat(seen).containsExactly(1);
+  }
+
   @Test public void withSideEffect_lateBinding() {
     List<Integer> source = new ArrayList<>();
     List<Integer> list = new ArrayList<>();
@@ -327,9 +363,33 @@ public class MoreStreamsTest {
 
   @Test public void consume_zero() {
     Stream<Integer> stream = Stream.of(1, 2, 3);
-    assertThat(MoreStreams.consume(stream, 0, x -> { throw new AssertionError("shouldn't be called"); }))
+    assertThat(
+            MoreStreams.consume(
+                stream, 0,
+                x -> {
+                  throw new AssertionError("shouldn't be called");
+                }))
         .containsExactly(1, 2, 3)
         .inOrder();
+  }
+
+  @Test public void consume_closeWithoutConsumingRemainder() {
+    List<String> closed = new ArrayList<>();
+    Stream<Integer> input = Stream.of(1, 2, 3).onClose(() -> closed.add("input"));
+    try (Stream<Integer> remaining = MoreStreams.consume(input, 1, x -> {})) {
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
+  }
+
+  @Test public void consume_closeAfterConsumingAllElements() {
+    List<String> closed = new ArrayList<>();
+    Stream<Integer> input = Stream.of(1, 2, 3).onClose(() -> closed.add("input"));
+    try (Stream<Integer> remaining = MoreStreams.consume(input, 3, x -> {})) {
+      assertThat(remaining).isEmpty();
+      assertThat(closed).isEmpty();
+    }
+    assertThat(closed).containsExactly("input");
   }
 
   @Test public void consume_streamReferenceNoLongerUsable() {
@@ -341,7 +401,65 @@ public class MoreStreamsTest {
   }
 
   @Test public void consume_negative() {
-    assertThrows(IllegalArgumentException.class, () -> MoreStreams.consume(Stream.of(1), -1, x -> {}));
+    assertThrows(
+        IllegalArgumentException.class, () -> MoreStreams.consume(Stream.of(1), -1, x -> {}));
+  }
+
+  @Test public void consume_remainderOfHashSet_toArray() {
+    Stream<Integer> remaining =
+        MoreStreams.consume(new HashSet<>(asList(1, 2, 3)).stream(), 1, x -> {});
+    assertThat(remaining.toArray()).asList().containsExactly(2, 3);
+  }
+
+  @Test public void consume_remainderOfHashSet_count() {
+    Stream<Integer> remaining =
+        MoreStreams.consume(new HashSet<>(asList(1, 2, 3)).stream(), 1, x -> {});
+    assertThat(remaining.count()).isEqualTo(2);
+  }
+
+  @Test public void consume_remainderOfTreeSet_preservesComparator() {
+    TreeSet<Integer> set = new TreeSet<>(Comparator.reverseOrder());
+    set.addAll(asList(1, 2, 3));
+    Stream<Integer> remaining = MoreStreams.consume(set.stream(), 1, x -> {});
+    assertThat(remaining.spliterator().getComparator()).isEqualTo(Comparator.reverseOrder());
+  }
+
+  @Test public void consume_nullConsumer_doesNotConsumeStream() {
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    assertThrows(NullPointerException.class, () -> MoreStreams.consume(stream, 1, null));
+    assertThat(stream).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_consumerThrows_closesInputStream() {
+    List<String> closed = new ArrayList<>();
+    Stream<Integer> input = Stream.of(1, 2, 3).onClose(() -> closed.add("input"));
+    assertThrows(
+        IllegalStateException.class,
+        () -> MoreStreams.consume(
+            input,
+            2,
+            x -> {
+              throw new IllegalStateException("boom");
+            }));
+    assertThat(closed).containsExactly("input");
+  }
+
+  @Test public void generate_closesUnconsumedQueuedFanoutStreamsOnShortCircuit() {
+    List<Integer> closed = new ArrayList<>();
+    try (Stream<Integer> stream =
+        MoreStreams.generate(1, i -> Stream.of(i + 1).onClose(() -> closed.add(i)))) {
+      assertThat(stream.limit(3).collect(toList())).containsExactly(1, 2, 3).inOrder();
+    }
+    assertThat(closed).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void whileNotNull_doesNotCallSupplierAfterNull() {
+    Deque<Integer> stack = new ArrayDeque<>(asList(1, 2));
+    Stream<Integer> stream = whileNotNull(() -> {
+      int top = stack.removeFirst();
+      return top == 2 ? null : top;
+    });
+    assertThat(MoreStreams.iterateOnce(stream.map(x -> x))).containsExactly(1);
   }
 
   @Test public void testGroupConsecutive_byPredicate() {

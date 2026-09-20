@@ -1837,4 +1837,144 @@ public class EmailAddressTest {
         IntStream.range(0, 1000).parallel().mapToObj(i -> address.unicodeDisplayName()).toList();
     assertThat(results.stream()).containsExactlyElementsIn(nCopies(1000, Optional.empty()));
   }
+
+  @Test public void testEmailAddressOf_quotedLocalPart_arabicLetterMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("\"john\u061Cdoe\"@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("quoted string without control or formatting chars");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_leftToRightMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u200EDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_rightToLeftMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u200FDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_quotedLocalPart_zeroWidthSpaceRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("\"john\u200Bdoe\"@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("quoted string without control or formatting chars");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_zeroWidthNonJoinerRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u200CDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_zeroWidthJoinerRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u200DDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_wordJoinerRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u2060Doe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_byteOrderMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\uFEFFDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDisplayName_softHyphenRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("John\u00ADDoe <john@example.com>"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_leadingFileSeparatorControlCharRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("\u001Cuser@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void testEmailAddressOf_leadingGroupSeparatorControlCharRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("\u001Duser@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void testEmailAddressOf_leadingRecordSeparatorControlCharRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("\u001Euser@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void testEmailAddressOf_unitSeparatorBeforeAtSignRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user\u001F@example.com"));
+    assertThat(e).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void testEmailAddressOf_verticalTabAfterAtSignRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user@\u000Bexample.com"));
+    assertThat(e).hasMessageThat().contains("1:6");
+  }
+
+  @Test public void testEmailAddressOf_trailingFormFeedRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user@example.com\f"));
+    assertThat(e).hasMessageThat().contains("1:17");
+  }
+
+  @Test public void testEmailAddressOf_domainWithLeadingCombiningMarkRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user@\u0301example.com"));
+    assertThat(e).hasMessageThat().contains("1:6");
+    assertThat(e).hasMessageThat().contains("valid domain");
+  }
+
+  @Test public void testEmailAddressOf_domainSubLabelWithLeadingCombiningMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("user@sub.\u0301example.com"));
+    assertThat(e).hasMessageThat().contains("1:6");
+    assertThat(e).hasMessageThat().contains("valid domain");
+  }
+
+  @Test public void testEmailAddressOf_twoArg_domainWithLeadingCombiningMarkRejected() {
+    IllegalArgumentException e = assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("user", "\u0301example.com"));
+    assertThat(e).hasMessageThat().contains("invalid domain");
+  }
+
+  @Test public void testEmailAddressOf_punycodeDomainWithLeadingCombiningMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("user@xn--example-sge.com"));
+    assertThat(e).hasMessageThat().contains("1:6");
+    assertThat(e).hasMessageThat().contains("valid domain");
+  }
+
+  @Test public void testEmailAddressOf_leadingEnclosingMarkRejected() {
+    Parser.ParseException e = assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.of("\"\u20DDuser\"@example.com"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("local-part cannot start with a combining mark");
+  }
+
+  @Test public void testEmailAddressOf_unquotedLocalPart_enclosingMarkRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("1\u20E3@example.com"));
+    assertThat(e).hasMessageThat().contains("1:15");
+    assertThat(e).hasMessageThat().contains("expecting <<>");
+  }
+
+  @Test public void testEmailAddressOf_unquotedDomain_enclosingMarkRejected() {
+    Parser.ParseException e =
+        assertThrows(Parser.ParseException.class, () -> EmailAddress.of("user@a\u20DD.com"));
+    assertThat(e).hasMessageThat().contains("1:12");
+    assertThat(e).hasMessageThat().contains("expecting <<>");
+  }
 }

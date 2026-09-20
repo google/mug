@@ -92,6 +92,20 @@ to ensure safety against SQL injection and maintain readability.
     ` ESCAPE '^'` to the generated SQL. Do not manually append the `ESCAPE`
     clause.
 
+    `ILIKE` (PostgreSQL, H2, CockroachDB) is recognized the same way as `LIKE`.
+
+    Escaping is triggered by the wildcards in the *template*, not by the
+    operator. A placeholder written alone (`LIKE '{placeholder}'`) is left
+    unescaped and no `ESCAPE` clause is added, because the parameter value is
+    then the pattern rather than a literal fragment of it. Use that form only
+    when the application deliberately supplies its own wildcards; prefer
+    `'%{placeholder}%'` for user-supplied search terms.
+
+    Only `%`, `_` and `^` are escaped. SQL Server's `[` character-class
+    wildcard is **not** escaped. On SQL Server, build the full pattern outside
+    the template and pass it via the bare `LIKE '{pattern}'` form with your own
+    `ESCAPE` clause.
+
     **Example**:
 
     ```java

@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +65,10 @@ public final class BoundedConcurrency {
   /**
    * Returns a {@link BoundedConcurrency} using {@code maxConcurrency} and {@code threadFactory}.
    *
+   * <p>If {@code threadFactory} declines to create a thread by returning null, the operation in
+   * progress fails with {@link RejectedExecutionException} after the already-running threads have
+   * been cancelled and joined.
+   *
    * @throws IllegalArgumentException if {@code maxConcurrency <= 0}
    */
   public static BoundedConcurrency withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
@@ -75,16 +80,18 @@ public final class BoundedConcurrency {
    * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
    * exception is recoverable (thus allowing the other tasks to continue to run).
    *
-   * <p>When all tasks throw recoverable exceptions, or if any task failed with
-   * unrecoverable exception, the recoverable exceptions are propagated as {@link
-   * Throwable#addSuppressed suppressed}.
+   * <p>When all tasks throw recoverable exceptions, or when an unrecoverable exception is
+   * observed before any task has succeeded, the recoverable exceptions collected so far are
+   * propagated as {@link Throwable#addSuppressed suppressed}.
    *
    * @param tasks at least one must be provided
    * @param isRecoverable tests whether an exception is recoverable so that the
    *     other tasks should continue running.
    * @throws IllegalArgumentException if {@code tasks} is empty
    * @throws NullPointerException if {@code tasks} or {@code isRecoverable} is null
-   * @throws RuntimeException if all tasks failed, or any task failed with unrecoverable exception.
+   * @throws RuntimeException if all tasks failed, or if a task fails with an unrecoverable
+   *     exception before any task succeeds. The tasks race: whichever outcome is observed first
+   *     wins, so an unrecoverable failure that lands after a success is discarded.
    */
   public <T> T race(
       Collection<? extends Callable<? extends T>> tasks,
@@ -135,7 +142,9 @@ public final class BoundedConcurrency {
    * <li>{@code mapConcurrent()} only interrupts and joins the on-the-fly virtual threads upon
    * downstream exceptions, but is unable to interrupt or join when an <em>upstream</em> exception
    * is thrown. {@code concurrently()} will always interrupt and join. As a result, actions in the
-   * virtual threads <em>happens-before</em> actions after the collector returns or throws.
+   * virtual threads <em>happens-before</em> actions after the returned {@link BiStream}'s
+   * terminal operation returns or throws. Note that the collector itself returns before any
+   * work starts, because the returned {@code BiStream} is lazy.
    * <li>{@code mapConcurrent()} strictly adheres to encounter-order. If an input element takes
    * a long time or forever to process, it can potentially block or halt the program
    * when there are more than {@code maxConcurrency} elements following it, even if
@@ -146,7 +155,18 @@ public final class BoundedConcurrency {
    * monitoring subtask etc.), it won't reduce throughput or starve the workers after it.
    * <li>If encounter order is important to you, consider using {@link BiStream#sorted} or
    * friends to re-introduce ordering.
+   * <li>{@code mapConcurrent()} ignores interruption of the calling thread until every task has
+   * finished; {@code concurrently()} forwards it to the running virtual threads immediately.
    * </ul>
+   *
+   * <p>If the calling thread is interrupted, the interruption is forwarded to the running virtual
+   * threads and the calling thread's interrupt status is restored. What happens next is up to
+   * {@code work}: one that propagates the interruption aborts the operation with that exception,
+   * while one that swallows it lets the pipeline run to completion, leaving the restored interrupt
+   * status as the only evidence. Either way the input is fully consumed. No
+   * {@link InterruptedException} is thrown, because {@link Gatherer.Integrator} cannot throw
+   * checked exceptions and wrapping it in an unchecked exception would misrepresent a cancellation
+   * as a failure.
    *
    * <p>Compared to {@link com.google.mu.util.concurrent.Parallelizer#inParallel}: <ul>
    * <li>{@code inParallel()} fails fast. When an exception is thrown, it interrupts on-the-fly
@@ -179,7 +199,9 @@ public final class BoundedConcurrency {
    * within the limit of {@code maxConcurrency}.
    */
   <T, R> Gatherer<T, ?, R> mapConcurrently(Function<? super T, ? extends R> mapper) {
-    // Every methods of this class are called only by the main thread.
+    // At most one thread at a time runs the methods of this class, with the JDK supplying the
+    // happens-before edges between them. For a parallel stream that thread is not always the same
+    // one: the integrator may run on several ForkJoin workers and the finisher on yet another.
     class Window {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
 
@@ -214,7 +236,11 @@ public final class BoundedConcurrency {
               semaphore.release();
             }
           });
-          requireNonNull(thread, "failed to start a virtual thread");
+          if (thread == null) {
+            // ThreadFactory.newThread() documents null as "the request to create a thread is
+            // rejected", which is what RejectedExecutionException is for.
+            throw new RejectedExecutionException("thread factory returned null");
+          }
           running.add(thread);
           thread.start();
           success = true;
@@ -228,6 +254,11 @@ public final class BoundedConcurrency {
       }
 
       void finish(Downstream<? super R> downstream) {
+        if (downstream.isRejecting()) {
+          // Downstream has short-circuited. The pending work was already cancelled and joined by
+          // stop(), and the exceptions it may have queued are artifacts of that cancellation.
+          return;
+        }
         int inFlight = maxConcurrency - semaphore.drainPermits();
         if (!flushOrStop(downstream)) {  // Flush after every happens-before point
           return;
@@ -256,9 +287,12 @@ public final class BoundedConcurrency {
       private void propagateExceptions() {
         List<Throwable> thrown = whileNotNull(exceptions::poll).toList();
         if (thrown.isEmpty()) return;
+        List<Throwable> suppressed = new ArrayList<>(thrown.subList(1, thrown.size()));
         stop();
-        throw new UncheckedExecutionException(
-            thrown.get(0), thrown.subList(1, thrown.size()));
+        // stop() joins the cancelled threads, which may queue more exceptions on their way out.
+        // They are part of the diagnosis, not the cause.
+        whileNotNull(exceptions::poll).forEach(suppressed::add);
+        throw new UncheckedExecutionException(thrown.get(0), suppressed);
       }
 
       private void stop() {
@@ -311,8 +345,7 @@ public final class BoundedConcurrency {
    * <pre>{@code
    * List<Backend> backends = ...;
    * return backends.stream()
-   *     .gather(flatMapConcurrent(
-   *         maxConcurrency,
+   *     .gather(withMaxConcurrency(maxConcurrency).flatMapConcurrently(
    *         backend -> {
    *           try {
    *             return Stream.of(backend.getResult());
@@ -326,13 +359,16 @@ public final class BoundedConcurrency {
    *     .findAny();
    * }</pre>
    *
-   * <p>This is more suitable for production usage because you rarely want to blindly
+   * <p>Note that the example catches only {@code BackendException}. Catching narrowly like this
+   * is what makes the code suitable for production usage, because you rarely want to blindly
    * swallow all exceptions. Things like NullPointerException, IllegalArgumentException,
    * StackOverflowError etc. should almost never be swallowed.
    *
-   * @see {@link #race} for a more production-ready utility that allows you to control what
-   *      exceptions are allowed to recover from, and eventually propagate them if all
-   *      have failed or a non-recoverable exception is thrown (like IllegalArgumentException).
+   * <p>For a more production-ready utility that allows you to control what exceptions are allowed
+   * to recover from, and eventually propagates them if all have failed or a non-recoverable
+   * exception is thrown (like IllegalArgumentException), see {@link #race}.
+   *
+   * @see #race
    */
   <T, R> Gatherer<T, ?, R> flatMapConcurrently(
       Function<? super T, ? extends Stream<? extends R>> mapper) {
@@ -349,9 +385,18 @@ public final class BoundedConcurrency {
     var finisher = upstream.finisher();
     return Gatherer.of(
         upstream.initializer(),
-        (a, elem, downstream) -> integrator.integrate(a, elem, pushingAll(downstream)),
+        // The wrapper only relays downstream rejection, so it's as greedy as what it wraps.
+        greedyIf(
+            integrator instanceof Integrator.Greedy,
+            (a, elem, downstream) -> integrator.integrate(a, elem, pushingAll(downstream))),
         upstream.combiner(),
         (a, downstream) -> finisher.accept(a, pushingAll(downstream)));
+  }
+
+  /** Keeps {@code integrator} greedy if {@code greedy}, or strips the marker interface if not. */
+  private static <A, T, R> Integrator<A, T, R> greedyIf(
+      boolean greedy, Integrator.Greedy<A, T, R> integrator) {
+    return greedy ? integrator : integrator::integrate;
   }
 
   private static <T> Gatherer.Downstream<List<T>> pushingAll(Downstream<? super T> downstream) {
@@ -377,7 +422,7 @@ public final class BoundedConcurrency {
   }
 
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
-  private sealed interface Result<R> permits Success, Failure {}
+  private sealed interface Result<R> {}
   private record Success<R>(R value) implements Result<R> {}
   private record Failure<R>(Throwable exception) implements Result<R> {}
 

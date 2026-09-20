@@ -619,7 +619,7 @@ For more details, check out [left-recursion.md](./left-recursion.md).
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>11.0</version>
+  <version>11.1</version>
 </dependency>
 ```
 

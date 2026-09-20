@@ -58,13 +58,13 @@ import java.util.stream.Stream;
  *
  * <pre>{@code
  * Stream<Foo> listAllFoos() {
- *   class Pagination extends new Iteration<Foo>() {
+ *   class Pagination extends Iteration<Foo> {
  *     Pagination paginate(ListFooRequest request) {
  *       ListFooResponse response = service.listFoos(request);
  *       emit(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
- *         lazily(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+ *         lazily(() -> paginate(request.toBuilder().setPageToken(nextPage).build()));
  *       }
  *       return this;
  *     }
@@ -98,6 +98,7 @@ import java.util.stream.Stream;
  *     lazily(() -> inOrder(tree.left));
  *     emit(tree.value);
  *     lazily(() -> inOrder(tree.right));
+ *     return this;
  *   }
  * }
  *
@@ -272,19 +273,17 @@ public class Iteration<T> {
   }
 
   private <V> void forEachLazily(Spliterator<V> spliterator, Consumer<? super V> consumer) {
-    lazily(() -> spliterator.tryAdvance(
-        e -> {
-          consumer.accept(e);
-          forEachLazily(spliterator, consumer);
-        }));
+    lazily(() -> spliterator.tryAdvance(e -> {
+      consumer.accept(e);
+      forEachLazily(spliterator, consumer);
+    }));
   }
 
   private void forEachLazily(Spliterator.OfInt spliterator, IntConsumer consumer) {
-    lazily(() -> spliterator.tryAdvance(
-        (int i) -> {
-          consumer.accept(i);
-          forEachLazily(spliterator, consumer);
-        }));
+    lazily(() -> spliterator.tryAdvance((int i) -> {
+      consumer.accept(i);
+      forEachLazily(spliterator, consumer);
+    }));
   }
 
   /**

@@ -1,13 +1,9 @@
 package com.google.mu.util.graph;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Arrays.asList;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Stream;
-
-import org.junit.Test;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
@@ -16,6 +12,10 @@ import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.mu.util.stream.BiStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.Test;
 
 public class StronglyConnectedComponentsTest {
   @Test public void stronglyConnectedComponents_noStartNode() {
@@ -115,9 +115,17 @@ public class StronglyConnectedComponentsTest {
   }
   @Test public void stronglyConnectedComponents_multipleStartNodes() {
     Graph<String> graph = toDirectedGraph(
-        ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo", "foo", "zoo", "dog", "cat"));
+        ImmutableListMultimap.of(
+            "foo", "bar", "bar", "baz", "baz", "foo", "foo", "zoo", "dog", "cat"));
     assertThat(stronglyConnectedFrom(graph, "zoo", "foo", "dog"))
         .containsExactly(asList("baz", "bar", "foo"), asList("zoo"), asList("dog"), asList("cat"));
+  }
+
+  @Test public void stronglyConnectedComponents_iterator() {
+    Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of("0", "1", "1", "2"));
+    assertThat(iterateOnce(stronglyConnectedFrom(graph, "0")))
+        .containsExactly(asList("2"), asList("1"), asList("0"))
+        .inOrder();
   }
 
   @SafeVarargs

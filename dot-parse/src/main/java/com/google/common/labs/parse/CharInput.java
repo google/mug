@@ -32,8 +32,14 @@ import java.util.regex.Pattern;
 abstract class CharInput {
   int nestingLevel = 0;
 
-  /** Reads the character at {@code index}. */
-  abstract char charAt(int index);
+  /**
+   * Reads the character at {@code index}, or returns -1 if {@code index} is at or past EOF.
+   *
+   * <p>{@code char} is unsigned, so a real character always widens into {@code [0, 65535]} and can
+   * never be confused with the -1 sentinel. This mirrors the convention of {@link
+   * java.io.Reader#read()}.
+   */
+  abstract int charAtOrEof(int index);
 
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
@@ -53,7 +59,8 @@ abstract class CharInput {
   }
 
   final boolean startsWith(CharPredicate predicate, int index) {
-    return isInRange(index) && predicate.test(charAt(index));
+    int c = charAtOrEof(index);
+    return c >= 0 && predicate.test((char) c);
   }
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
@@ -91,8 +98,8 @@ abstract class CharInput {
   static CharInput from(String text) {
     requireNonNull(text);
     return new CharInput() {
-      @Override char charAt(int index) {
-        return text.charAt(index);
+      @Override int charAtOrEof(int index) {
+        return index < text.length() ? text.charAt(index) : -1;
       }
 
       @Override int indexOf(String str, int fromIndex) {
@@ -161,9 +168,10 @@ abstract class CharInput {
       private final StringBuilder chars = new StringBuilder();
       private int garbageCharCount = 0;
 
-      @Override char charAt(int index) {
+      @Override int charAtOrEof(int index) {
         ensureCharCount(index + 1);
-        return chars.charAt(toPhysicalIndex(index));
+        int p = toPhysicalIndex(index);
+        return p < chars.length() ? chars.charAt(p) : -1;
       }
 
       @Override int indexOf(String str, int fromIndex) {
@@ -232,9 +240,15 @@ abstract class CharInput {
         for (int i = 0; i < prefix.length(); i++) {
           char c1 = chars.charAt(index + i);
           char c2 = prefix.charAt(i);
-          if (c1 != c2 && Character.toUpperCase(c1) != Character.toUpperCase(c2)) {
-            return false;
+          if (c1 == c2) {
+            continue;
           }
+          char u1 = Character.toUpperCase(c1);
+          char u2 = Character.toUpperCase(c2);
+          if (u1 == u2 || Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
+            continue;
+          }
+          return false;
         }
         return true;
       }

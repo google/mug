@@ -149,13 +149,13 @@ BiStream<K, V> biStream = maps.stream()
 
 // a stream of multimaps
 BiStream<K, V> biStream = multimaps.stream()
-    .collect(concatenating(multimap -> BiStream.from(multimap.entries()));
+    .collect(concatenating(multimap -> BiStream.from(multimap.entries())));
 ```
 
 With `groupingBy()`:
 ```java
 import static com.google.mu.util.stream.BiStream.groupingBy;
-import java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.counting;
 
 Map<City, Long> cityHouseholds = addresses.stream()
     .collect(groupingBy(Address::city, counting()))

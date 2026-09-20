@@ -15,7 +15,6 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
-import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static com.google.mu.util.stream.MoreStreams.withSideEffect;
 import static java.util.Objects.requireNonNull;
@@ -31,19 +30,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Walker for graph topology (see {@link Walker#inGraph Walker.inGraph()}).
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
  * #breadthFirstFrom breadth-first} traversals, also supports {@link #topologicalOrderFrom
- * topologicalOrderFrom()}, {@link #detectCycleFrom detectCycleFrom()} and
- * {@link #stronglyConnectedComponentsFrom stronglyConnectedComponentsFrom()}.
+ * topologicalOrderFrom()}, {@link #detectCycleFrom detectCycleFrom()} and {@link
+ * #stronglyConnectedComponentsFrom stronglyConnectedComponentsFrom()}.
  *
  * @param <N> the graph node type
  * @since 4.3
@@ -79,14 +78,18 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
    *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
+   *
    * @param startNodes the entry point nodes to start walking the graph.
    * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
-   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
-   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
+   *     cycle, ending with nodes along a cyclic path. The last node will also be the starting point
+   *     of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends with {@code
+   *     A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
    * @since 4.3
    */
-  @SafeVarargs public final Optional<Stream<N>> detectCycleFrom(N... startNodes) {
+  @SafeVarargs
+  public final Optional<Stream<N>> detectCycleFrom(N... startNodes) {
     return detectCycleFrom(nonNullList(startNodes));
   }
 
@@ -108,11 +111,14 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>This method will hang if the given graph is infinite with no cycles (the sequence of natural
    * numbers for instance).
    *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
+   *
    * @param startNodes the entry point nodes to start walking the graph.
    * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
-   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
-   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
+   *     cycle, ending with nodes along a cyclic path. The last node will also be the starting point
+   *     of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends with {@code
+   *     A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
    * @since 4.3
    */
   public final Optional<Stream<N>> detectCycleFrom(Iterable<? extends N> startNodes) {
@@ -123,14 +129,18 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
    * nodes in topological order.
    *
-   * <p>Unlike the other {@code Walker} utilities, this method is not lazy:
-   * it has to traverse the entire graph in order to figure out the topological order.
+   * <p>Unlike the other {@code Walker} utilities, this method is not lazy: it has to traverse the
+   * entire graph in order to figure out the topological order.
+   *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
    * @throws CyclicGraphException if the graph has cycles.
    * @since 4.3
    */
-  @SafeVarargs public final List<N> topologicalOrderFrom(N... startNodes) {
+  @SafeVarargs
+  public final List<N> topologicalOrderFrom(N... startNodes) {
     return topologicalOrderFrom(nonNullList(startNodes));
   }
 
@@ -138,8 +148,11 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
    * nodes in topological order.
    *
-   * <p>Unlike the other {@code Walker} utilities, this method is not lazy:
-   * it has to traverse the entire graph in order to figure out the topological order.
+   * <p>Unlike the other {@code Walker} utilities, this method is not lazy: it has to traverse the
+   * entire graph in order to figure out the topological order.
+   *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
    * @throws CyclicGraphException if the graph has cycles.
@@ -150,45 +163,58 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   /**
-   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of
-   * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
-   * connected components</a> found in the graph.
+   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of <a
+   * href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+   * components</a> found in the graph.
    *
-   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
-   * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
+   * <p>Implements the <a
+   * href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan
+   * algorithm</a> in linear time ({@code O(V + E)}).
    *
-   * <p>The strongly connected components (represented by the list of nodes in each component)
-   * are returned in a lazy stream, in depth-first post order. If you need topological order from
-   * the start nodes, convert it using: <pre>{@code
-   *   List<List<N>> components = Walker.inGraph(...)
-   *       .stronglyConnectedComponentsFrom(...)
-   *       .peek(Collections::reverse)                      // reverse order within each component
-   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * <p>The strongly connected components (represented by the list of nodes in each component) are
+   * returned in a lazy stream, in depth-first post order. If you need topological order from the
+   * start nodes, convert it using:
+   *
+   * <pre>{@code
+   * List<List<N>> components = Walker.inGraph(...)
+   *     .stronglyConnectedComponentsFrom(...)
+   *     .peek(Collections::reverse)                      // reverse order within each component
+   *     .collect(toListAndThen(Collections::reverse));   // reverse order of the components
    * }</pre>
+   *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
    * @since 4.4
    */
-  @SafeVarargs public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
+  @SafeVarargs
+  public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
     return stronglyConnectedComponentsFrom(nonNullList(startNodes));
   }
 
   /**
-   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of
-   * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
-   * connected components</a> found in the graph.
+   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of <a
+   * href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+   * components</a> found in the graph.
    *
-   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
-   * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
+   * <p>Implements the <a
+   * href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan
+   * algorithm</a> in linear time ({@code O(V + E)}).
    *
-   * <p>The strongly connected components (represented by the list of nodes in each component)
-   * are returned in a lazy stream, in depth-first post order. If you need topological order from
-   * the start nodes, convert it using: <pre>{@code
-   *   List<List<N>> components = Walker.inGraph(...)
-   *       .stronglyConnectedComponentsFrom(...)
-   *       .peek(Collections::reverse)                      // reverse order within each component
-   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * <p>The strongly connected components (represented by the list of nodes in each component) are
+   * returned in a lazy stream, in depth-first post order. If you need topological order from the
+   * start nodes, convert it using:
+   *
+   * <pre>{@code
+   * List<List<N>> components = Walker.inGraph(...)
+   *     .stronglyConnectedComponentsFrom(...)
+   *     .peek(Collections::reverse)                      // reverse order within each component
+   *     .collect(toListAndThen(Collections::reverse));   // reverse order of the components
    * }</pre>
+   *
+   * <p>Cycles are detected by node {@link Object#equals equals()}; a tracker that deduplicates by
+   * another key does not change that.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
    * @since 4.4
@@ -205,6 +231,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
     private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
     private final Predicate<? super N> tracker;
     private final Deque<Spliterator<? extends N>> horizon = new ArrayDeque<>();
+    private final Deque<Stream<?>> openStreams = new ArrayDeque<>();
     private N visited;
 
     Walk(
@@ -219,12 +246,12 @@ public abstract class GraphWalker<N> extends Walker<N> {
     }
 
     Stream<N> breadthFirst(Iterable<? extends N> startNodes) {
-      horizon.add(startNodes.spliterator());
+      addHorizon(Queue::add, StreamSupport.stream(startNodes.spliterator(), false));
       return topDown(Queue::add);
     }
 
     Stream<N> preOrder(Iterable<? extends N> startNodes) {
-      horizon.push(startNodes.spliterator());
+      addHorizon(Deque::push, StreamSupport.stream(startNodes.spliterator(), false));
       return topDown(Deque::push);
     }
 
@@ -233,59 +260,96 @@ public abstract class GraphWalker<N> extends Walker<N> {
     }
 
     private Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
-      horizon.push(startNodes.spliterator());
+      addHorizon(Deque::push, StreamSupport.stream(startNodes.spliterator(), false));
       return whileNotNull(() -> {
         while (visitNext()) {
           N next = visited;
           Stream<? extends N> successors = findSuccessors.apply(next);
           if (successors == null) return next;
-          horizon.push(successors.spliterator());
+          addHorizon(Deque::push, successors);
           roots.push(next);
         }
         return roots.poll();
-      });
+      })
+          .onClose(this::closeOpenStreams);
     }
 
     private Stream<N> topDown(InsertionOrder order) {
       return whileNotNull(() -> {
-        do {
+        while (!horizon.isEmpty()) {
           if (visitNext()) {
             N next = visited;
-            Stream<? extends N> successors = findSuccessors.apply(next);
-            if (successors != null) order.insertInto(horizon, successors.spliterator());
+            addHorizon(order, findSuccessors.apply(next));
             return next;
           }
-        } while (!horizon.isEmpty());
+        }
         return null; // no more element
-      });
+      })
+          .onClose(this::closeOpenStreams);
+    }
+
+    private void addHorizon(InsertionOrder order, Stream<? extends N> stream) {
+      if (stream != null) {
+        order.insertInto(horizon, stream.spliterator());
+        order.insertInto(openStreams, stream);
+      }
+    }
+
+    private void closeOpenStreams() {
+      for (Stream<?> stream = openStreams.pollFirst();
+          stream != null;
+          stream = openStreams.pollFirst()) {
+        stream.close();
+      }
     }
 
     private boolean visitNext() {
-      Spliterator<? extends N> top = horizon.getFirst();
+      Spliterator<? extends N> top = horizon.peekFirst();
+      if (top == null) {
+        return false;
+      }
       while (top.tryAdvance(this)) {
         if (tracker.test(visited)) return true;
       }
       horizon.removeFirst();
+      openStreams.removeFirst().close();
       return false;
     }
 
     List<N> topologicalOrder(Iterable<? extends N> startNodes) {
       CycleTracker cycleDetector = new CycleTracker();
-      return cycleDetector.startPostOrder(startNodes, path -> {
-        throw new CyclicGraphException(path);
-      }).collect(toListAndThen(Collections::reverse));
+      try (Stream<N> postOrder = cycleDetector.startPostOrder(
+          startNodes,
+          path -> {
+            throw new CyclicGraphException(path);
+          })) {
+        return postOrder.collect(toListAndThen(Collections::reverse));
+      }
     }
 
     Optional<Stream<N>> detectCycle(Iterable<? extends N> startNodes) {
-      AtomicReference<List<N>> cyclePath = new AtomicReference<>();
       CycleTracker detector = new CycleTracker();
-      for (N n : iterateOnce(detector.startPostOrder(startNodes, cyclePath::set))) {
-        List<N> found = cyclePath.get();
-        if (found != null) {
-          return Optional.of(found.stream());
-        }
+      try (Stream<N> postOrder = detector.startPostOrder(
+          startNodes,
+          path -> {
+            throw new CycleDetected(path);
+          })) {
+        postOrder.forEach(n -> {});
+        return Optional.empty();
+      } catch (CycleDetected e) {
+        @SuppressWarnings("unchecked")
+        List<N> cycle = (List<N>) e.cycle;
+        return Optional.of(cycle.stream());
       }
-      return Optional.empty();
+    }
+
+    private static final class CycleDetected extends Error {
+      final List<?> cycle;
+
+      CycleDetected(List<?> cycle) {
+        super(null, null, false, false);
+        this.cycle = cycle;
+      }
     }
 
     private final class CycleTracker {

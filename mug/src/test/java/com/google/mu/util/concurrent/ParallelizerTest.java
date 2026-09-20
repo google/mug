@@ -22,9 +22,15 @@ import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.base.Preconditions;
+import com.google.common.truth.IterableSubject;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,9 +45,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -51,12 +60,6 @@ import org.junit.rules.Verifier;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.base.Preconditions;
-import com.google.common.truth.IterableSubject;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(Enclosed.class)
 public class ParallelizerTest {
@@ -74,7 +77,7 @@ public class ParallelizerTest {
       threadPool.shutdownNow();
     }
 
-    @Test public void testInParallel_emptyInputStream() throws InterruptedException{
+    @Test public void testInParallel_emptyInputStream() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       assertThat(Stream.empty().collect(parallelizer.inParallel(Object::toString)).toMap())
           .isEmpty();
@@ -102,16 +105,139 @@ public class ParallelizerTest {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       RuntimeException thrown = assertThrows(
           RuntimeException.class,
-          () ->  Stream.of(1, 2, 3).collect(parallelizer.inParallel(i -> {
-            Preconditions.checkState(i < 3);
-            return i.toString();
-          })));
+          () -> Stream.of(1, 2, 3)
+              .collect(
+                  parallelizer.inParallel(i -> {
+                    Preconditions.checkState(i < 3);
+                    return i.toString();
+                  })));
       assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
     }
 
     @Test public void testNulls() {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       assertThrows(NullPointerException.class, () -> parallelizer.inParallel(null));
+    }
+  }
+
+  public static class OrphanFailureLoggingTest {
+    private static final Logger logger = Logger.getLogger(Parallelizer.class.getName());
+
+    private ExecutorService threadPool;
+    private final List<LogRecord> logRecords = Collections.synchronizedList(new ArrayList<>());
+    private final Handler logHandler = new Handler() {
+      @Override public void publish(LogRecord record) {
+        logRecords.add(record);
+      }
+
+      @Override public void flush() {}
+
+      @Override public void close() {}
+    };
+
+    @Before public void setUp() {
+      threadPool = Executors.newCachedThreadPool();
+      logger.addHandler(logHandler);
+    }
+
+    @After public void tearDown() {
+      logger.removeHandler(logHandler);
+      threadPool.shutdownNow();
+    }
+
+    @Test public void cancelledSiblingWrapsInterruptedException_loggedAtInfo()
+        throws InterruptedException {
+      Parallelizer parallelizer = new Parallelizer(threadPool, 2);
+      CountDownLatch siblingStarted = new CountDownLatch(1);
+      RuntimeException thrown =
+          assertThrows(
+              RuntimeException.class,
+              () -> parallelizer.parallelize(
+                  Stream.of(
+                      () -> {
+                        siblingStarted.countDown();
+                        try {
+                          new CountDownLatch(1).await();
+                        } catch (InterruptedException e) {
+                          throw new RuntimeException("wrapped interrupt", e);
+                        }
+                      },
+                      () -> {
+                        try {
+                          siblingStarted.await();
+                        } catch (InterruptedException e) {
+                          throw new AssertionError(e);
+                        }
+                        throw new IllegalStateException("primary failure");
+                      })));
+      assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("primary failure");
+      threadPool.shutdown();
+      assertThat(threadPool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+      assertThat(logRecords.stream().map(LogRecord::getLevel).collect(Collectors.toList()))
+          .containsExactly(Level.INFO);
+    }
+
+    @Test public void orphanTaskFailsAfterTimeout_loggedAtWarning() throws InterruptedException {
+      Parallelizer parallelizer = new Parallelizer(threadPool, 1);
+      CountDownLatch allowFailure = new CountDownLatch(1);
+      assertThrows(
+          TimeoutException.class,
+          () -> parallelizer.parallelize(
+              Stream.of(() -> {
+                while (true) {
+                  try {
+                    allowFailure.await();
+                    break;
+                  } catch (InterruptedException ignored) {
+                    // Ignore interruption and fail with a real exception afterwards
+                  }
+                }
+                throw new IllegalStateException("real failure after timeout");
+              }),
+              Duration.ofMillis(10)));
+      allowFailure.countDown();
+      threadPool.shutdown();
+      assertThat(threadPool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+      assertThat(logRecords.stream().map(LogRecord::getLevel).collect(Collectors.toList()))
+          .containsExactly(Level.WARNING);
+      assertThat(logRecords.get(0).getThrown())
+          .hasMessageThat()
+          .isEqualTo("real failure after timeout");
+    }
+
+    @Test public void orphanTaskFailsAfterCallerInterrupt_loggedAtWarning()
+        throws InterruptedException {
+      Parallelizer parallelizer = new Parallelizer(threadPool, 1);
+      CountDownLatch taskStarted = new CountDownLatch(1);
+      CountDownLatch allowFailure = new CountDownLatch(1);
+      Thread caller = new Thread(
+          () -> assertThrows(
+              InterruptedException.class,
+              () -> parallelizer.parallelize(
+                  Stream.of(() -> {
+                    taskStarted.countDown();
+                    while (true) {
+                      try {
+                        allowFailure.await();
+                        break;
+                      } catch (InterruptedException ignored) {
+                        // Ignore interruption and fail with a real exception
+                      }
+                    }
+                    throw new IllegalStateException("real failure after caller interrupt");
+                  }))));
+      caller.start();
+      taskStarted.await();
+      caller.interrupt();
+      caller.join();
+      allowFailure.countDown();
+      threadPool.shutdown();
+      assertThat(threadPool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+      assertThat(logRecords.stream().map(LogRecord::getLevel).collect(Collectors.toList()))
+          .containsExactly(Level.WARNING);
+      assertThat(logRecords.get(0).getThrown())
+          .hasMessageThat()
+          .isEqualTo("real failure after caller interrupt");
     }
   }
 
@@ -127,7 +253,8 @@ public class ParallelizerTest {
     private final ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Object> interrupted = new ConcurrentLinkedQueue<>();
 
-    @Rule public final Verifier verifyTaskAssertions = new Verifier() {
+    @Rule
+    public final Verifier verifyTaskAssertions = new Verifier() {
       @Override protected void verify() throws Throwable {
         shutdownThreadPool();
         for (Throwable e : thrown) {
@@ -176,11 +303,12 @@ public class ParallelizerTest {
       maxInFlight = 2;
       RuntimeException exception = assertThrows(
           RuntimeException.class,
-          () -> parallelize(Stream.of(
-              // With maxInflight=2, at least one will print, even if a fail() task races it.
-              () -> translateToString(1), () -> translateToString(1),
-              () -> fail("foobar"), () -> fail("foobar"),  // both should fail
-              () -> translateToString(5))));  // should be dismissed
+          () -> parallelize(
+              Stream.of(
+                  // With maxInflight=2, at least one will print, even if a fail() task races it.
+                  () -> translateToString(1), () -> translateToString(1), () -> fail("foobar"),
+                  () -> fail("foobar"), // both should fail
+                  () -> translateToString(5)))); // should be dismissed
       assertThat(exception.getCause().getMessage()).contains("foobar");
       assertThat(translated).containsEntry(1, "1");
       assertThat(translated).doesNotContainKey(5);
@@ -191,11 +319,12 @@ public class ParallelizerTest {
       maxInFlight = 2;
       RuntimeException exception = assertThrows(
           RuntimeException.class,
-          () -> parallelize(serialTasks(
-              () -> translateToString(1),  // should print
-              () -> blockFor(2), // Will be interrupted
-              () -> fail("foobar"),  // kills the pipeline
-              () -> translateToString(4))));  // should be dismissed
+          () -> parallelize(
+              serialTasks(
+                  () -> translateToString(1), // should print
+                  () -> blockFor(2), // Will be interrupted
+                  () -> fail("foobar"), // kills the pipeline
+                  () -> translateToString(4)))); // should be dismissed
       assertThat(exception.getCause().getMessage()).contains("foobar");
       shutdownAndAssertInterruptedKeys().containsExactly(2);
       assertThat(translated).containsEntry(1, "1");
@@ -209,10 +338,11 @@ public class ParallelizerTest {
       timeout = Duration.ofMillis(1);
       assertThrows(
           TimeoutException.class,
-          () -> parallelize(serialTasks(
-              () -> blockFor(1), // Will be interrupted
-              () -> blockFor(2), // Will be interrupted
-              () -> translateToString(3))));  // Times out
+          () -> parallelize(
+              serialTasks(
+                  () -> blockFor(1), // Will be interrupted
+                  () -> blockFor(2), // Will be interrupted
+                  () -> translateToString(3)))); // Times out
       shutdownAndAssertInterruptedKeys().containsExactly(1, 2);
       assertThat(translated).doesNotContainKey(3);
     }
@@ -224,9 +354,10 @@ public class ParallelizerTest {
       timeout = Duration.ofMillis(1);
       assertThrows(
           TimeoutException.class,
-          () -> parallelize(serialTasks(
-              () -> blockFor(1), // Will be interrupted
-              () -> blockFor(2)))); // Might be interrupted
+          () -> parallelize(
+              serialTasks(
+                  () -> blockFor(1), // Will be interrupted
+                  () -> blockFor(2)))); // Might be interrupted
       shutdownAndAssertInterruptedKeys().contains(1);
     }
 
@@ -238,15 +369,17 @@ public class ParallelizerTest {
       CountDownLatch allowTranslation = new CountDownLatch(1);
       Thread thread = new Thread(() -> {
         try {
-          parallelize(numbers.stream(), input -> {
-            try {
-              allowTranslation.await();
-            } catch (InterruptedException e) {
-              thrown.add(e);
-              return;
-            }
-            translateToString(input);
-          });
+          parallelize(
+              numbers.stream(),
+              input -> {
+                try {
+                  allowTranslation.await();
+                } catch (InterruptedException e) {
+                  thrown.add(e);
+                  return;
+                }
+                translateToString(input);
+              });
         } catch (InterruptedException | TimeoutException impossible) {
           thrown.add(impossible);
         }
@@ -270,15 +403,17 @@ public class ParallelizerTest {
       AtomicBoolean paralllelizationInterrupted = new AtomicBoolean();
       Thread thread = new Thread(() -> {
         try {
-          parallelize(numbers.stream(), input -> {
-            inflight.countDown();
-            try {
-              allowTranslation.await();
-            } catch (InterruptedException e) {
-              return;
-            }
-            translateToString(input);
-          });
+          parallelize(
+              numbers.stream(),
+              input -> {
+                inflight.countDown();
+                try {
+                  allowTranslation.await();
+                } catch (InterruptedException e) {
+                  return;
+                }
+                translateToString(input);
+              });
         } catch (InterruptedException expected) {
           paralllelizationInterrupted.set(true);
         } catch (TimeoutException e) {
@@ -299,17 +434,15 @@ public class ParallelizerTest {
 
     @Test public void testErrorPropagated() {
       Error error = new Error();
-      RuntimeException exception = assertThrows(
-          RuntimeException.class,
-          () -> parallelize(Stream.of(() -> raise(error))));
+      RuntimeException exception =
+          assertThrows(RuntimeException.class, () -> parallelize(Stream.of(() -> raise(error))));
       assertThat(exception.getCause()).isSameInstanceAs(error);
     }
 
     @Test public void testExceptionPropagated() {
       RuntimeException exception = new RuntimeException();
       RuntimeException caught = assertThrows(
-          RuntimeException.class,
-          () -> parallelize(Stream.of(() -> raise(exception))));
+          RuntimeException.class, () -> parallelize(Stream.of(() -> raise(exception))));
       assertThat(caught.getCause()).isSameInstanceAs(exception);
     }
 
@@ -336,15 +469,15 @@ public class ParallelizerTest {
       }
     }
 
-    private <T> void parallelize(Stream<? extends T> inputs, Consumer<? super T> consumer)
+    private <T> void parallelize(
+        Stream<? extends T> inputs, Consumer<? super T> consumer)
         throws InterruptedException, TimeoutException {
       parallelize(forAll(inputs, consumer));
     }
 
-    private void parallelize(Stream<? extends Runnable> tasks)
-        throws InterruptedException, TimeoutException {
-      mode.run(
-          new Parallelizer(threadPool, maxInFlight), tasks, this::runTask, timeout);
+    private void parallelize(
+        Stream<? extends Runnable> tasks) throws InterruptedException, TimeoutException {
+      mode.run(new Parallelizer(threadPool, maxInFlight), tasks, this::runTask, timeout);
     }
 
     private void blockFor(Object key) {
@@ -371,17 +504,18 @@ public class ParallelizerTest {
     // taken out of the stream. Helps to ensure in-flight status for tasks where we care.
     private static Stream<Runnable> serialTasks(Runnable... tasks) {
       Semaphore semaphore = new Semaphore(1);
-      return asList(tasks).stream().map(task -> {
-        semaphore.acquireUninterruptibly();
-        return () -> {
-          semaphore.release();
-          task.run();
-        };
-      });
+      return asList(tasks).stream()
+          .map(task -> {
+            semaphore.acquireUninterruptibly();
+            return () -> {
+              semaphore.release();
+              task.run();
+            };
+          });
     }
 
     private IterableSubject shutdownAndAssertInterruptedKeys() throws InterruptedException {
-      shutdownThreadPool();  // Allow left-over threads to respond to interruptions.
+      shutdownThreadPool(); // Allow left-over threads to respond to interruptions.
       return assertThat(interrupted);
     }
 
@@ -408,8 +542,7 @@ public class ParallelizerTest {
     private enum Mode {
       INTERRUPTIBLY {
         @Override <T> void run(
-            Parallelizer parallelizer,
-            Stream<? extends T> inputs, Consumer<? super T> consumer,
+            Parallelizer parallelizer, Stream<? extends T> inputs, Consumer<? super T> consumer,
             Duration timeout)
             throws TimeoutException, InterruptedException {
           parallelizer.parallelize(inputs, consumer, timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -426,8 +559,7 @@ public class ParallelizerTest {
       },
       INTERRUPTIBLY_FOR_ITERATOR {
         @Override <T> void run(
-            Parallelizer parallelizer,
-            Stream<? extends T> inputs, Consumer<? super T> consumer,
+            Parallelizer parallelizer, Stream<? extends T> inputs, Consumer<? super T> consumer,
             Duration timeout)
             throws TimeoutException, InterruptedException {
           parallelizer.parallelize(
@@ -471,6 +603,7 @@ public class ParallelizerTest {
       }
     },
     ;
+
     abstract ExecutorService newExecutorService();
   }
 }

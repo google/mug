@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.labs.parse.Parser;
 import java.io.Reader;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -73,6 +74,9 @@ public record MarkdownLink(String label, String url) {
   private static final Parser<?> IGNORED = anyOf(
       consecutive("[^\\[`]"), consecutive("[`]").flatMap(Parser::first), one('\\').then(chars(1)));
 
+  private static final Parser<MarkdownLink>.Lexical SCANNER =
+      anyOf(PARSER, one('[').<MarkdownLink>thenReturn(null)).skipping(IGNORED);
+
   /**
    * Parses {@code link} into a {@link MarkdownLink}.
    *
@@ -89,7 +93,7 @@ public record MarkdownLink(String label, String url) {
    * @throws NullPointerException if {@code markdown} is null
    */
   public static Stream<MarkdownLink> scan(String markdown) {
-    return PARSER.skipping(IGNORED).probe(markdown);
+    return SCANNER.probe(markdown).filter(Objects::nonNull);
   }
 
   /**
@@ -98,6 +102,6 @@ public record MarkdownLink(String label, String url) {
    * @throws NullPointerException if {@code markdown} is null
    */
   public static Stream<MarkdownLink> scan(Reader markdown) {
-    return PARSER.skipping(IGNORED).probe(markdown);
+    return SCANNER.probe(markdown).filter(Objects::nonNull);
   }
 }

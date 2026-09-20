@@ -16,11 +16,9 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
-import static java.util.Collections.unmodifiableSet;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -28,10 +26,8 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.stream.Joiner;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -41,7 +37,7 @@ final class OrParser<T> extends Parser<T> {
   private static final PrefixPruneTree<?> UNKNOWN = new PrefixPruneTree<>(List.of(), null);
   private final List<Parser<T>> parsers;
   @LazyInit private volatile PrefixPruneTree<Parser<T>> prefixPruneTree;
-  @LazyInit private Set<String> expectedSymbols;
+  @LazyInit private volatile Set<String> expectedSymbols;
 
   @SuppressWarnings("unchecked") // sentinel
   OrParser(List<? extends Parser<? extends T>> candidates) {
@@ -59,9 +55,9 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override MatchResult<T> skipAndMatch(
-      Skipper skip, CharInput input, int start, ErrorContext context) {
+      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context) {
     // All top-level parsers allow input to apply pre-skipping.
-    start = Parser.skipIfAny(skip, input, start);
+    start = Parser.skipIfAny(preskipper, input, start);
     List<Parser<T>> candidates = parsers;
     var prefixTree = getPrefixTree();
     if (prefixTree != null) {
@@ -73,7 +69,7 @@ final class OrParser<T> extends Parser<T> {
     MatchResult.Failure<T> farthestFailure = null;
     for (int i = 0, n = candidates.size(); i < n; i++) {
       Parser<T> parser = candidates.get(i);
-      MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
+      MatchResult<T> result = parser.skipAndMatch(null, innerSkipper, input, start, context);
       if (result instanceof MatchResult.Failure<T> failure) {
         if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
           farthestFailure = failure;
@@ -88,18 +84,7 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override Set<String> computePrefixes() {
-    List<String> result = new ArrayList<>();
-    for (String prefix :
-        iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
-      if (prefix.isEmpty()) { // short circuit upon no prefix.
-        return super.computePrefixes();
-      }
-      // prefixes are sorted lexicographically, so if "a" is a prefix, "an", "any" are redundant.
-      if (result.isEmpty() || !prefix.startsWith(result.getLast())) {
-        result.add(prefix);
-      }
-    }
-    return unmodifiableSet(new LinkedHashSet<>(result));
+    return Utils.toPrefixFreeSet(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()));
   }
 
   @Override Parser<?> doIgnoreReturn() {
@@ -137,10 +122,7 @@ final class OrParser<T> extends Parser<T> {
     if (builder.numSurvivors() > 0) {
       for (Parser<T> parser : parsers) {
         if (parser.getPrefixes().contains("")) {
-          BitSet blocklist = parser.getBlocklist();
-          for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
-            builder.addBlocked((char) c, parser);
-          }
+          builder.addBlocklist(parser.getBlocklist(), parser);
         }
       }
     }

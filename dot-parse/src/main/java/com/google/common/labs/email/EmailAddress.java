@@ -34,15 +34,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import java.net.IDN;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.FormatMethod;
@@ -53,6 +44,14 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
+import java.net.IDN;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -87,10 +86,10 @@ import com.google.mu.util.stream.Joiner;
  *   <li><b>Name-Addr:</b> Fully supports {@code "display-name" <addr-spec>} syntax (RFC 5322 §3.4).
  *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting backslash-escaped
  *       characters within double-quoted display names.
- *   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in display names, forbidding
- *       specials, i.e. the {@code <}, {@code >}, {@code ;}, {@code \}, and {@code "} characters,
- *       while allowing periods, commas, colons, brackets, and parentheses for real-world usability
- *       (e.g., "[JIRA] (PROJ-123)").
+ *   <li><b>Phrases (unquoted names):</b> Supports a relaxed phrase syntax in display names,
+ *       forbidding control/formatting characters and structural delimiters ({@code <}, {@code >},
+ *       {@code ;}, {@code \}, and {@code "}), while allowing periods, commas (when unambiguous),
+ *       colons, brackets, and parentheses for real-world usability (e.g., "[JIRA] (PROJ-123)").
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace between the display name and
  *       the angle-bracketed address.
  *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world variations like
@@ -110,8 +109,14 @@ import com.google.mu.util.stream.Joiner;
  *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names are preserved literally in their
  *       raw/encoded form by default (preventing visual spoofing/phishing side-channels). Safe
  *       opt-in decoding is provided explicitly via {@link #unicodeDisplayName()}.
- *   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted multi-@
- *       injections are strictly disallowed.
+ *   <li><b>Single-Mailbox Enforcement and Multi-@ Local-Parts:</b> Standalone RFC 5322 group
+ *       constructs (e.g. {@code group: a@b.com;}) and unquoted multi-@ injections are strictly
+ *       disallowed in single-address parsing.
+ *   <li><b>Invisible and Formatting Characters:</b> Control characters ({@code Cc}), line/paragraph
+ *       separators ({@code Zl}, {@code Zp}), and Unicode format characters ({@code Cf} — including
+ *       bidirectional overrides and zero-width joiners {@code ZWJ}/{@code ZWNJ}) are rejected
+ *       across all address fields and display names to prevent visual spoofing and header
+ *       injection.
  * </ul>
  *
  * <h3>Comparison with {@code javax.mail.InternetAddress} (Java / Jakarta Mail)</h3>
@@ -125,7 +130,7 @@ import com.google.mu.util.stream.Joiner;
  *   <tr>
  *     <td><b>Immutability</b></td>
  *     <td>Mutable POJO</td>
- *     <td>Immutable {@code record}</td>
+ *     <td>Immutable value class</td>
  *   </tr>
  *   <tr>
  *     <td><b>DNS labels</b></td>
@@ -145,14 +150,14 @@ import com.google.mu.util.stream.Joiner;
  *   <tr>
  *     <td><b>Group Addresses</b></td>
  *     <td>Permissive (parses RFC-822 group syntax implicitly)</td>
- *     <td>Strictly rejected (enforces single address structure)</td>
+ *     <td>Enforces single-mailbox structure in {@link #of(String)}; composable via {@link #PARSER}</td>
  *   </tr>
  *   <tr>
  *     <td><b>RFC 2047 Encoded Words</b></td>
  *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part,
  *         or domain, risking address spoofing and routing hijacking)</td>
- *     <td>Defensively rejected in local-part and checkDomain
- *      Supported in display name via safe, explicit opt-in {@link #unicodeDisplayName()}</td>
+ *     <td>Defensively rejected in local-part and domain; supported in display name via safe,
+ *         explicit opt-in {@link #unicodeDisplayName()}</td>
  *   </tr>
  *   <tr>
  *     <td><b>Multi-@ Local-Parts</b></td>
@@ -184,36 +189,38 @@ public final class EmailAddress {
       new StringFormat("\"{name}\" <{address}>");
   private static final StringFormat WITH_UNQUOTED_DISPLAY_NAME =
       new StringFormat("{name} <{address}>");
-  private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
-      StringFormat.to(
-          IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
+  private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED = StringFormat
+      .to(IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final StringFormat ENCODED_WORD =
       new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
   private static final CharPredicate INLINE_WHITESPACE = anyOf(" \t");
-  private static final CharPredicate DANGEROUS_WHITESPACE =
-      anyOf("\u034F\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
+  private static final int DANGEROUS_CHAR_TYPES =
+      (1 << Character.CONTROL) | (1 << Character.FORMAT) | (1 << Character.LINE_SEPARATOR)
+          | (1 << Character.PARAGRAPH_SEPARATOR);
   private static final CharPredicate DANGEROUS =
-      DANGEROUS_WHITESPACE.or(Character::isISOControl).precomputeForAscii();
+      c -> ((1 << Character.getType(c)) & DANGEROUS_CHAR_TYPES) != 0 || c == '\u034F';
   private static final CharPredicate SAFE_WHITESPACE =
-      DANGEROUS_WHITESPACE.not().and(Character::isWhitespace).precomputeForAscii();
+      DANGEROUS.not().or(anyOf(" \t\r\n")).and(Character::isWhitespace).precomputeForAscii();
   private static final Substring.Pattern TLD = after(last('.'));
 
-  // While most letters and digits are supplementary chars, using it is strictly better than
-  // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
-  // successfully parsing valid non-ASCII local-parts like "müller" or "björn",
-  // which [a-zA-Z0-9] rejects).
+  // Using Character.isLetterOrDigit(char) (with isCombiningMark(char)) is strictly better than
+  // ASCII-only [a-zA-Z0-9] because it natively supports internationalized BMP characters (for
+  // example, successfully parsing valid non-ASCII local-parts like "müller" or "björn", which
+  // [a-zA-Z0-9] rejects).
   //
-  // Email Address Internationalization (EAI) identifiers (RFC 6530, 6531, 6532) are
-  // standardly restricted to the BMP plane, and excluding supplementary characters (like emojis or
-  // historical symbols) is an intentional, beneficial security boundary.
+  // Although RFC 6532 (EAI) permits supplementary characters up to U+10FFFF, restricting unquoted
+  // identifiers to the BMP (16-bit char units) is an intentional security boundary that excludes
+  // supplementary-plane emojis and historic scripts.
   //
-  // It is also vastly safer than using the RFC 6532 range (UTF8-non-ascii: [\u0080-\u10FFFF]),
-  // which is a massive superset containing dangerous formatting controls, Bidirectional overrides
-  // (e.g., LRE, RLE, RLO, LRO U+202A-202E / U+2066-2069 that trick visual paths in logging/UIs),
-  // and line/paragraph separators (U+2028-2029 that can trigger MTA header injections).
-  // javaLetterOrDigit() strictly limits the character class to printable classified letters and
-  // digits, successfully neutralizing these injection vectors.
+  // It is also vastly safer than allowing the raw RFC 6532 UTF8-non-ascii range
+  // ([\u0080-\u10FFFF]),
+  // which is a broad superset containing dangerous formatting controls (Cf), Bidirectional
+  // overrides
+  // (e.g., U+061C, U+200E-200F, U+202A-202E, U+2066-2069 that spoof visual rendering in UIs/logs),
+  // and line/paragraph separators (U+2028-2029 that can trigger header injections).
+  // Restricting WORD_CHAR to classified letters, digits, and combining marks neutralizes these
+  // injection vectors.
   private static final CharPredicate WORD_CHAR =
       c -> Character.isLetterOrDigit(c) || isCombiningMark(c);
   private static final CharPredicate ATEXT = WORD_CHAR.or("!#$%&'*+-/=?^_`{|}~");
@@ -258,16 +265,19 @@ public final class EmailAddress {
    */
   public static final Parser<EmailAddress> PARSER = makeParser();
 
-  private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
-      PARSER.notFollowedBy(one("[^,;]"), "non-separator"), // don't extract a@b from a@b@c
-      consecutive("[^,;]").map(String::trim));
+  private static final Parser<Object> ADDRESS_OR_JUNK =
+      anyOf(
+          PARSER.notFollowedBy(one("[^,;]"), "non-separator"), // don't extract a@b from a@b@c
+          consecutive("[^,;]").map(String::trim));
 
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
   private static final Parser<List<EmailAddress>>.OrEmpty ADDRESS_LIST =
-      PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+      PARSER
+          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
           .between(ADDRESS_LIST_DELIMITER.optional(), ADDRESS_LIST_DELIMITER.optional());
   private static final Parser<List<Object>>.OrEmpty ADDRESS_OR_JUNK_LIST =
-      ADDRESS_OR_JUNK.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+      ADDRESS_OR_JUNK
+          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
           .between(ADDRESS_LIST_DELIMITER.optional(), ADDRESS_LIST_DELIMITER.optional());
 
   private final String localPart;
@@ -419,7 +429,8 @@ public final class EmailAddress {
    * name" <local-part@domain>}. Backslashes and double quotes in the display name are auto-escaped.
    */
   @Override public String toString() {
-    return displayName.map(name ->
+    return displayName
+        .map(name ->
             requiresQuoting(name)
                 ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
                 : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
@@ -547,7 +558,14 @@ public final class EmailAddress {
   }
 
   private static boolean isValidDomain(String domain) {
-    return domain.contains(".") && !hasWeirdDots(domain) && !hasWeirdHyphen(domain);
+    return domain.contains(".") && !hasWeirdDots(domain) && !hasWeirdHyphen(domain)
+        && !hasLeadingCombiningMarkInLabel(domain);
+  }
+
+  private static boolean hasLeadingCombiningMarkInLabel(String domain) {
+    return all('.')
+        .split(IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED))
+        .anyMatch(label -> label.length() > 0 && isLeadingCombiningMark(label.charAt(0)));
   }
 
   private static boolean hasValidTopLevelDomain(String domain) {
@@ -569,14 +587,19 @@ public final class EmailAddress {
         && c != '\u034F';
   }
 
+  private static boolean isLeadingCombiningMark(char c) {
+    return isCombiningMark(c) || Character.getType(c) == Character.ENCLOSING_MARK;
+  }
+
   private static String normalizeLocalPart(String localPart) {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     String normalized = Normalizer.normalize(localPart, Normalizer.Form.NFC);
     checkArgument(
-        !isCombiningMark(normalized.charAt(0)),
+        !isLeadingCombiningMark(normalized.charAt(0)),
         "local-part cannot start with a combining mark (%s)", normalized);
     checkArgument(
-        !ENCODED_WORD.matches(normalized), "local-part doesn't allow encoded word (%s)", normalized);
+        !ENCODED_WORD.matches(normalized),
+        "local-part doesn't allow encoded word (%s)", normalized);
     checkArgument(
         DANGEROUS.matchesNoneOf(normalized),
         "local-part must not contain control or formatting characters");

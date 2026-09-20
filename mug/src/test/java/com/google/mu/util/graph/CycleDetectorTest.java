@@ -17,12 +17,6 @@ package com.google.mu.util.graph;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
@@ -32,6 +26,10 @@ import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Stream;
+import org.junit.Test;
 
 public class CycleDetectorTest {
   @Test public void detectCycle_noChildren() {
@@ -111,12 +109,25 @@ public class CycleDetectorTest {
         ImmutableListMultimap.of("a", "b", "foo", "bar", "bar", "baz", "baz", "foo"));
     assertThat(detectCycle(graph, "a", "foo")).containsExactly("foo", "bar", "baz", "foo")
         .inOrder();
-    assertThat(detectCycle(graph, "foo", "a")).containsExactly("foo", "bar", "baz", "foo")
+    assertThat(detectCycle(graph, "foo", "a"))
+        .containsExactly("foo", "bar", "baz", "foo")
         .inOrder();
   }
 
-  @Test public void instanceMethods_nullCheck()
-      throws Exception {
+  @Test public void detectCycle_stopsAfterCycleFound() {
+    GraphWalker<String> walker = Walker.inGraph(n -> {
+      if (n.equals("a")) {
+        return Stream.of("b");
+      }
+      if (n.equals("b")) {
+        return Stream.of("a", "c");
+      }
+      throw new AssertionError("Should not traverse node: " + n);
+    });
+    assertThat(walker.detectCycleFrom("a").get()).containsExactly("a", "b", "a").inOrder();
+  }
+
+  @Test public void instanceMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Walker.inGraph(n -> null));
   }
 

@@ -14,16 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
-import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -36,6 +30,13 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.junit.Test;
 
 public class WalkerTest {
   // TODO: figure out parameterized test like @ParameterizedTestRunner
@@ -284,13 +285,79 @@ public class WalkerTest {
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 1, 2, 3, 4, 5).inOrder();
   }
 
+  @Test public void preOrder_iteratorWithIntermediateOp() {
+    Walker<String> walker =
+        dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
+    assertThat(MoreStreams.iterateOnce(walker.preOrderFrom("foo").map(x -> x)))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void postOrder_iteratorWithIntermediateOp() {
+    Walker<String> walker =
+        dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
+    assertThat(MoreStreams.iterateOnce(walker.postOrderFrom("foo").map(x -> x)))
+        .containsExactly("baz", "bar", "foo")
+        .inOrder();
+  }
+
+  @Test public void breadthFirst_iteratorWithIntermediateOp() {
+    Walker<String> walker =
+        dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
+    assertThat(MoreStreams.iterateOnce(walker.breadthFirstFrom("foo").filter(x -> true)))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void preOrder_closesSuccessorStreams() {
+    List<String> closed = new ArrayList<>();
+    Walker<String> walker = Walker.inGraph(
+        n ->
+            n.equals("foo")
+                ? Stream.of("bar", "baz").onClose(() -> closed.add(n))
+                : Stream.<String>empty().onClose(() -> closed.add(n)));
+    assertThat(walker.preOrderFrom("foo")).containsExactly("foo", "bar", "baz").inOrder();
+    assertThat(closed).containsExactly("foo", "bar", "baz");
+  }
+
+  @Test public void postOrder_closesSuccessorStreams() {
+    List<String> closed = new ArrayList<>();
+    Walker<String> walker = Walker.inGraph(
+        n ->
+            n.equals("foo")
+                ? Stream.of("bar", "baz").onClose(() -> closed.add(n))
+                : Stream.<String>empty().onClose(() -> closed.add(n)));
+    assertThat(walker.postOrderFrom("foo")).containsExactly("bar", "baz", "foo").inOrder();
+    assertThat(closed).containsExactly("foo", "bar", "baz");
+  }
+
+  @Test public void breadthFirst_closesSuccessorStreams() {
+    List<String> closed = new ArrayList<>();
+    Walker<String> walker = Walker.inGraph(
+        n ->
+            n.equals("foo")
+                ? Stream.of("bar", "baz").onClose(() -> closed.add(n))
+                : Stream.<String>empty().onClose(() -> closed.add(n)));
+    assertThat(walker.breadthFirstFrom("foo")).containsExactly("foo", "bar", "baz").inOrder();
+    assertThat(closed).containsExactly("foo", "bar", "baz");
+  }
+
+  @Test public void preOrder_closesRemainingSuccessorStreamsOnShortCircuit() {
+    List<String> closed = new ArrayList<>();
+    Walker<String> walker =
+        Walker.inGraph(n -> Stream.of(n + "1", n + "2").onClose(() -> closed.add(n)));
+    try (Stream<String> stream = walker.preOrderFrom("root")) {
+      assertThat(stream.limit(2)).containsExactly("root", "root1").inOrder();
+    }
+    assertThat(closed).containsExactly("root", "root1");
+  }
+
   @Test public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(Walker.class);
     new ClassSanityTester().forAllPublicStaticMethods(Walker.class).testNulls();
   }
 
-  @Test public void instanceMethods_nullCheck()
-      throws Exception {
+  @Test public void instanceMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(dataType.newWalker());
   }
 

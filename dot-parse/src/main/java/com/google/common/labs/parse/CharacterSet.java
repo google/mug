@@ -20,8 +20,6 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.Substring.after;
-import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
@@ -67,7 +65,7 @@ final class CharacterSet implements CharPredicate {
 
   private final String string;
   private final CharPredicate predicate;
-  @LazyInit private Set<String> asciiPrefixes;
+  @LazyInit private volatile Set<String> asciiPrefixes;
 
   private CharacterSet(String string, CharPredicate predicate) {
     this.string = string;
@@ -77,8 +75,11 @@ final class CharacterSet implements CharPredicate {
   /**
    * Returns a {@link CharacterSet} instance compiled from the given {@code characterSet} specifier.
    *
+   * <p>Only Basic Multilingual Plane (BMP) characters are supported; surrogate characters are
+   * rejected.
+   *
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   * @throws IllegalArgumentException if {@code characterSet} is malformed
+   * @throws IllegalArgumentException if {@code characterSet} is malformed or contains surrogates
    */
   static CharacterSet charsIn(String characterSet) {
     return new CharacterSet(characterSet, compileCharacterSet(characterSet));
@@ -105,15 +106,6 @@ final class CharacterSet implements CharPredicate {
    */
   @Override public CharacterSet precomputeForAscii() {
     return this;
-  }
-
-  @Override public CharacterSet not() {
-    return new CharacterSet(
-        after(prefix("["))
-            .in(string)
-            .map(m -> m.startsWith("^") ? "[" + m.skip(1, 0) : "[^" + m)
-            .orElse(string),
-        predicate.not());
   }
 
   @Override public boolean equals(Object obj) {
@@ -177,7 +169,8 @@ final class CharacterSet implements CharPredicate {
   }
 
   private static Parser<CharPredicate> makeCharacterSetParser() {
-    Parser<Character> validChar = one(ANY, "literal char").notFollowedByEof();
+    Parser<Character> validChar =
+        one(c -> !Character.isSurrogate(c), "BMP char").notFollowedByEof();
     Parser<CharPredicate> range = sequence(
         validChar.followedBy("-"), validChar,
         (c1, c2) -> {
