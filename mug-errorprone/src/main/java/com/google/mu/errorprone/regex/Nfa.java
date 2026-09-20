@@ -40,6 +40,7 @@ final class Nfa {
   static final class State {
     final int id;
     final List<Integer> epsilonTransitions = new ArrayList<>();
+    final List<CharTransition> outgoingCharTransitions = new ArrayList<>();
 
     State(int id) {
       this.id = id;
@@ -85,6 +86,7 @@ final class Nfa {
     CharTransition t = new CharTransition(
         charTransitions.size(), from, chars, to, astNode, List.copyOf(quantifierStack), flags);
     charTransitions.add(t);
+    states.get(from).outgoingCharTransitions.add(t);
   }
 
   static Nfa from(RegexPattern pattern) {
@@ -333,11 +335,18 @@ final class Nfa {
   }
 
   List<CharTransition> reachableCharTransitions(int state) {
+    State st = states.get(state);
+    if (st.outgoingCharTransitions.isEmpty() && st.epsilonTransitions.size() == 1) {
+      return reachableCharTransitions(st.epsilonTransitions.get(0));
+    }
     return reachableCache.computeIfAbsent(
         state,
         s -> {
           Set<Integer> closure = epsilonClosure(s);
-          return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
+          return closure.stream()
+              .flatMap(c -> states.get(c).outgoingCharTransitions.stream())
+              .sorted((a, b) -> Integer.compare(a.id(), b.id()))
+              .toList();
         });
   }
 
@@ -362,6 +371,9 @@ final class Nfa {
   }
 
   boolean canReachAccept(int state) {
+    if (state != acceptState && states.get(state).epsilonTransitions.size() == 1) {
+      return canReachAccept(states.get(state).epsilonTransitions.get(0));
+    }
     return canReachAcceptCache.computeIfAbsent(
         state, s -> epsilonClosure(s).contains(acceptState));
   }

@@ -78,19 +78,19 @@ final class SuggestionSynthesizer {
               RegexPattern simplified =
                   new RegexPattern.Quantified(
                       innerQ.element(), RegexPattern.Quantifier.atLeast((int) totalMin));
-              return Optional.of(preserveOuterGroups(q.element(), simplified));
+              return Optional.of(preserveOuterGroups(q.element(), transform(simplified, SuggestionSynthesizer::rewriteRedosNode)));
             }
           } else if (innerQ.quantifier().min() == 0 && innerQ.metadata().maxSize() > 0) {
             RegexPattern simplified =
                 new RegexPattern.Quantified(innerQ.element(), RegexPattern.Quantifier.atLeast(0));
-            return Optional.of(preserveOuterGroups(q.element(), simplified));
+            return Optional.of(preserveOuterGroups(q.element(), transform(simplified, SuggestionSynthesizer::rewriteRedosNode)));
           } else if (innerQ.quantifier().min() == 1
               && RegexPatternUtils.isUnbounded(innerQ)
               && outerAtLeast.min() <= 1) {
             RegexPattern simplified =
                 new RegexPattern.Quantified(
                     innerQ.element(), RegexPattern.Quantifier.atLeast(outerAtLeast.min()));
-            return Optional.of(preserveOuterGroups(q.element(), simplified));
+            return Optional.of(preserveOuterGroups(q.element(), transform(simplified, SuggestionSynthesizer::rewriteRedosNode)));
           }
         } else if (q.quantifier() instanceof RegexPattern.AtMost atMost && atMost.max() == 1) {
           if (innerQ.quantifier() instanceof RegexPattern.AtLeast innerAtLeast
@@ -98,7 +98,7 @@ final class SuggestionSynthesizer {
               && !(unwrapGroup(innerQ.element()) instanceof RegexPattern.Quantified)) {
             RegexPattern simplified =
                 new RegexPattern.Quantified(innerQ.element(), RegexPattern.Quantifier.atLeast(0));
-            return Optional.of(preserveOuterGroups(q.element(), simplified));
+            return Optional.of(preserveOuterGroups(q.element(), transform(simplified, SuggestionSynthesizer::rewriteRedosNode)));
           }
         }
       }

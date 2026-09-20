@@ -774,7 +774,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("((a+)+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((a+)+)");
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((a+))");
   }
 
   @Test public void
@@ -2376,5 +2376,45 @@ public final class ReDosTest {
   @Test public void checkRedosVulnerability_javaCharacterPropertiesAndEmoji_doesNotThrow() {
     ReDos.checkRedosVulnerability(RegexPattern.of("\\p{javaLowerCase}+x"));
     ReDos.checkRedosVulnerability(RegexPattern.of("\\p{IsEmoji}+x"));
+  }
+
+  @Test public void checkRedosVulnerability_multiLevelNestedQuantifiers_suggestsSafeRegex() {
+    VulnerableRegexException e1 =
+        assertThrows(
+            VulnerableRegexException.class,
+            () -> ReDos.checkRedosVulnerability(RegexPattern.of("((a+)+)+$")));
+    assertThat(e1.getMessage()).contains("consider: /((a+))$/");
+    ReDos.checkRedosVulnerability(RegexPattern.of("((a+))$"));
+
+    VulnerableRegexException e2 =
+        assertThrows(
+            VulnerableRegexException.class,
+            () -> ReDos.checkRedosVulnerability(RegexPattern.of("((a+)*)+$")));
+    assertThat(e2.getMessage()).contains("consider: /((a*))$/");
+    ReDos.checkRedosVulnerability(RegexPattern.of("((a*))$"));
+
+    VulnerableRegexException e3 =
+        assertThrows(
+            VulnerableRegexException.class,
+            () -> ReDos.checkRedosVulnerability(RegexPattern.of("(((a+)+)+)+$")));
+    assertThat(e3.getMessage()).contains("consider: /(((a+)))$/");
+    ReDos.checkRedosVulnerability(RegexPattern.of("(((a+)))$"));
+  }
+
+  @Test public void checkRedosVulnerability_sharedPrefixAlternation200Words_completesQuickly() {
+    StringBuilder sb = new StringBuilder("(?:");
+    for (int i = 0; i < 200; i++) {
+      if (i > 0) {
+        sb.append('|');
+      }
+      sb.append("kw").append(i).append('x');
+    }
+    sb.append(")+$");
+    RegexPattern pattern = RegexPattern.of(sb.toString());
+    long startNanos = System.nanoTime();
+    ReDos.checkRedosVulnerability(pattern);
+    ReDos.checkPolynomialBacktracking(pattern);
+    long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
+    assertThat(elapsedMillis).isLessThan(1000L);
   }
 }
