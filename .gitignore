@@ -21,3 +21,6 @@ build/
 # Ignore nested .gitignore files but keep root one
 .gitignore
 !/.gitignore
+
+# Local scripts
+/rewind-version
