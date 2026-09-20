@@ -68,6 +68,7 @@ loadScripts(document, 'script');</script>
 <ol class="toc-list">
 <li><a href="#add(java.util.List,V)" tabindex="0">add(List, V)</a></li>
 <li><a href="#addAll(java.util.Map)" tabindex="0">addAll(Map)</a></li>
+<li><a href="#addAll(java.lang.Iterable,V)" tabindex="0">addAll(Iterable, V)</a></li>
 <li><a href="#build()" tabindex="0">build()</a></li>
 </ol>
 </li>
@@ -117,13 +118,19 @@ loadScripts(document, 'script');</script>
 <div class="block">Adds the mapping from <code>compoundKey</code> to <code>value</code>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a><wbr>&lt;<a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>,<wbr><a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#addAll(java.util.Map)" class="member-name-link">addAll</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;? extends <a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>&gt;, ? extends <a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;&nbsp;mappings)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#addAll(java.lang.Iterable,V)" class="member-name-link">addAll</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;? extends <a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>&gt;&gt;&nbsp;compoundKeys,
+ <a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&nbsp;value)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Maps each key in <code>compoundKeys</code> to <code>value</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a><wbr>&lt;<a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>,<wbr><a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#addAll(java.util.Map)" class="member-name-link">addAll</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;? extends <a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>&gt;, ? extends <a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;&nbsp;mappings)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Adds all of <code>mappings</code> into this builder.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="PrefixSearchTable.html" title="class in com.google.mu.collect">PrefixSearchTable</a><wbr>&lt;<a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>,<wbr><a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#build()" class="member-name-link">build</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="PrefixSearchTable.html" title="class in com.google.mu.collect">PrefixSearchTable</a><wbr>&lt;<a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>,<wbr><a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#build()" class="member-name-link">build</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 </div>
 </div>
 </div>
@@ -169,6 +176,20 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>8.0</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="addAll(java.lang.Iterable,V)">
+<h3 id="addAll(java.lang.Iterable,java.lang.Object)">addAll</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a>&lt;<a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>,<wbr><a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&gt;</span>&nbsp;<span class="element-name">addAll</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;? extends <a href="#type-param-K" title="type parameter in PrefixSearchTable.Builder">K</a>&gt;&gt;&nbsp;compoundKeys,
+ <a href="#type-param-V" title="type parameter in PrefixSearchTable.Builder">V</a>&nbsp;value)</span></div>
+<div class="block">Maps each key in <code>compoundKeys</code> to <code>value</code>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.1</dd>
 </dl>
 </div>
 </section>

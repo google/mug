@@ -169,7 +169,11 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="BoundedConcurrency.html" title="class in com.google.mu.util.concurrent24">BoundedConcurrency</a></span>&nbsp;<span class="element-name">withMaxConcurrency</span><wbr><span class="parameters">(int&nbsp;maxConcurrency,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ThreadFactory.html" title="class or interface in java.util.concurrent" class="external-link">ThreadFactory</a>&nbsp;threadFactory)</span></div>
-<div class="block">Returns a <a href="BoundedConcurrency.html" title="class in com.google.mu.util.concurrent24"><code>BoundedConcurrency</code></a> using <code>maxConcurrency</code> and <code>threadFactory</code>.</div>
+<div class="block">Returns a <a href="BoundedConcurrency.html" title="class in com.google.mu.util.concurrent24"><code>BoundedConcurrency</code></a> using <code>maxConcurrency</code> and <code>threadFactory</code>.
+
+ <p>If <code>threadFactory</code> declines to create a thread by returning null, the operation in
+ progress fails with <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/RejectedExecutionException.html" title="class or interface in java.util.concurrent" class="external-link"><code>RejectedExecutionException</code></a> after the already-running threads have
+ been cancelled and joined.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>maxConcurrency &lt;= 0</code></dd>
@@ -187,8 +191,9 @@ loadScripts(document, 'script');</script>
  Upon exception, the <code>isRecoverable</code> predicate is tested to check whether the
  exception is recoverable (thus allowing the other tasks to continue to run).
 
- <p>When all tasks throw recoverable exceptions, or if any task failed with
- unrecoverable exception, the recoverable exceptions are propagated as <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html#addSuppressed(java.lang.Throwable)" title="class or interface in java.lang" class="external-link"><code>suppressed</code></a>.</div>
+ <p>When all tasks throw recoverable exceptions, or when an unrecoverable exception is
+ observed before any task has succeeded, the recoverable exceptions collected so far are
+ propagated as <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html#addSuppressed(java.lang.Throwable)" title="class or interface in java.lang" class="external-link"><code>suppressed</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>tasks</code> - at least one must be provided</dd>
@@ -197,7 +202,9 @@ loadScripts(document, 'script');</script>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>tasks</code> is empty</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if <code>tasks</code> or <code>isRecoverable</code> is null</dd>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/RuntimeException.html" title="class or interface in java.lang" class="external-link">RuntimeException</a></code> - if all tasks failed, or any task failed with unrecoverable exception.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/RuntimeException.html" title="class or interface in java.lang" class="external-link">RuntimeException</a></code> - if all tasks failed, or if a task fails with an unrecoverable
+     exception before any task succeeds. The tasks race: whichever outcome is observed first
+     wins, so an unrecoverable failure that lands after a success is discarded.</dd>
 </dl>
 </div>
 </section>
@@ -225,7 +232,9 @@ loadScripts(document, 'script');</script>
  <li><code>mapConcurrent()</code> only interrupts and joins the on-the-fly virtual threads upon
  downstream exceptions, but is unable to interrupt or join when an <em>upstream</em> exception
  is thrown. <code>concurrently()</code> will always interrupt and join. As a result, actions in the
- virtual threads <em>happens-before</em> actions after the collector returns or throws.
+ virtual threads <em>happens-before</em> actions after the returned <a href="../stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>'s
+ terminal operation returns or throws. Note that the collector itself returns before any
+ work starts, because the returned <code>BiStream</code> is lazy.
  <li><code>mapConcurrent()</code> strictly adheres to encounter-order. If an input element takes
  a long time or forever to process, it can potentially block or halt the program
  when there are more than <code>maxConcurrency</code> elements following it, even if
@@ -236,7 +245,18 @@ loadScripts(document, 'script');</script>
  monitoring subtask etc.), it won't reduce throughput or starve the workers after it.
  <li>If encounter order is important to you, consider using <a href="../stream/BiStream.html#sorted(java.util.Comparator,java.util.Comparator)"><code>BiStream.sorted(java.util.Comparator&lt;? super K&gt;, java.util.Comparator&lt;? super V&gt;)</code></a> or
  friends to re-introduce ordering.
+ <li><code>mapConcurrent()</code> ignores interruption of the calling thread until every task has
+ finished; <code>concurrently()</code> forwards it to the running virtual threads immediately.
  </ul>
+
+ <p>If the calling thread is interrupted, the interruption is forwarded to the running virtual
+ threads and the calling thread's interrupt status is restored. What happens next is up to
+ <code>work</code>: one that propagates the interruption aborts the operation with that exception,
+ while one that swallows it lets the pipeline run to completion, leaving the restored interrupt
+ status as the only evidence. Either way the input is fully consumed. No
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link"><code>InterruptedException</code></a> is thrown, because <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Gatherer.Integrator.html" title="class or interface in java.util.stream" class="external-link"><code>Gatherer.Integrator</code></a> cannot throw
+ checked exceptions and wrapping it in an unchecked exception would misrepresent a cancellation
+ as a failure.
 
  <p>Compared to <a href="../concurrent/Parallelizer.html#inParallel(java.util.function.Function)"><code>Parallelizer.inParallel(java.util.function.Function&lt;? super I, ? extends O&gt;)</code></a>: <ul>
  <li><code>inParallel()</code> fails fast. When an exception is thrown, it interrupts on-the-fly

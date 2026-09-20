@@ -139,10 +139,10 @@ loadScripts(document, 'script');</script>
    <li><b>Name-Addr:</b> Fully supports <code>"display-name" &lt;addr-spec&gt;</code> syntax (RFC 5322 §3.4).
    <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting backslash-escaped
        characters within double-quoted display names.
-   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in display names, forbidding
-       specials, i.e. the <code>&lt;</code>, <code>&gt;</code>, <code>;</code>, <code>\</code>, and <code>"</code> characters,
-       while allowing periods, commas, colons, brackets, and parentheses for real-world usability
-       (e.g., "[JIRA] (PROJ-123)").
+   <li><b>Phrases (unquoted names):</b> Supports a relaxed phrase syntax in display names,
+       forbidding control/formatting characters and structural delimiters (<code>&lt;</code>, <code>&gt;</code>,
+       <code>;</code>, <code>\</code>, and <code>"</code>), while allowing periods, commas (when unambiguous),
+       colons, brackets, and parentheses for real-world usability (e.g., "[JIRA] (PROJ-123)").
    <li><b>Folding White Space (FWS):</b> Supports optional whitespace between the display name and
        the angle-bracketed address.
    <li><b>Address-List:</b> Supports semicolon as separators; allows real-world variations like
@@ -162,8 +162,14 @@ loadScripts(document, 'script');</script>
    <li><b>Display Name Spoofing (RFC 2047):</b> Display names are preserved literally in their
        raw/encoded form by default (preventing visual spoofing/phishing side-channels). Safe
        opt-in decoding is provided explicitly via <a href="#unicodeDisplayName()"><code>unicodeDisplayName()</code></a>.
-   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted multi-@
-       injections are strictly disallowed.
+   <li><b>Single-Mailbox Enforcement and Multi-@ Local-Parts:</b> Standalone RFC 5322 group
+       constructs (e.g. <code>group: a@b.com;</code>) and unquoted multi-@ injections are strictly
+       disallowed in single-address parsing.
+   <li><b>Invisible and Formatting Characters:</b> Control characters (<code>Cc</code>), line/paragraph
+       separators (<code>Zl</code>, <code>Zp</code>), and Unicode format characters (<code>Cf</code> — including
+       bidirectional overrides and zero-width joiners <code>ZWJ</code>/<code>ZWNJ</code>) are rejected
+       across all address fields and display names to prevent visual spoofing and header
+       injection.
  </ul>
 
  <h3 id="comparison-with-javax-mail-internetaddress-java-jakarta-mail--heading">Comparison with <code>javax.mail.InternetAddress</code> (Java / Jakarta Mail)</h3>
@@ -177,7 +183,7 @@ loadScripts(document, 'script');</script>
    <tr>
      <td><b>Immutability</b></td>
      <td>Mutable POJO</td>
-     <td>Immutable <code>record</code></td>
+     <td>Immutable value class</td>
    </tr>
    <tr>
      <td><b>DNS labels</b></td>
@@ -197,14 +203,14 @@ loadScripts(document, 'script');</script>
    <tr>
      <td><b>Group Addresses</b></td>
      <td>Permissive (parses RFC-822 group syntax implicitly)</td>
-     <td>Strictly rejected (enforces single address structure)</td>
+     <td>Enforces single-mailbox structure in <a href="#of(java.lang.String)"><code>of(String)</code></a>; composable via <a href="#PARSER"><code>PARSER</code></a></td>
    </tr>
    <tr>
      <td><b>RFC 2047 Encoded Words</b></td>
      <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part,
          or domain, risking address spoofing and routing hijacking)</td>
-     <td>Defensively rejected in local-part and checkDomain
-      Supported in display name via safe, explicit opt-in <a href="#unicodeDisplayName()"><code>unicodeDisplayName()</code></a></td>
+     <td>Defensively rejected in local-part and domain; supported in display name via safe,
+         explicit opt-in <a href="#unicodeDisplayName()"><code>unicodeDisplayName()</code></a></td>
    </tr>
    <tr>
      <td><b>Multi-@ Local-Parts</b></td>

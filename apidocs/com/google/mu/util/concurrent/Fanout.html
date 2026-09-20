@@ -436,13 +436,13 @@ loadScripts(document, 'script');</script>
      .toMap();
  </code></pre>
 
- Functionally, the <a href="Parallelizer.html#inParallel(java.util.function.Function)"><code>Parallelizer.inParallel(java.util.function.Function&lt;? super I, ? extends O&gt;)</code></a> collector is very similar to the Java 25
- <code>mapConcurrent()</code> gatherer:
+ Functionally, the <a href="Parallelizer.html#inParallel(java.util.function.Function)"><code>Parallelizer.inParallel(java.util.function.Function&lt;? super I, ? extends O&gt;)</code></a> collector is very similar to the Java 24
+ <code>Gatherers.mapConcurrent()</code> gatherer:
 
  <pre><code>
- List&lt;UserId&gt; userIds = ;
+ List&lt;UserId&gt; userIds = ...;
  List&lt;User&gt; users = userIds.stream()
-     .gather(mapConcurrent(userService::fetchUser, 10))
+     .gather(mapConcurrent(10, userService::fetchUser))
      .toList();
  </code></pre>
 

@@ -125,7 +125,9 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="../RegexPattern.Backreference.Numbered.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Backreference.Numbered</a></code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block">A backreference to a capturing group by number, like <code>\1</code>.</div>
+</div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="../RegexPattern.CharacterProperty.Negated.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a></code></div>
 <div class="col-last even-row-color">
@@ -191,29 +193,35 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color">
 <div class="block">Negative lookbehind: <code>(?&lt;!pattern)</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="../RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../RegexPattern.ModifierDirective.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Represents a POSIX character class inside a CharacterSet: e.g.</div>
+<div class="block">A standalone modifier directive, like <code>(?i)</code> or <code>(?is-m)</code>, which turns flags on or
+ off for the remainder of the enclosing group.</div>
 </div>
 <div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="../RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
+<div class="col-second even-row-color"><code><a href="../RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
 <div class="col-last even-row-color">
+<div class="block">Represents a POSIX character class inside a CharacterSet: e.g.</div>
+</div>
+<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a predefined character class like <code>\d</code> or <code>\w</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="../RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a regex pattern that is modified by a quantifier.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="../RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a sequence of regex patterns that must match consecutively.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="../RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a Unicode property class: e.g.</div>
 </div>
 </div>

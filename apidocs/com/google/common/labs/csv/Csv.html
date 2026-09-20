@@ -123,7 +123,8 @@ loadScripts(document, 'script');</script>
  List&lt;Map&lt;String, String&gt;&gt; rows = CSV.parseToMaps(input).toList();
  </code></pre>
 
- <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored.
+ <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored,
+ unless the whitespace character is the configured delimiter.
 
  <p>Also starting from v9.5, to write to CSV format, use the <a href="#join(java.util.Collection)"><code>join(Collection)</code></a> method to
  join to CSV format:

@@ -123,8 +123,8 @@ loadScripts(document, 'script');</script>
  int&nbsp;n,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code>
- in encounter order, then return the remaining elements in a stream.</div>
+<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code> in
+ encounter order, then return the remaining elements in a stream.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Spliterator.html" title="class or interface in java.util" class="external-link">Spliterator</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;T&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#dice(java.util.Spliterator,int)" class="member-name-link">dice</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Spliterator.html" title="class or interface in java.util" class="external-link">Spliterator</a>&lt;? extends T&gt;&nbsp;spliterator,
@@ -142,9 +142,9 @@ loadScripts(document, 'script');</script>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#generate(T,java.util.function.Function)" class="member-name-link">generate</a><wbr>(T&nbsp;seed,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&gt;&nbsp;step)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial
- <code>seed</code>, producing a Stream consisting of seed, elements of step(seed),
- elements of step(x) for each x in step(seed), etc.</div>
+<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial <code>seed</code>,
+ producing a Stream consisting of seed, elements of step(seed), elements of step(x) for each x
+ in step(seed), etc.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#groupConsecutive(java.util.stream.Stream,java.util.function.BiPredicate,java.util.function.BinaryOperator)" class="member-name-link">groupConsecutive</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
@@ -193,8 +193,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#iterateThrough(java.util.stream.Stream,com.google.mu.function.CheckedConsumer)" class="member-name-link">iterateThrough</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;stream,
  <a href="../../function/CheckedConsumer.html" title="interface in com.google.mu.function">CheckedConsumer</a>&lt;? super T, E&gt;&nbsp;consumer)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code>
- with exceptions propagated.</div>
+<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code> with
+ exceptions propagated.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T, S extends T&gt;<br><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#mergeConsecutive(java.util.stream.Stream,java.lang.Class,java.util.function.BinaryOperator)" class="member-name-link">mergeConsecutive</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
@@ -246,51 +246,55 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;</span>&nbsp;<span class="element-name">generate</span><wbr><span class="parameters">(T&nbsp;seed,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&gt;&nbsp;step)</span></div>
-<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial
- <code>seed</code>, producing a Stream consisting of seed, elements of step(seed),
- elements of step(x) for each x in step(seed), etc.
- (If the result stream returned by the <code>step</code> function is null an empty stream is used,
- instead.)
+<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial <code>seed</code>,
+ producing a Stream consisting of seed, elements of step(seed), elements of step(x) for each x
+ in step(seed), etc. (If the result stream returned by the <code>step</code> function is null an
+ empty stream is used, instead.)
 
- <p>While <code>Stream.generate(supplier)</code> can be used to generate infinite streams,
- it's not as easy to generate a <em>finite</em> stream unless the size can be pre-determined.
- This method can be used to generate finite streams: just return an empty stream when the
- <code>step</code> determines that there's no more elements to be generated.
+ <p>While <code>Stream.generate(supplier)</code> can be used to generate infinite streams, it's not
+ as easy to generate a <em>finite</em> stream unless the size can be pre-determined. This method
+ can be used to generate finite streams: just return an empty stream when the <code>step</code>
+ determines that there's no more elements to be generated.
 
- <p>A typical group of use cases are BFS traversal algorithms.
- For example, to stream the tree nodes in BFS order: <pre><code>
-   Stream&lt;Node&gt; bfs(Node root) {
-     return generate(root, node -&gt; node.children().stream());
-   }
+ <p>A typical group of use cases are BFS traversal algorithms. For example, to stream the tree
+ nodes in BFS order:
+
+ <pre><code>
+ Stream&lt;Node&gt; bfs(Node root) {
+   return generate(root, node -&gt; node.children().stream());
+ }
  </code></pre>
 
- It's functionally equivalent to the following common imperative code: <pre><code>
-   List&lt;Node&gt; bfs(Node root) {
-     List&lt;Node&gt; result = new ArrayList&lt;&gt;();
-     Queue&lt;Node&gt; queue = new ArrayDeque&lt;&gt;();
-     queue.add(root);
-     while (!queue.isEmpty()) {
-       Node node = queue.remove();
-       result.add(node);
-       queue.addAll(node.children());
-     }
-     return result;
+ It's functionally equivalent to the following common imperative code:
+
+ <pre><code>
+ List&lt;Node&gt; bfs(Node root) {
+   List&lt;Node&gt; result = new ArrayList&lt;&gt;();
+   Queue&lt;Node&gt; queue = new ArrayDeque&lt;&gt;();
+   queue.add(root);
+   while (!queue.isEmpty()) {
+     Node node = queue.remove();
+     result.add(node);
+     queue.addAll(node.children());
    }
+   return result;
+ }
  </code></pre>
 
- A BFS 2-D grid traversal algorithm: <pre><code>
-   Stream&lt;Cell&gt; bfs(Cell startingCell) {
-     Set&lt;Cell&gt; visited = new HashSet&lt;&gt;();
-     visited.add(startingCell);
-     return generate(startingCell, c -&gt; c.neighbors().filter(visited::add));
-   }
+ A BFS 2-D grid traversal algorithm:
+
+ <pre><code>
+ Stream&lt;Cell&gt; bfs(Cell startingCell) {
+   Set&lt;Cell&gt; visited = new HashSet&lt;&gt;();
+   visited.add(startingCell);
+   return generate(startingCell, c -&gt; c.neighbors().filter(visited::add));
+ }
  </code></pre>
 
- <p>At every step, 0, 1 or more elements can be generated into the resulting stream.
- As discussed above, returning an empty stream leads to eventual termination of the stream;
- returning 1-element stream is equivalent to <code>Stream.generate(supplier)</code>;
- while returning more than one elements allows a single element to fan out to multiple
- elements.</div>
+ <p>At every step, 0, 1 or more elements can be generated into the resulting stream. As
+ discussed above, returning an empty stream leads to eventual termination of the stream;
+ returning 1-element stream is equivalent to <code>Stream.generate(supplier)</code>; while returning
+ more than one elements allows a single element to fan out to multiple elements.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>1.9</dd>
@@ -415,7 +419,7 @@ loadScripts(document, 'script');</script>
  <pre><code>
  List&lt;AstNode&gt; merged =
      mergeConsecutive(astNodes, LiteralNode.class, (a, b) -&gt; new LiteralNode(a.value + b.value))
-         .toList());
+         .toList();
  </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -460,34 +464,35 @@ loadScripts(document, 'script');</script>
 <h3>iterateOnce</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;T&gt;</span>&nbsp;<span class="element-name">iterateOnce</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream)</span></div>
-<div class="block">Iterates through <code>stream</code> <em>only once</em>. It's strongly recommended
- to avoid assigning the return value to a variable or passing it to any other method because
- the returned <code>Iterable</code>'s <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html#iterator()" title="class or interface in java.lang" class="external-link"><code>iterator()</code></a> method can only be called
- once. Instead, always use it together with a for-each loop, as in:
+<div class="block">Iterates through <code>stream</code> <em>only once</em>. It's strongly recommended to avoid
+ assigning the return value to a variable or passing it to any other method because the returned
+ <code>Iterable</code>'s <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html#iterator()" title="class or interface in java.lang" class="external-link"><code>iterator()</code></a> method can only be called once.
+ Instead, always use it together with a for-each loop, as in:
 
  <pre><code>
-   for (Foo foo : iterateOnce(stream)) {
-     ...
-     if (...) continue;
-     if (...) break;
-     ...
-   }
+ for (Foo foo : iterateOnce(stream)) {
+   ...
+   if (...) continue;
+   if (...) break;
+   ...
+ }
  </code></pre>
 
  The above is equivalent to manually doing:
 
  <pre><code>
-   Iterable&lt;Foo&gt; foos = stream::iterator;
-   for (Foo foo : foos) {
-     ...
-   }
+ Iterable&lt;Foo&gt; foos = stream::iterator;
+ for (Foo foo : foos) {
+   ...
+ }
  </code></pre>
+
  except using this API eliminates the need for a named variable that escapes the scope of the
  for-each loop. And code is more readable too.
 
- <p>Note that <a href="#iterateThrough(java.util.stream.Stream,com.google.mu.function.CheckedConsumer)"><code>iterateThrough()</code></a> should be preferred whenever possible
- due to the caveats mentioned above. This method is still useful when the loop body needs to
- use control flows such as <code>break</code> or <code>return</code>.</div>
+ <p>Note that <a href="#iterateThrough(java.util.stream.Stream,com.google.mu.function.CheckedConsumer)"><code>iterateThrough()</code></a> should be preferred whenever possible due
+ to the caveats mentioned above. This method is still useful when the loop body needs to use
+ control flows such as <code>break</code> or <code>return</code>.</div>
 </div>
 </section>
 </li>
@@ -498,13 +503,13 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T, E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">iterateThrough</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;stream,
  <a href="../../function/CheckedConsumer.html" title="interface in com.google.mu.function">CheckedConsumer</a>&lt;? super T, E&gt;&nbsp;consumer)</span>
                                                     throws <span class="exceptions">E</span></div>
-<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code>
- with exceptions propagated. For example:
+<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code> with
+ exceptions propagated. For example:
 
  <pre><code>
-   void writeAll(Stream&lt;?&gt; stream, ObjectOutput out) throws IOException {
-     iterateThrough(stream, out::writeObject);
-   }
+ void writeAll(Stream&lt;?&gt; stream, ObjectOutput out) throws IOException {
+   iterateThrough(stream, out::writeObject);
+ }
  </code></pre></div>
 <dl class="notes">
 <dt>Throws:</dt>
@@ -521,11 +526,10 @@ loadScripts(document, 'script');</script>
  int&nbsp;maxSize)</span></div>
 <div class="block">Dices <code>stream</code> into smaller chunks each with up to <code>maxSize</code> elements.
 
- <p>For a sequential stream, the first N-1 chunk's will contain exactly <code>maxSize</code>
- elements and the last chunk may contain less (but never 0).
- However for parallel streams, it's possible that the stream is split in roughly equal-sized
- sub streams before being diced into smaller chunks, which then will result in more than one
- chunks with less than <code>maxSize</code> elements.
+ <p>For a sequential stream, the first N-1 chunks will contain exactly <code>maxSize</code> elements
+ and the last chunk may contain less (but never 0). However for parallel streams, it's possible
+ that the stream is split in roughly equal-sized sub streams before being diced into smaller
+ chunks, which then will result in more than one chunks with less than <code>maxSize</code> elements.
 
  <p>This is an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#StreamOps">
  intermediary operation</a>.</div>
@@ -536,7 +540,7 @@ loadScripts(document, 'script');</script>
 <dt>Returns:</dt>
 <dd>Stream of diced chunks each being a list of size up to <code>maxSize</code></dd>
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>maxSize &lt;= 0</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>maxSize &lt;= 0</code></dd>
 </dl>
 </div>
 </section>
@@ -555,7 +559,7 @@ loadScripts(document, 'script');</script>
 <dt>Returns:</dt>
 <dd>Spliterator of diced chunks each being a list of size up to <code>maxSize</code></dd>
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>maxSize &lt;= 0</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>maxSize &lt;= 0</code></dd>
 </dl>
 </div>
 </section>
@@ -565,9 +569,9 @@ loadScripts(document, 'script');</script>
 <h3>indexesFrom</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</span>&nbsp;<span class="element-name">indexesFrom</span><wbr><span class="parameters">(int&nbsp;firstIndex)</span></div>
-<div class="block">Returns an infinite <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link"><code>Stream</code></a> starting from <code>firstIndex</code>.
- Can be used together with <a href="BiStream.html#zip(java.util.Collection,java.util.Collection)"><code>BiStream.zip(java.util.Collection&lt;? extends L&gt;, java.util.Collection&lt;? extends R&gt;)</code></a> to iterate over a stream with index.
- For example: <code>zip(indexesFrom(0), values)</code>.
+<div class="block">Returns an infinite <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link"><code>Stream</code></a> starting from <code>firstIndex</code>. Can be used together with
+ <a href="BiStream.html#zip(java.util.Collection,java.util.Collection)"><code>BiStream.zip(java.util.Collection&lt;? extends L&gt;, java.util.Collection&lt;? extends R&gt;)</code></a> to iterate over a stream with index. For example: <code>
+ zip(indexesFrom(0), values)</code>.
 
  <p>To get a finite stream, use <code>indexesFrom(...).limit(size)</code>.
 
@@ -614,7 +618,7 @@ loadScripts(document, 'script');</script>
  terminate as soon as the Supplier returns null, in which case the null is treated as the
  terminal condition and doesn't constitute a stream element.
 
- <p>For sequential iterations, <code>whileNotNll()</code> is usually more concise than implementing
+ <p>For sequential iterations, <code>whileNotNull()</code> is usually more concise than implementing
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Spliterators.AbstractSpliterator.html" title="class or interface in java.util" class="external-link"><code>Spliterators.AbstractSpliterator</code></a> directly. The latter requires boilerplate that looks like this:
 
  <pre><code>
@@ -636,10 +640,16 @@ loadScripts(document, 'script');</script>
  return whileNotNull(() -&gt; hasData ? data : null);
  </code></pre>
 
+ <p>Note that while the JDK stream pipeline does not guarantee at-most-once terminal invocation
+ of <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Spliterator.html#tryAdvance(java.util.function.Consumer)" title="class or interface in java.util" class="external-link"><code>Spliterator.tryAdvance(java.util.function.Consumer&lt;? super T&gt;)</code></a> after it returns <code>false</code>, <code>whileNotNull()</code>
+ guarantees that <code>supplier.get()</code> is never invoked again once it returns <code>null</code>.
+ Thus, <code>supplier</code> can be, but is not required to be, idempotent after returning <code>
+ null</code>.
+
  <p>Why null? Why not <code>Optional</code>? Wrapping every generated element of a stream in an
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a> carries considerable allocation cost. Also, while nulls are in general
- discouraged, they are mainly a problem for users who have to remember to deal with them.
- The stream returned by <code>whileNotNull()</code> on the other hand is guaranteed to never include
+ discouraged, they are mainly a problem for users who have to remember to deal with them. The
+ stream returned by <code>whileNotNull()</code> on the other hand is guaranteed to never include
  nulls that users have to worry about.
 
  <p>If you already have an <code>Optional</code> from a method return value, you can use <code>
@@ -679,14 +689,16 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;sideEffect)</span></div>
 <div class="block">Returns a sequential stream with <code>sideEffect</code> attached on every element.
 
- <p>Unlike <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#peek(java.util.function.Consumer)" title="class or interface in java.util.stream" class="external-link"><code>Stream.peek(java.util.function.Consumer&lt;? super T&gt;)</code></a>, which should only be used for debugging purpose,
- the side effect is allowed to interfere with the source of the stream, and is
- guaranteed to be applied in encounter order.
+ <p>Unlike <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#peek(java.util.function.Consumer)" title="class or interface in java.util.stream" class="external-link"><code>Stream.peek(java.util.function.Consumer&lt;? super T&gt;)</code></a>, which should only be used for debugging purpose, the side effect
+ is allowed to interfere with the source of the stream, and is guaranteed to be applied in
+ encounter order.
 
  <p>If you have to resort to side effects, use this dedicated method instead of <code>peek()</code>
  or any other stream method. From the API specification, all methods defined by <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link"><code>Stream</code></a>
  are expected to be stateless, and should not cause or depend on side effects, because even for
- ordered, sequential streams, only the order of output is defined, not the order of evaluation.</div>
+ ordered, sequential streams, only the order of output is defined, not the order of evaluation.
+
+ <p>Closing the returned stream also closes <code>stream</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.9</dd>
@@ -701,11 +713,12 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;</span>&nbsp;<span class="element-name">consume</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
  int&nbsp;n,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</span></div>
-<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code>
- in encounter order, then return the remaining elements in a stream.
+<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code> in
+ encounter order, then return the remaining elements in a stream.
 
- <p>Upon return, to-be-consumed (up to <code>n</code>) elements have been consumed.
- The <code>stream</code> reference should no longer be used.</div>
+ <p>Upon return, to-be-consumed (up to <code>n</code>) elements have been consumed. The <code>
+ stream</code> reference should no longer be used. Closing the returned stream will close <code>
+ stream</code>.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>n</code> is negative;</dd>

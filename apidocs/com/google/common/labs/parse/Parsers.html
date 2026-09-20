@@ -121,7 +121,7 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Class</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-first even-row-color"><code>static final class&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="Parsers.Suffix.html" class="type-name-link" title="class in com.google.common.labs.parse">Parsers.Suffix</a></code></div>
 <div class="col-last even-row-color">
 <div class="block">Provides helpers to left-factor common prefixes followed by one or multiple optional suffixes.</div>
@@ -314,7 +314,11 @@ loadScripts(document, 'script');</script>
 
  <p>Note that leading plus signs (e.g., <code>+1</code>), leading zeros on integers (e.g., <code>
  05</code>), and missing integer or fractional parts (e.g., <code>.5</code> or <code>5.</code>) are not allowed,
- as per the JSON standard.</div>
+ as per the JSON standard.
+
+ <p>Per <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html#parseDouble(java.lang.String)" title="class or interface in java.lang" class="external-link"><code>Double.parseDouble(String)</code></a>, values that overflow the range of <code>double</code>
+ evaluate to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html#POSITIVE_INFINITY" title="class or interface in java.lang" class="external-link"><code>Double.POSITIVE_INFINITY</code></a> or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html#NEGATIVE_INFINITY" title="class or interface in java.lang" class="external-link"><code>Double.NEGATIVE_INFINITY</code></a>, and values
+ that underflow evaluate to <code>0.0</code>.</div>
 </div>
 </section>
 </li>
@@ -438,9 +442,9 @@ loadScripts(document, 'script');</script>
  "aaaaaaaaaaaaaaaaaaaaaaaaaaaa!"</code>. See the <a href="https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS">OWASP
  ReDoS Attack Reference</a> for a detailed analysis of this issue.
 
- <p>To avoid ReDoS and keep parsing execution linear and safe, prefer the declarative,
- backtracking-free <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> combinator API (using methods like <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser)"><code>followedBy()</code></a>, <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)"><code>sequence()</code></a>, <a href="Parser.html#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a>, etc.) and only
- use <code>regex</code> on trusted input (such as a config file, command line tool etc).
+ <p>To avoid ReDoS and keep parsing execution linear and safe, prefer the declarative <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> combinator API (using methods like <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser)"><code>followedBy()</code></a>, <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)"><code>sequence()</code></a>, <a href="Parser.html#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)"><code>followedByZeroOrMore()</code></a>, etc.)
+ whose repetitions are possessive and never unconsume matched characters, and only use <code>
+ regex</code> on trusted input (such as a config file, command line tool etc).
 
  <p>The pattern must be a compile-time constant, must not match the empty string, and must not
  contain anchors (like <code>^</code>, <code>$</code>), lookarounds (like <code>(?=...)</code>), or

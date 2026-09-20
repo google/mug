@@ -109,14 +109,14 @@ loadScripts(document, 'script');</script>
 
  <p>At high level, this class provides similar behavior as <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#concat(java.util.stream.Stream,java.util.stream.Stream)" title="class or interface in java.util.stream" class="external-link"><code>Stream.concat()</code></a>
  or <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/Iterables.html#concat(java.lang.Iterable,java.lang.Iterable)" title="class or interface in com.google.common.collect" class="external-link"><code>Guava Iterables.concat()</code></a>, except it's not
- recursive. That is, if your Chain is the result of 1 million concatenations, you won't run
- into stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
+ recursive. That is, if your Chain is the result of 1 million concatenations, you won't run into
+ stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
 
  <p>The expected use case is to concatenate lots of smaller <code>Chain</code>s using the <code>
  concat()</code> methods to create the final Chain. O(n) materialization cost will be (lazily) incurred
- upon the first time accessing the elements of the final Chain through the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a>
- interface such as <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html#get(int)" title="class or interface in java.util" class="external-link"><code>List.get(int)</code></a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html#equals(java.lang.Object)" title="class or interface in java.util" class="external-link"><code>List.equals(java.lang.Object)</code></a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/AbstractCollection.html#toString()" title="class or interface in java.util" class="external-link"><code>AbstractCollection.toString()</code></a> etc. You may also
- want to copy the final Chain into a more conventional List such as <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ImmutableList.html#copyOf(java.lang.Iterable)" title="class or interface in com.google.common.collect" class="external-link"><code>Guava ImmutableList</code></a>.
+ upon the first time accessing the elements of the final Chain through the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a> interface
+ such as <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html#get(int)" title="class or interface in java.util" class="external-link"><code>List.get(int)</code></a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html#equals(java.lang.Object)" title="class or interface in java.util" class="external-link"><code>List.equals(java.lang.Object)</code></a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/AbstractCollection.html#toString()" title="class or interface in java.util" class="external-link"><code>AbstractCollection.toString()</code></a> etc. You may also want to copy
+ the final Chain into a more conventional List such as <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ImmutableList.html#copyOf(java.lang.Iterable)" title="class or interface in com.google.common.collect" class="external-link"><code>Guava ImmutableList</code></a>.
 
  <p>On the other hand, it's inefficient to materialize, concatenate then materialize the
  concatenated Chain...
@@ -127,9 +127,9 @@ loadScripts(document, 'script');</script>
  <p>Null elements are not allowed.
 
  <p>While bearing a bit of similarity, this class isn't a <a href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent data structure</a>.
- Besides the O(1) concatenation, it's a traditional immutable <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a> supporting
- no other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists;
- and random access is also O(1) (after one-time lazy materialization).</div>
+ Besides the O(1) concatenation, it's a traditional immutable <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a> supporting no
+ other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists; and
+ random access is also O(1) (after one-time lazy materialization).</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>8.1</dd>
@@ -162,8 +162,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#concat(com.google.mu.collect.Chain,com.google.mu.collect.Chain)" class="member-name-link">concat</a><wbr>(<a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;? extends T&gt;&nbsp;left,
  <a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;? extends T&gt;&nbsp;right)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the
- <code>right</code> Chain, in <em>O(1)</em> time.</div>
+<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the <code>right</code>
+ Chain, in <em>O(1)</em> time.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Chain.html" title="class in com.google.mu.collect">Chain</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Chain">T</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#concat(T)" class="member-name-link">concat</a><wbr>(<a href="#type-param-T" title="type parameter in Chain">T</a>&nbsp;lastElement)</code></div>
@@ -279,11 +279,15 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;T&gt;</span>&nbsp;<span class="element-name">concat</span><wbr><span class="parameters">(<a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;? extends T&gt;&nbsp;left,
  <a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;? extends T&gt;&nbsp;right)</span></div>
-<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the
- <code>right</code> Chain, in <em>O(1)</em> time.
+<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the <code>right</code>
+ Chain, in <em>O(1)</em> time.
 
- <p>Encounter order of elements is preserved. That is, <code>concat([1, 2], [3, 4])</code>
- returns <code>[1, 2, 3, 4]</code>.</div>
+ <p>Encounter order of elements is preserved. That is, <code>concat([1, 2], [3, 4])</code> returns
+ <code>[1, 2, 3, 4]</code>.</div>
+<dl class="notes">
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the resulting chain size would exceed <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -294,6 +298,10 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Chain.html" title="class in com.google.mu.collect">Chain</a>&lt;<a href="#type-param-T" title="type parameter in Chain">T</a>&gt;</span>&nbsp;<span class="element-name">concat</span><wbr><span class="parameters">(<a href="#type-param-T" title="type parameter in Chain">T</a>&nbsp;lastElement)</span></div>
 <div class="block">Returns a new Chain concatenating elements from <code>this</code> Chain followed by <code>
  lastElement</code>, in <em>O(1)</em> time.</div>
+<dl class="notes">
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the resulting chain size would exceed <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -336,9 +344,8 @@ loadScripts(document, 'script');</script>
 <h3>stream</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="#type-param-T" title="type parameter in Chain">T</a>&gt;</span>&nbsp;<span class="element-name">stream</span>()</div>
-<div class="block">Returns a <em>lazy</em> stream of the elements in this list.
- The returned stream is lazy in that concatenated chains aren't consumed until the stream
- reaches their elements.</div>
+<div class="block">Returns a <em>lazy</em> stream of the elements in this list. The returned stream is lazy in
+ that concatenated chains aren't consumed until the stream reaches their elements.</div>
 </div>
 </section>
 </li>

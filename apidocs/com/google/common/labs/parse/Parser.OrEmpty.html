@@ -548,22 +548,24 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
        <p>Like <a href="#parse(java.lang.String)"><code>parse(String)</code></a>, but throws a custom exception instead of <code>
        ParseException</code>:
        <pre><code>
-       int id = Parser.digits()
-           .map(Integer::parseInt)
-           .orElse(0)
-           .parse(input, leftOver -&gt; {
-             throw new BadRequestException("unrecognized characters from index " + leftOver);
-           });
-       </code></pre>
+ int id = Parser.digits()
+     .map(Integer::parseInt)
+     .orElse(0)
+     .parse(input, leftOver -&gt; {
+       throw new BadRequestException("unrecognized characters from index " + leftOver);
+     });
+
+ </code></pre>
    <li>To tolerate partial matches through the returned value:
        <p>When partial matches or syntax mismatches should not cause an exception but instead
        be handled as an absent or default value, pass a no-op handler:
        <pre><code>
-       Optional&lt;Integer&gt; id = Parser.digits()
-           .map(Integer::parseInt)
-           .optional()
-           .parse(input, leftOver -&gt; {});
-       </code></pre>
+ Optional&lt;Integer&gt; id = Parser.digits()
+     .map(Integer::parseInt)
+     .optional()
+     .parse(input, leftOver -&gt; {});
+
+ </code></pre>
  </ol></div>
 <dl class="notes">
 <dt>Parameters:</dt>

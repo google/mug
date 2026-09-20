@@ -92,8 +92,9 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="annotations">@ThreadSafe
 </span><span class="modifiers">public final class </span><span class="element-name type-name-label">Happenstance&lt;K&gt;</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
-<div class="block">A utility to manipulate temporal ordering (via <a href="#checkpoint(K)"><code>checkpoint(K)</code></a>) or happens-before (via <a href="#join(K)"><code>join(K)</code></a>) relationships between events in concurrent operations. This is useful for testing, where
- you want to ensure that certain actions are executed in a specific order.
+<div class="block">A utility to manipulate happens-before relationships (via <a href="#join(K)"><code>join(K)</code></a>) between events in
+ concurrent operations. This is useful for testing, where you want to ensure that certain actions
+ are executed in a specific order.
 
  <p>Example:
 
@@ -114,23 +115,21 @@ loadScripts(document, 'script');</script>
                sut.read(input);
                sut.write(input);
                happens.join("written" + input);
-               dut.finish(input);
+               sut.finish(input);
              });
    }
  }
  </code></pre>
 
- <p>Implementation note: this class uses VarHandle instead of high-level synchronization
- primitives to avoid introducing unintended memory barrier that may result in false negative tests
- (the test would have failed without the sequence points). When waiting for predecessors, a
- two-stage back-off strategy is employed: <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Thread.html#onSpinWait()" title="class or interface in java.lang" class="external-link"><code>Thread.onSpinWait()</code></a> is called up to 1000 times to
- catch tight visibility races in CPU-bound tests without triggering a context switch; if the
- predecessor is still not ready, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Thread.html#yield()" title="class or interface in java.lang" class="external-link"><code>Thread.yield()</code></a> is called to prevent deadlocks or extreme
- performance degradation in I/O-bound or heavily over-provisioned environments.
+ <p>Implementation note: when waiting for predecessors, a three-stage back-off strategy is
+ employed: <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Thread.html#onSpinWait()" title="class or interface in java.lang" class="external-link"><code>Thread.onSpinWait()</code></a> is called up to 1000 times to catch tight races in CPU-bound
+ tests without triggering a context switch; if the predecessor is still not ready, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Thread.html#yield()" title="class or interface in java.lang" class="external-link"><code>Thread.yield()</code></a> is called up to 100 times to prevent deadlocks or extreme performance degradation
+ in heavily over-provisioned environments; beyond that the thread parks for 50µs at a time, so
+ that an I/O-bound SUT operation taking hundreds of milliseconds doesn't burn a core per waiter.
 
- <p>The <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a> method is intended to be called from the main thread to set
- up the DAG of relationships between sequence points before the <code>checkpoint()</code> or <code>
- join()</code> method is called from any threads.</div>
+ <p>The <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a> method is intended to be called from the main thread to set up
+ the DAG of relationships between sequence points before the <code>join()</code> method is called from
+ any threads.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.3</dd>
@@ -161,7 +160,7 @@ loadScripts(document, 'script');</script>
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -177,11 +176,14 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a new <a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#checkpoint(K)" class="member-name-link">checkpoint</a><wbr>(<a href="#type-param-K" title="type parameter in Happenstance">K</a>&nbsp;sequencePoint)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Waits for all predecessors of <code>sequencePoint</code> to have checked in, then marks <code>
- sequencePoint</code> as checked-in and returns.</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#checkpoint(K)" class="member-name-link">checkpoint</a><wbr>(<a href="#type-param-K" title="type parameter in Happenstance">K</a>&nbsp;sequencePoint)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">The JIT and the CPU can move the surrounding plain reads and writes across a
+     checkpoint, so the ordering applies to the check-in calls themselves, not to the SUT code
+     around them.</div>
+</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#join(K)" class="member-name-link">join</a><wbr>(<a href="#type-param-K" title="type parameter in Happenstance">K</a>&nbsp;sequencePoint)</code></div>
@@ -212,9 +214,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/SafeVarargs.html" title="class or interface in java.lang" class="external-link">@SafeVarargs</a>
 </span><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;K&gt;</span>&nbsp;<span class="return-type"><a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent">Happenstance.Builder</a>&lt;K&gt;</span>&nbsp;<span class="element-name">builder</span><wbr><span class="parameters">(K...&nbsp;sequencePoints)</span></div>
-<div class="block">Returns a new <a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>.
- No order is defined among these sequence points, until you explicitly
- call <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</div>
+<div class="block">Returns a new <a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>. No order is defined
+ among these sequence points, until you explicitly call <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</div>
 </div>
 </section>
 </li>
@@ -223,9 +224,8 @@ loadScripts(document, 'script');</script>
 <h3>builder</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;K&gt;</span>&nbsp;<span class="return-type"><a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent">Happenstance.Builder</a>&lt;K&gt;</span>&nbsp;<span class="element-name">builder</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends K&gt;&nbsp;sequencePoints)</span></div>
-<div class="block">Returns a new <a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>.
- No order is defined among these sequence points, until you explicitly
- call <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</div>
+<div class="block">Returns a new <a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>. No order is defined
+ among these sequence points, until you explicitly call <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</div>
 </div>
 </section>
 </li>
@@ -237,19 +237,24 @@ loadScripts(document, 'script');</script>
 <div class="block">Joins until all predecessors of <code>sequencePoint</code> have checked in, then marks <code>
  sequencePoint</code> as checked-in and returns.
 
- <p>This method differs from <a href="#checkpoint(K)"><code>checkpoint(K)</code></a> in that it establishes happens-before
- relationship between sequence points, which means writes happening before <code>join(A)</code> are
- visible to code after <code>join(B)</code> as long as <code>sequence(A, B)</code> is specified.
+ <p>This method establishes happens-before relationship between sequence points, which means
+ writes happening before <code>join(A)</code> are visible to code after <code>join(B)</code> as long as
+ <code>sequence(A, B)</code> is specified.
 
  <p><em>Warning:</em>Using <code>join()</code> inappropriately may result in false negative tests if
  the SUT has a bug that writes to non-volatile state, because the <code>join()</code> call will
- accidentally "fix" the bug by making the write visible to other threads.</div>
+ accidentally "fix" the bug by making the write visible to other threads.
+
+ <p>If the calling thread is interrupted while waiting, this method throws <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link"><code>AssertionError</code></a> without checking in, and leaves the thread's interrupt status set. An <code>
+ Error</code> is used so that the bail-out isn't swallowed by a <code>catch (Exception)</code> in the code
+ under test.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>sequencePoint</code> - the sequence point to wait for and mark as completed.</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>sequencePoint</code> wasn't defined via <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>sequencePoint</code> has already been marked as completed.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link">AssertionError</a></code> - if the calling thread is interrupted while waiting for predecessors.</dd>
 </dl>
 </div>
 </section>
@@ -258,24 +263,28 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="checkpoint(K)">
 <h3 id="checkpoint(java.lang.Object)">checkpoint</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">checkpoint</span><wbr><span class="parameters">(<a href="#type-param-K" title="type parameter in Happenstance">K</a>&nbsp;sequencePoint)</span></div>
+<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">checkpoint</span><wbr><span class="parameters">(<a href="#type-param-K" title="type parameter in Happenstance">K</a>&nbsp;sequencePoint)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">The JIT and the CPU can move the surrounding plain reads and writes across a
+     checkpoint, so the ordering applies to the check-in calls themselves, not to the SUT code
+     around them. Use <a href="#join(K)"><code>join(K)</code></a> instead.</div>
+</div>
 <div class="block">Waits for all predecessors of <code>sequencePoint</code> to have checked in, then marks <code>
  sequencePoint</code> as checked-in and returns.
 
- <p>To avoid introducing unintended memory barriers, this method only establishes temporal
- ordering; no additional happens-before relationship between sequence points is established,
- which means writes before the checkpoint A may still be invisible to reads after checkpoint B
- even with <code>sequence(A, B)</code>. The SUT itself should establish happens-before
- relationship if necessary.
-
- <p>If extra memory barrier doesn't defeat your concurrency tests, and you need to establish
- happens-before relationships, use <a href="#join(K)"><code>join(K)</code></a> instead.</div>
+ <p>If the calling thread is interrupted while waiting, this method throws <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link"><code>AssertionError</code></a> without checking in, and leaves the thread's interrupt status set. An <code>
+ Error</code> is used so that the bail-out isn't swallowed by a <code>catch (Exception)</code> in the code
+ under test. The interrupt status is only consulted while actually waiting, so a sequence point
+ with no predecessors, or whose predecessors have already checked in, checks in normally even on
+ an interrupted thread.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>sequencePoint</code> - the sequence point to wait for and mark as completed.</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>sequencePoint</code> wasn't defined via <a href="Happenstance.Builder.html#sequence(K...)"><code>Happenstance.Builder.sequence(K...)</code></a>.</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>sequencePoint</code> has already been marked as completed.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link">AssertionError</a></code> - if the calling thread is interrupted while waiting for predecessors.</dd>
 </dl>
 </div>
 </section>

@@ -108,9 +108,8 @@ loadScripts(document, 'script');</script>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>
 implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Comparable.html" title="class or interface in java.lang" class="external-link">Comparable</a>&lt;<a href="Ordinal.html" title="class in com.google.mu.util">Ordinal</a>&gt;</span></div>
 <div class="block">This class provides type-safe transition between 1-based Ordinal and 0-based indexes that are
- commonly used to index arrays and lists. This is useful especially to translate between
- end-user friendly numbers and machine-friendly index numbers, like for example, to report error
- messages.
+ commonly used to index arrays and lists. This is useful especially to translate between end-user
+ friendly numbers and machine-friendly index numbers, like for example, to report error messages.
 
  <p>Users should immediately wrap 1-based numbers as <code>Ordinal</code> instances to take advantage
  of the static type safety, to avoid 1-off errors and to use the extra utilities in this class.
@@ -211,8 +210,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toIndex()" class="member-name-link">toIndex</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to
- read and write elements in arrays and lists.</div>
+<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to read and
+ write elements in arrays and lists.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
@@ -293,11 +292,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>of</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Ordinal.html" title="class in com.google.mu.util">Ordinal</a></span>&nbsp;<span class="element-name">of</span><wbr><span class="parameters">(int&nbsp;oneBased)</span></div>
-<div class="block">Returns instance corresponding to the <code>oneBased</code> number.
- Small integer numbers in the range of <code>[1, 100]</code> are cached.</div>
+<div class="block">Returns instance corresponding to the <code>oneBased</code> number. Small integer numbers in the
+ range of <code>[1, 100]</code> are cached.</div>
 <dl class="notes">
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>num</code> is not positive.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>oneBased</code> is not positive.</dd>
 </dl>
 </div>
 </section>
@@ -309,8 +308,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Ordinal.html" title="class in com.google.mu.util">Ordinal</a></span>&nbsp;<span class="element-name">of</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Enum.html" title="class or interface in java.lang" class="external-link">Enum</a>&lt;?&gt;&nbsp;e)</span></div>
 <div class="block">Returns instance corresponding to the ordinal of the Enum object <code>e</code>.
 
- <p>Note that given <code>Enum.ordinal</code> is 0-based, an enum with <code>ordinal() == 0</code>
- maps to <a href="#first()"><code>first()</code></a>, or <code>of(1)</code>.</div>
+ <p>Note that given <code>Enum.ordinal</code> is 0-based, an enum with <code>ordinal() == 0</code> maps to
+ <a href="#first()"><code>first()</code></a>, or <code>of(1)</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>7.0</dd>
@@ -323,11 +322,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>fromIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Ordinal.html" title="class in com.google.mu.util">Ordinal</a></span>&nbsp;<span class="element-name">fromIndex</span><wbr><span class="parameters">(int&nbsp;zeroBased)</span></div>
-<div class="block">Returns instance corresponding to the <code>zeroBased</code> index. That is:
- index <code>0</code> corresponds to <code>"1st"</code> and index <code>1</code> for <code>"2nd"</code> etc.</div>
+<div class="block">Returns instance corresponding to the <code>zeroBased</code> index. That is: index <code>0</code>
+ corresponds to <code>"1st"</code> and index <code>1</code> for <code>"2nd"</code> etc.</div>
 <dl class="notes">
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>num</code> is negative.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>zeroBased</code> is negative or <code>Integer.MAX_VALUE</code>.</dd>
 </dl>
 </div>
 </section>
@@ -337,8 +336,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>toIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">toIndex</span>()</div>
-<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to
- read and write elements in arrays and lists.</div>
+<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to read and
+ write elements in arrays and lists.</div>
 </div>
 </section>
 </li>
@@ -372,9 +371,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Returns the distance between <code>this</code> and <code>that</code>.
 
  <p>Some examples:
+
  <pre><code>
-   1st.minus(2nd) =&gt; -1
-   5th.minus(2nd) =&gt; 3
+ 1st.minus(2nd) =&gt; -1
+ 5th.minus(2nd) =&gt; 3
  </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -425,8 +425,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>toString</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">toString</span>()</div>
-<div class="block">Returns the string representation of this ordinal. For example,
- <code>Ordinal.of(1).toString()</code> returns "1st".</div>
+<div class="block">Returns the string representation of this ordinal. For example, <code>
+ Ordinal.of(1).toString()</code> returns "1st".</div>
 <dl class="notes">
 <dt>Overrides:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></dd>

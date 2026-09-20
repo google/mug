@@ -103,43 +103,49 @@ loadScripts(document, 'script');</script>
 implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>, com.google.mu.util.stream.Joiner.FasterStringJoiner, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span></div>
 <div class="block">A joiner (and <code>Collector</code>) that joins strings.
 
- <p>When used to join a pair of objects (for example in a BiStream), it can be used for BiFunction:
+ <p>When used to join a pair of objects (for example in a BiStream), it can be used for
+ BiFunction:
+
  <pre><code>
-   BiStream.zip(userIds, names)
-       .mapToObj(Joiner.on('=')::join)  // (id, name) -&gt; id + "=" + name
-       ....;
+ BiStream.zip(userIds, names)
+     .mapToObj(Joiner.on('=')::join)  // (id, name) -&gt; id + "=" + name
+     ....;
  </code></pre>
 
- <p>Alternatively, it can be used as a Collector. For example,
- <code>names.collect(Joiner.on(','))</code> is equivalent to <code>names.collect(Collectors.joining(","))</code>.
+ <p>Alternatively, it can be used as a Collector. For example, <code>
+ names.collect(Joiner.on(','))</code> is equivalent to <code>names.collect(Collectors.joining(","))</code>.
 
- Except that JDK <code>joining()</code> requires the inputs to be strings; while Joiner can join any input,
- e.g. numbers.
+ <p>Except that JDK <code>joining()</code> requires the inputs to be strings; while Joiner can join any
+ input, e.g. numbers.
 
  <p>Starting from v9.6, <code>Joiner.on()</code> is optimized to be more efficient than <code>
  Collectors.joining()</code> when the input has only one string element because it will return the
  string element as is, whereas JDK <code>Collectors.joining()</code> delegates to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/StringJoiner.html" title="class or interface in java.util" class="external-link"><code>StringJoiner</code></a>,
  which performs a deep copy even when there is only one string with no prefix and suffix.
 
- <p>You can also chain <a href="#between(char,char)"><code>between(char, char)</code></a> to further enclose the joined result between a pair of strings.
- The following code joins a list of ids and their corresponding names in the format of
- <code>"[id1=name1, id2=name2, id3=name3, ...]"</code> by first joining each pair with <code>'='</code> and then
- joining the <code>"id=name"</code> entries with <code>','</code>, finally enclosing them between
+ <p>You can also chain <a href="#between(char,char)"><code>between(char, char)</code></a> to further enclose the joined result between a pair of
+ strings. The following code joins a list of ids and their corresponding names in the format of
+ <code>"[id1=name1, id2=name2, id3=name3, ...]"</code> by first joining each pair with <code>'='</code> and
+ then joining the <code>"id=name"</code> entries with <code>','</code>, finally enclosing them between
  <code>'['</code> and <code>']'</code>:
+
  <pre><code>
-   BiStream.zip(userIds, names)
-       .mapToObj(Joiner.on('=')::join)
-       .collect(Joiner.on(", ").between('[', ']'));
+ BiStream.zip(userIds, names)
+     .mapToObj(Joiner.on('=')::join)
+     .collect(Joiner.on(", ").between('[', ']'));
  </code></pre>
+
  Which reads clearer than using JDK <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#joining()" title="class or interface in java.util.stream" class="external-link"><code>Collectors.joining()</code></a>:
+
  <pre><code>
-   BiStream.zip(userIds, names)
-       .mapToObj(id, name) -&gt; id + "=" + name)
-       .collect(Collectors.joining(", ", "[", "]"));
+ BiStream.zip(userIds, names)
+     .mapToObj((id, name) -&gt; id + "=" + name)
+     .collect(Collectors.joining(", ", "[", "]"));
  </code></pre>
 
  <p>If you need to skip nulls and/or empty strings while joining, use <code>
- collect(Joiner.on(...).skipNulls())</code> or <code>collect(Joiner.on(...).skipEmpties())</code> respectively.
+ collect(Joiner.on(...).skipNulls())</code> or <code>collect(Joiner.on(...).skipEmpties())</code>
+ respectively.
 
  <p>Unlike Guava <code>com.google.common.base.Joiner</code>, nulls don't cause NullPointerException,
  instead, they are stringified using <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html#valueOf(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>String.valueOf(java.lang.Object)</code></a>.</div>
@@ -219,8 +225,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>, ?, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipEmpties()" class="member-name-link">skipEmpties</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using
- this Joiner.</div>
+<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using this
+ Joiner.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>,<wbr>?,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipNulls()" class="member-name-link">skipNulls</a>()</code></div>
@@ -298,8 +304,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  char&nbsp;after)</span></div>
 <div class="block">Returns an instance that wraps the join result between <code>before</code> and <code>after</code>.
 
- <p>For example both <code>Joiner.on(',').between('[', ']').join(List.of(1, 2))</code> and
- <code>Joiner.on(',').between('[', ']').join(1, 2)</code> return <code>"[1,2]"</code>.</div>
+ <p>For example both <code>Joiner.on(',').between('[', ']').join(List.of(1, 2))</code> and <code>
+ Joiner.on(',').between('[', ']').join(1, 2)</code> return <code>"[1,2]"</code>.</div>
 </div>
 </section>
 </li>
@@ -311,8 +317,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&nbsp;after)</span></div>
 <div class="block">Returns an instance that wraps the join result between <code>before</code> and <code>after</code>.
 
- <p>For example both <code>Joiner.on(',').between("[", "]").join([1, 2])</code> and
- <code>Joiner.on(',').between("[", "]").join(1, 2)</code> result in <code>"[1,2]"</code>.</div>
+ <p>For example both <code>Joiner.on(',').between("[", "]").join([1, 2])</code> and <code>
+ Joiner.on(',').between("[", "]").join(1, 2)</code> result in <code>"[1,2]"</code>.</div>
 </div>
 </section>
 </li>
@@ -330,8 +336,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>skipEmpties</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>, ?, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">skipEmpties</span>()</div>
-<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using
- this Joiner.</div>
+<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using this
+ Joiner.</div>
 </div>
 </section>
 </li>

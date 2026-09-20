@@ -179,7 +179,7 @@ loadScripts(document, 'script');</script>
  <pre><code>
  SafeSql sql = SafeSql.of(
      """
-     SELECT id FROM Users
+     SELECT id FROM Employees
      WHERE firstName = {first_name} AND lastName IN ({last_names})
      """,
      firstName, lastNamesList);
@@ -233,7 +233,7 @@ loadScripts(document, 'script');</script>
              &lt;path&gt;
                &lt;groupId&gt;com.google.mug&lt;/groupId&gt;
                &lt;artifactId&gt;mug-errorprone&lt;/artifactId&gt;
-               &lt;version&gt;11.0&lt;/version&gt;
+               &lt;version&gt;11.1&lt;/version&gt;
              &lt;/path&gt;
            &lt;/annotationProcessorPaths&gt;
          &lt;/configuration&gt;
@@ -288,7 +288,7 @@ loadScripts(document, 'script');</script>
            {aliases? -&gt; AND name IN (aliases?)}
        """,
        asList(columns),
-       criteria.userId()),
+       criteria.userId(),
        criteria.firstName(),
        criteria.aliases());
  }
@@ -299,7 +299,7 @@ loadScripts(document, 'script');</script>
 
  <p>The special "{foo? -&gt; ...}" guard syntax informs the template engine that the right hand side
  query snippet is only rendered if the <code>Optional</code> parameter corresponding to the "foo?"
- placeholder is present, or the <code>Collection</code> paameter corresponding to it isn't empty, in
+ placeholder is present, or the <code>Collection</code> parameter corresponding to it isn't empty, in
  which case the value of the Optional or Collection will be used in the right hand side snippet as
  if it were a regular template argument.
 
@@ -377,7 +377,7 @@ loadScripts(document, 'script');</script>
  The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  identifiers). SafeSql will sanity-check the string(s) to ensure injection safety.
 
- <p>In the above example, if <code>getColumns()</code> returns <code>["id", "age"]</code>, the genereated
+ <p>In the above example, if <code>getColumns()</code> returns <code>["id", "age"]</code>, the generated
  SQL will be:
 
  <pre><code>
@@ -392,7 +392,7 @@ loadScripts(document, 'script');</script>
 
  <p>Note that with straight JDBC API, if you try to use the LIKE operator to match a user-provided
  substring, i.e. using <code>LIKE '%foo%'</code> to search for "foo", this seemingly intuitive syntax
- is actually incorect:
+ is actually incorrect:
 
  <pre><code>
  String searchTerm = ...;
@@ -411,7 +411,7 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  And even then, if the <code>searchTerm</code> includes special characters like '%' or backslash ('\'),
- they'll be interepreted as wildcards and escape characters, opening it up to a form of minor SQL
+ they'll be interpreted as wildcards and escape characters, opening it up to a form of minor SQL
  injection despite already using the parameterized SQL.
 
  <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
@@ -984,7 +984,7 @@ loadScripts(document, 'script');</script>
  </code></pre></div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>condition</code> - the guard condition to determine if <code>template</code> should be renderd</dd>
+<dd><code>condition</code> - the guard condition to determine if <code>template</code> should be rendered</dd>
 <dd><code>template</code> - the template to render if <code>condition</code> is true</dd>
 <dd><code>params</code> - see <a href="#of(java.lang.String,java.lang.Object...)"><code>of(String, Object...)</code></a> for discussion on the template arguments</dd>
 </dl>

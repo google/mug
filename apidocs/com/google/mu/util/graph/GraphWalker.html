@@ -99,8 +99,7 @@ loadScripts(document, 'script');</script>
 <span class="extends-implements">extends <a href="Walker.html" title="class in com.google.mu.util.graph">Walker</a>&lt;N&gt;</span></div>
 <div class="block">Walker for graph topology (see <a href="Walker.html#inGraph(java.util.function.Function)"><code>Walker.inGraph()</code></a>).
 
- <p>Besides <a href="#preOrderFrom(java.lang.Iterable)"><code>pre-order</code></a>, <a href="#postOrderFrom(java.lang.Iterable)"><code>post-order</code></a> and <a href="#breadthFirstFrom(java.lang.Iterable)"><code>breadth-first</code></a> traversals, also supports <a href="#topologicalOrderFrom(N...)"><code>topologicalOrderFrom()</code></a>, <a href="#detectCycleFrom(N...)"><code>detectCycleFrom()</code></a> and
- <a href="#stronglyConnectedComponentsFrom(N...)"><code>stronglyConnectedComponentsFrom()</code></a>.</div>
+ <p>Besides <a href="#preOrderFrom(java.lang.Iterable)"><code>pre-order</code></a>, <a href="#postOrderFrom(java.lang.Iterable)"><code>post-order</code></a> and <a href="#breadthFirstFrom(java.lang.Iterable)"><code>breadth-first</code></a> traversals, also supports <a href="#topologicalOrderFrom(N...)"><code>topologicalOrderFrom()</code></a>, <a href="#detectCycleFrom(N...)"><code>detectCycleFrom()</code></a> and <a href="#stronglyConnectedComponentsFrom(N...)"><code>stronglyConnectedComponentsFrom()</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.3</dd>
@@ -149,16 +148,14 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#stronglyConnectedComponentsFrom(java.lang.Iterable)" class="member-name-link">stronglyConnectedComponentsFrom</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends <a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&nbsp;startNodes)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.</div>
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#stronglyConnectedComponentsFrom(N...)" class="member-name-link">stronglyConnectedComponentsFrom</a><wbr>(<a href="#type-param-N" title="type parameter in GraphWalker">N</a>...&nbsp;startNodes)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.</div>
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#topologicalOrderFrom(java.lang.Iterable)" class="member-name-link">topologicalOrderFrom</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends <a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&nbsp;startNodes)</code></div>
@@ -269,15 +266,18 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
- numbers for instance).</div>
+ numbers for instance).
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start walking the graph.</dd>
 <dt>Returns:</dt>
 <dd>The stream of nodes starting from the first of <code>startNodes</code> that leads to a
-         cycle, ending with nodes along a cyclic path. The last node will also be the starting
-         point of the cycle. That is, if <code>A</code> and <code>B</code> form a cycle, the stream ends
-         with <code>A -&gt; B -&gt; A</code>. If there is no cycle, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#empty()" title="class or interface in java.util" class="external-link"><code>Optional.empty()</code></a> is returned.</dd>
+     cycle, ending with nodes along a cyclic path. The last node will also be the starting point
+     of the cycle. That is, if <code>A</code> and <code>B</code> form a cycle, the stream ends with <code>
+     A -&gt; B -&gt; A</code>. If there is no cycle, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#empty()" title="class or interface in java.util" class="external-link"><code>Optional.empty()</code></a> is returned.</dd>
 <dt>Since:</dt>
 <dd>4.3</dd>
 </dl>
@@ -304,15 +304,18 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  <p>This method will hang if the given graph is infinite with no cycles (the sequence of natural
- numbers for instance).</div>
+ numbers for instance).
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start walking the graph.</dd>
 <dt>Returns:</dt>
 <dd>The stream of nodes starting from the first of <code>startNodes</code> that leads to a
-         cycle, ending with nodes along a cyclic path. The last node will also be the starting
-         point of the cycle. That is, if <code>A</code> and <code>B</code> form a cycle, the stream ends
-         with <code>A -&gt; B -&gt; A</code>. If there is no cycle, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#empty()" title="class or interface in java.util" class="external-link"><code>Optional.empty()</code></a> is returned.</dd>
+     cycle, ending with nodes along a cyclic path. The last node will also be the starting point
+     of the cycle. That is, if <code>A</code> and <code>B</code> form a cycle, the stream ends with <code>
+     A -&gt; B -&gt; A</code>. If there is no cycle, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#empty()" title="class or interface in java.util" class="external-link"><code>Optional.empty()</code></a> is returned.</dd>
 <dt>Since:</dt>
 <dd>4.3</dd>
 </dl>
@@ -328,8 +331,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Fully traverses the graph by starting from <code>startNodes</code>, and returns an immutable list of
  nodes in topological order.
 
- <p>Unlike the other <code>Walker</code> utilities, this method is not lazy:
- it has to traverse the entire graph in order to figure out the topological order.</div>
+ <p>Unlike the other <code>Walker</code> utilities, this method is not lazy: it has to traverse the
+ entire graph in order to figure out the topological order.
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start traversing the graph.</dd>
@@ -349,8 +355,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Fully traverses the graph by starting from <code>startNodes</code>, and returns an immutable list of
  nodes in topological order.
 
- <p>Unlike the other <code>Walker</code> utilities, this method is not lazy:
- it has to traverse the entire graph in order to figure out the topological order.</div>
+ <p>Unlike the other <code>Walker</code> utilities, this method is not lazy: it has to traverse the
+ entire graph in order to figure out the topological order.
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start traversing the graph.</dd>
@@ -368,21 +377,25 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/SafeVarargs.html" title="class or interface in java.lang" class="external-link">@SafeVarargs</a>
 </span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&gt;</span>&nbsp;<span class="element-name">stronglyConnectedComponentsFrom</span><wbr><span class="parameters">(<a href="#type-param-N" title="type parameter in GraphWalker">N</a>...&nbsp;startNodes)</span></div>
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.
 
- <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
- Tarjan algorithm</a> in linear time (<code>O(V + E)</code>).
+ <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan
+ algorithm</a> in linear time (<code>O(V + E)</code>).
 
- <p>The strongly connected components (represented by the list of nodes in each component)
- are returned in a lazy stream, in depth-first post order. If you need topological order from
- the start nodes, convert it using: <pre><code>
-   List&lt;List&lt;N&gt;&gt; components = Walker.inGraph(...)
-       .stronglyConnectedComponentsFrom(...)
-       .peek(Collections::reverse)                      // reverse order within each component
-       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
- </code></pre></div>
+ <p>The strongly connected components (represented by the list of nodes in each component) are
+ returned in a lazy stream, in depth-first post order. If you need topological order from the
+ start nodes, convert it using:
+
+ <pre><code>
+ List&lt;List&lt;N&gt;&gt; components = Walker.inGraph(...)
+     .stronglyConnectedComponentsFrom(...)
+     .peek(Collections::reverse)                      // reverse order within each component
+     .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+ </code></pre>
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start traversing the graph.</dd>
@@ -397,21 +410,25 @@ loadScripts(document, 'script');</script>
 <h3>stronglyConnectedComponentsFrom</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&gt;</span>&nbsp;<span class="element-name">stronglyConnectedComponentsFrom</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;? extends <a href="#type-param-N" title="type parameter in GraphWalker">N</a>&gt;&nbsp;startNodes)</span></div>
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.
 
- <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
- Tarjan algorithm</a> in linear time (<code>O(V + E)</code>).
+ <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Tarjan
+ algorithm</a> in linear time (<code>O(V + E)</code>).
 
- <p>The strongly connected components (represented by the list of nodes in each component)
- are returned in a lazy stream, in depth-first post order. If you need topological order from
- the start nodes, convert it using: <pre><code>
-   List&lt;List&lt;N&gt;&gt; components = Walker.inGraph(...)
-       .stronglyConnectedComponentsFrom(...)
-       .peek(Collections::reverse)                      // reverse order within each component
-       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
- </code></pre></div>
+ <p>The strongly connected components (represented by the list of nodes in each component) are
+ returned in a lazy stream, in depth-first post order. If you need topological order from the
+ start nodes, convert it using:
+
+ <pre><code>
+ List&lt;List&lt;N&gt;&gt; components = Walker.inGraph(...)
+     .stronglyConnectedComponentsFrom(...)
+     .peek(Collections::reverse)                      // reverse order within each component
+     .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+ </code></pre>
+
+ <p>Cycles are detected by node <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>equals()</code></a>; a tracker that deduplicates by
+ another key does not change that.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>startNodes</code> - the entry point nodes to start traversing the graph.</dd>

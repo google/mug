@@ -126,13 +126,13 @@ loadScripts(document, 'script');</script>
 
  <pre><code>
  Stream&lt;Foo&gt; listAllFoos() {
-   class Pagination extends new Iteration&lt;Foo&gt;() {
+   class Pagination extends Iteration&lt;Foo&gt; {
      Pagination paginate(ListFooRequest request) {
        ListFooResponse response = service.listFoos(request);
        emit(response.getFoos());
        String nextPage = response.getNextPageToken();
        if (!nextPage.isEmpty()) {
-         lazily(() -&gt; paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+         lazily(() -&gt; paginate(request.toBuilder().setPageToken(nextPage).build()));
        }
        return this;
      }
@@ -166,6 +166,7 @@ loadScripts(document, 'script');</script>
      lazily(() -&gt; inOrder(tree.left));
      emit(tree.value);
      lazily(() -&gt; inOrder(tree.right));
+     return this;
    }
  }
 

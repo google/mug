@@ -184,7 +184,7 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
  immediately preceded by the <code>lookbehind</code> string and immediately followed by the <code>
- after</code> string.</div>
+ lookahead</code> string.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;<a href="Substring.Match.html" title="class in com.google.mu.util">Substring.Match</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#in(java.lang.String)" class="member-name-link">in</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
@@ -217,7 +217,7 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
  be immediately preceded by the <code>lookbehind</code> string and immediately followed by the
- <code>after</code> string.</div>
+ <code>lookahead</code> string.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notPrecededBy(java.lang.String)" class="member-name-link">notPrecededBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookbehind)</code></div>
@@ -241,7 +241,7 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#precededBy(java.lang.String)" class="member-name-link">precededBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookbehind)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
- immediately preceded by the <code>lookahead</code> string.</div>
+ immediately preceded by the <code>lookbehind</code> string.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#removeFrom(java.lang.String)" class="member-name-link">removeFrom</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
@@ -391,7 +391,9 @@ loadScripts(document, 'script');</script>
  returning a <code>Match</code> if successful, or <code>empty()</code> otherwise.
 
  <p>Note that it treats <code>fromIndex</code> as the beginning of the string, so patterns like
- <a href="Substring.html#prefix(java.lang.String)"><code>Substring.prefix(java.lang.String)</code></a>, <a href="Substring.html#BEGINNING"><code>Substring.BEGINNING</code></a> will attempt to match from this index.</div>
+ <a href="Substring.html#prefix(java.lang.String)"><code>Substring.prefix(java.lang.String)</code></a>, <a href="Substring.html#BEGINNING"><code>Substring.BEGINNING</code></a> will attempt to match from this index. Lookarounds and
+ boundaries (<a href="#precededBy(java.lang.String)"><code>precededBy(java.lang.String)</code></a>, <a href="#separatedBy(com.google.mu.util.CharPredicate)"><code>separatedBy(com.google.mu.util.CharPredicate)</code></a>, <a href="Substring.html#word(java.lang.String)"><code>Substring.word(String)</code></a> etc.)
+ are still allowed to inspect the characters before <code>fromIndex</code>.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IndexOutOfBoundsException.html" title="class or interface in java.lang" class="external-link">IndexOutOfBoundsException</a></code> - if fromIndex is negative or greater than <code>
@@ -621,15 +623,19 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookahead)</span></div>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
  immediately preceded by the <code>lookbehind</code> string and immediately followed by the <code>
- after</code> string.
+ lookahead</code> string.
 
  <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
  satisfied. That is, <code>word().immediatelyBetween("(", ")")</code> will find the "bar" substring
  inside the parenthesis from "foo (bar)".
 
- <p>If you need lookahead only, use <a href="#followedBy(java.lang.String)"><code>followedBy(java.lang.String)</code></a> instead; for lookbehind only, pass an
- empty string as the <code>lookahead</code> string, as in: <code>word().immediatelyBetween(":",
- "")</code>.</div>
+ <p>Not all patterns backtrack: <a href="Substring.html#before(com.google.mu.util.Substring.Pattern)"><code>Substring.before(com.google.mu.util.Substring.Pattern)</code></a>, <a href="Substring.html#after(com.google.mu.util.Substring.Pattern)"><code>Substring.after(com.google.mu.util.Substring.Pattern)</code></a>, <a href="Substring.html#upToIncluding(com.google.mu.util.Substring.Pattern)"><code>Substring.upToIncluding(com.google.mu.util.Substring.Pattern)</code></a> and <a href="#toEnd()"><code>toEnd()</code></a>, as well as the anchored patterns (<a href="Substring.html#prefix(java.lang.String)"><code>Substring.prefix(java.lang.String)</code></a>, <a href="Substring.html#suffix(java.lang.String)"><code>Substring.suffix(java.lang.String)</code></a>, <a href="Substring.html#leading(com.google.mu.util.CharPredicate)"><code>Substring.leading(com.google.mu.util.CharPredicate)</code></a>, <a href="Substring.html#trailing(com.google.mu.util.CharPredicate)"><code>Substring.trailing(com.google.mu.util.CharPredicate)</code></a>, <a href="Substring.html#BEGINNING"><code>Substring.BEGINNING</code></a>, <a href="Substring.html#END"><code>Substring.END</code></a>), are attempted only
+ once; <a href="Substring.html#consecutive(char)"><code>Substring.consecutive(char)</code></a> and <a href="Substring.html#word()"><code>Substring.word()</code></a> backtrack past the entire run
+ of matched characters. The lookaround is allowed to inspect characters before the index the
+ match is searched from.
+
+ <p>If you need lookahead only, use <a href="#followedBy(java.lang.String)"><code>followedBy(java.lang.String)</code></a> instead; for lookbehind only, use
+ <a href="#precededBy(java.lang.String)"><code>precededBy(java.lang.String)</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.2</dd>
@@ -669,15 +675,14 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookahead)</span></div>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
  be immediately preceded by the <code>lookbehind</code> string and immediately followed by the
- <code>after</code> string.
+ <code>lookahead</code> string.
 
  <p>Similar to regex negative lookarounds, the returned pattern will backtrack until the
  negative lookaround is satisfied. That is, <code>word().notImmediatelyBetween("(", ")")</code>
- will find the "bar" substring from "(foo) bar".
+ will find the "bar" substring from "(foo) bar". See <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> for which patterns backtrack.
 
  <p>If you need negative lookahead only, use <a href="#notFollowedBy(java.lang.String)"><code>notFollowedBy(java.lang.String)</code></a> instead; for negative
- lookbehind only, pass an empty string as the <code>lookahead</code> string, as in: <code>
- word().notImmediatelyBetween(":", "")</code>.
+ lookbehind only, use <a href="#notPrecededBy(java.lang.String)"><code>notPrecededBy(java.lang.String)</code></a>.
 
  <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
  using <a href="#separatedBy(com.google.mu.util.CharPredicate)"><code>separatedBy(com.google.mu.util.CharPredicate)</code></a>. The following code finds "911" but only if it's at the beginning
@@ -702,12 +707,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
  immediately followed by the <code>lookahead</code> string.
 
- <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
- lookahead is satisfied. That is, <code>word().followedBy(":")</code> will find the "Joe" substring
- from "To Joe:".
+ <p>Similar to regex lookahead, the returned pattern will backtrack until the lookahead is
+ satisfied. That is, <code>word().followedBy(":")</code> will find the "Joe" substring from "To
+ Joe:". See <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> for which patterns backtrack.
 
- <p>If you need lookbehind, or both lookahead and lookbehind, use <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(java.lang.String, java.lang.String)</code></a>
- instead.</div>
+ <p>If you need lookbehind, or both lookahead and lookbehind, use <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> instead. For "between inclusive", use <a href="#immediatelyBetween(java.lang.String,com.google.mu.util.Substring.BoundStyle,java.lang.String,com.google.mu.util.Substring.BoundStyle)"><code>immediatelyBetween(String, BoundStyle, String, BoundStyle)</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.2</dd>
@@ -724,8 +728,9 @@ loadScripts(document, 'script');</script>
  be immediately followed by the <code>lookahead</code> string.
 
  <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
- negative lookahead is satisfied. That is, <code>word().notFollowedBy(" ")</code> will find the
- "Joe" substring from "To Joe:".
+ negative lookahead is satisfied. For example, <code>word().notFollowedBy(" ")</code> will find the
+ "Joe" substring from "To Joe:". See <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> for which
+ patterns backtrack.
 
  <p>If you need negative lookbehind, or both negative lookahead and lookbehind, use <a href="#notImmediatelyBetween(java.lang.String,java.lang.String)"><code>notImmediatelyBetween(java.lang.String, java.lang.String)</code></a> instead.
 
@@ -750,11 +755,14 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></span>&nbsp;<span class="element-name">precededBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lookbehind)</span></div>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
- immediately preceded by the <code>lookahead</code> string.
+ immediately preceded by the <code>lookbehind</code> string.
 
  <p>Similar to regex lookbehind, the returned pattern will backtrack until the lookbehind is
  satisfied. That is, <code>word().precededBy(": ")</code> will find the "Please" substring from
- "Amy: Please come in".</div>
+ "Amy: Please come in". See <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> for which patterns
+ backtrack.
+
+ <p>If you need lookahead, or both lookahead and lookbehind, use <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> instead. For "between inclusive", use <a href="#immediatelyBetween(java.lang.String,com.google.mu.util.Substring.BoundStyle,java.lang.String,com.google.mu.util.Substring.BoundStyle)"><code>immediatelyBetween(String, BoundStyle, String, BoundStyle)</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.2</dd>
@@ -772,7 +780,8 @@ loadScripts(document, 'script');</script>
 
  <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
  negative lookbehind is satisfied. For example, <code>word().notPrecededBy("(")</code> will find
- the "bar" substring from "(foo+bar)".</div>
+ the "bar" substring from "(foo+bar)". See <a href="#immediatelyBetween(java.lang.String,java.lang.String)"><code>immediatelyBetween(String, String)</code></a> for
+ which patterns backtrack.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.2</dd>

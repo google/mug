@@ -358,8 +358,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#collect(A,com.google.mu.util.stream.BiAccumulator)" class="member-name-link">collect</a><wbr>(A&nbsp;container,
  <a href="BiAccumulator.html" title="interface in com.google.mu.util.stream">BiAccumulator</a>&lt;? super A, ? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;accumulator)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Performs mutable reduction, as in <code>
- collect(ImmutableMap.builder(), ImmutableMap.Builder::put)</code>.</div>
+<div class="block">Performs mutable reduction, as in <code>collect(ImmutableMap.builder(),
+ ImmutableMap.Builder::put)</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract &lt;R&gt;&nbsp;R</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#collect(com.google.mu.util.stream.BiCollector)" class="member-name-link">collect</a><wbr>(<a href="BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, R&gt;&nbsp;collector)</code></div>
@@ -646,8 +646,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#limit(int)" class="member-name-link">limit</a><wbr>(int&nbsp;maxSize)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns a <code>BiStream</code> consisting of the only the first <code>maxSize</code> pairs of this
- stream.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of only the first <code>maxSize</code> pairs of this stream.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;K2,<wbr>V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr>V2&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#map(java.util.function.BiFunction)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K2, ? extends V2&gt;&gt;&nbsp;mapper)</code></div>
@@ -665,8 +664,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;K2,<wbr>V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr>V2&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapIfPresent(java.util.function.BiFunction)" class="member-name-link">mapIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="../BiOptional.html" title="class in com.google.mu.util">BiOptional</a>&lt;? extends K2, ? extends V2&gt;&gt;&nbsp;mapper)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to
- the pairs in this <code>BiStream</code>.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to the
+ pairs in this <code>BiStream</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;K2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapKeys(java.util.function.BiFunction)" class="member-name-link">mapKeys</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends K2&gt;&nbsp;keyMapper)</code></div>
@@ -981,8 +980,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream()" class="member-name-link">toBiStream</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an equivalent
- <code>BiStream</code>.</div>
+<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an
+ equivalent <code>BiStream</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;E,<wbr>K,<wbr>V&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;E, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream(java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends <a href="../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;toPair)</code></div>
@@ -1068,7 +1067,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
      .collect(ImmutableMap::toImmutableMap);
  </code></pre>
 
- <p>Entries are collected in encounter order.</div>
+ <p>Entries are collected in encounter order. Null keys are not allowed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>3.3</dd>
@@ -1093,7 +1092,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
      .collect(ImmutableMap::toImmutableMap);
  </code></pre>
 
- <p>Entries are collected in encounter order.</div>
+ <p>Entries are collected in encounter order. Null keys are not allowed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>3.3</dd>
@@ -1108,8 +1107,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>K&gt;</span>
 <span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;T&gt;&gt;&gt;</span>&nbsp;<span class="element-name">groupingBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends K&gt;&nbsp;classifier)</span></div>
 <div class="block">Returns a <code>Collector</code> that groups the input elements by <code>classifier</code> and collects
- the values mapping to the same key into a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a>. Similar but different from
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#groupingBy(java.util.function.Function)" title="class or interface in java.util.stream" class="external-link"><code>Collectors.groupingBy(Function)</code></a>, this method collects the groups into <code>BiStream()</code>
+ the values mapping to the same key into a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link"><code>List</code></a>. Similar but different from <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#groupingBy(java.util.function.Function)" title="class or interface in java.util.stream" class="external-link"><code>Collectors.groupingBy(Function)</code></a>, this method collects the groups into <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>
  instead, allowing fluent method chaining. For example:
 
  <pre><code>
@@ -1121,9 +1119,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 
  Even if you don't need to chain more methods, using this collector allows you to fluently
  collect the results into the desired container type. For example <a href="#toMap()"><code>toMap()</code></a> collects to an
- immutable <code>Map</code>; or <code>collect(Collectors::toConcurrentMap)</code> if concurrency is needed.
+ immutable <code>Map</code>; or <code>collect(Collectors::toConcurrentMap)</code> if concurrency is
+ needed.
 
- <p>Entries are collected in encounter order.</div>
+ <p>Entries are collected in encounter order. Null keys are not allowed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>3.0</dd>
@@ -1140,7 +1139,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super T, ?, V&gt;&nbsp;valueCollector)</span></div>
 <div class="block">Returns a <code>Collector</code> that groups the input elements by <code>classifier</code> and collects
  the values mapping to the same key using <code>valueCollector</code>. Similar but different from
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#groupingBy(java.util.function.Function,java.util.stream.Collector)" title="class or interface in java.util.stream" class="external-link"><code>Collectors.groupingBy(Function, Collector)</code></a>, this method collects the groups into <code>BiStream()</code> instead, allowing fluent method chaining. For example:
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#groupingBy(java.util.function.Function,java.util.stream.Collector)" title="class or interface in java.util.stream" class="external-link"><code>Collectors.groupingBy(Function, Collector)</code></a>, this method collects the groups into <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> instead, allowing fluent method chaining. For example:
 
  <pre><code>
  Map&lt;EmployeeId, Integer&gt; topTenEmployeesByWorkHour = projects.stream()
@@ -1153,10 +1152,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 
  Even if you don't need to chain more methods, using this collector allows you to fluently
  collect the results into the desired container type. For example <a href="#toMap()"><code>toMap()</code></a> collects to an
- immutable <code>Map</code>; or you could supply <code>collect(ImmutableBiMap::toImmutableBiMap)</code>
- if <code>BiMap</code> is needed.
+ immutable <code>Map</code>; or you could supply <code>collect(ImmutableBiMap::toImmutableBiMap)</code> if
+ <code>BiMap</code> is needed.
 
- <p>Entries are collected in encounter order.</div>
+ <p>Entries are collected in encounter order. Null keys are not allowed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>3.0</dd>
@@ -1330,9 +1329,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/SafeVarargs.html" title="class or interface in java.lang" class="external-link">@SafeVarargs</a>
 </span><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;</span>&nbsp;<span class="element-name">adjacentPairsFrom</span><wbr><span class="parameters">(T...&nbsp;elements)</span></div>
-<div class="block">Returns a BiStream of every neighboring pair from <code>elements</code>.
- For example <code>adjacentPairsFrom(1, 2, 3, 4)</code> will
- return <code>[{1, 2}, {2, 3}, {3, 4}]</code>.
+<div class="block">Returns a BiStream of every neighboring pair from <code>elements</code>. For example <code>
+ adjacentPairsFrom(1, 2, 3, 4)</code> will return <code>[{1, 2}, {2, 3}, {3, 4}]</code>.
 
  <p>If the input has 0 or 1 elements then the output is an empty <code>BiStream</code>. Otherwise the
  length of the output <code>BiStream</code> is one less than the length of the input.</div>
@@ -1348,9 +1346,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>adjacentPairsFrom</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;</span>&nbsp;<span class="element-name">adjacentPairsFrom</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends T&gt;&nbsp;collection)</span></div>
-<div class="block">Returns a BiStream of every neighboring pair from <code>collection</code>.
- For example <code>adjacentPairsFrom(List.of(1, 2, 3, 4))</code> will
- return <code>[{1, 2}, {2, 3}, {3, 4}]</code>.
+<div class="block">Returns a BiStream of every neighboring pair from <code>collection</code>. For example <code>
+ adjacentPairsFrom(List.of(1, 2, 3, 4))</code> will return <code>[{1, 2}, {2, 3}, {3, 4}]</code>.
 
  <p>If the input has 0 or 1 elements then the output is an empty <code>BiStream</code>. Otherwise the
  length of the output <code>BiStream</code> is one less than the length of the input.</div>
@@ -1390,9 +1387,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Returns a <code>Collector</code> that splits each input element as a pair and collects them into a
  <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>.
 
- <p>Note that it's more efficient to use <code>BiStream.from(stream, toPair)</code> than
- <code>stream.collect(toBiStream(toPair))</code>. The latter is intended to be used in the
- middle of a long stream pipeline, when performance isn't critical.</div>
+ <p>Note that it's more efficient to use <code>BiStream.from(stream, toPair)</code> than <code>
+ stream.collect(toBiStream(toPair))</code>. The latter is intended to be used in the middle of a long
+ stream pipeline, when performance isn't critical.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>5.1</dd>
@@ -1405,12 +1402,12 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>toBiStream</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</span>&nbsp;<span class="element-name">toBiStream</span>()</div>
-<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an equivalent
- <code>BiStream</code>.
+<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an
+ equivalent <code>BiStream</code>.
 
- <p>Note that it's more efficient to use <code>biStream(stream)</code> than
- <code>stream.collect(toBiStream())</code>. The latter is intended to be used in the
- middle of a long stream pipeline, when performance isn't critical.</div>
+ <p>Note that it's more efficient to use <code>biStream(stream)</code> than <code>
+ stream.collect(toBiStream())</code>. The latter is intended to be used in the middle of a long stream
+ pipeline, when performance isn't critical.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>3.6</dd>
@@ -1748,7 +1745,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Short-hand for <code>from(elements, identity(), identity())</code>. Typically followed by <a href="#mapKeys(java.util.function.BiFunction)"><code>mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="#mapValues(java.util.function.BiFunction)"><code>mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a>. For example:
 
  <pre><code>
- static import com.google.common.labs.collect.BiStream.biStream;
+ import static com.google.mu.util.stream.BiStream.biStream;
 
  Map&lt;EmployeeId, Employee&gt; employeesById = biStream(employees)
      .mapKeys(Employee::id)
@@ -1769,7 +1766,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Short-hand for <code>from(elements, identity(), identity())</code>. Typically followed by <a href="#mapKeys(java.util.function.BiFunction)"><code>mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="#mapValues(java.util.function.BiFunction)"><code>mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a>. For example:
 
  <pre><code>
- static import com.google.common.labs.collect.BiStream.biStream;
+ import static com.google.mu.util.stream.BiStream.biStream;
 
  Map&lt;EmployeeId, Employee&gt; employeesById = biStream(employees)
      .mapKeys(Employee::id)
@@ -1880,8 +1877,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>from</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;K,<wbr>V&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;</span>&nbsp;<span class="element-name">from</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.Entry.html" title="class or interface in java.util" class="external-link">Map.Entry</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;entries)</span></div>
-<div class="block">Returns a <code>BiStream</code> of the key value pairs from <code>entries</code>.
- For example <code>BiStream.from(multimap.entries())</code>.</div>
+<div class="block">Returns a <code>BiStream</code> of the key value pairs from <code>entries</code>. For example <code>
+ BiStream.from(multimap.entries())</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.7</dd>
@@ -1934,8 +1931,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  I&nbsp;initial,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super I, ? super O, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends I&gt;&gt;&nbsp;increment)</span></div>
 <div class="block">Returns a stream of the inputs and outputs from repeated applications of the <code>work</code>
- function. The <code>initial</code> input is passed to <code>work</code> for the first round, after
- which the <code>increment</code> function is called to determine the input for the next round. This
+ function. The <code>initial</code> input is passed to <code>work</code> for the first round, after which
+ the <code>increment</code> function is called to determine the input for the next round. This
  process repeats until the <code>increment</code> function returns <code>Optional.empty()</code>.
 
  <p>A common use case is pagination. For example, if you have a list API with pagination
@@ -1978,9 +1975,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <dd><code>initial</code> - the initial input to pass to the <code>work</code> function. Cannot be null.</dd>
 <dd><code>increment</code> - the function to get the next input given the current input and output.</dd>
 <dt>Returns:</dt>
-<dd>A BiStream of the inputs and outputs of the <code>work</code> function. The stream is
-     lazy in that <code>work</code> won't be called until the stream is being consumed; and it
-     won't be called again until the second pair of input and output are being consumed, etc.</dd>
+<dd>A BiStream of the inputs and outputs of the <code>work</code> function. The stream is lazy
+     in that <code>work</code> won't be called until the stream is being consumed; and it won't be
+     called again until the second pair of input and output are being consumed, etc.</dd>
 <dt>Since:</dt>
 <dd>5.5</dd>
 </dl>
@@ -2069,8 +2066,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>mapIfPresent</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;K2,<wbr>V2&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K2,<wbr>V2&gt;</span>&nbsp;<span class="element-name">mapIfPresent</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="../BiOptional.html" title="class in com.google.mu.util">BiOptional</a>&lt;? extends K2, ? extends V2&gt;&gt;&nbsp;mapper)</span></div>
-<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to
- the pairs in this <code>BiStream</code>. If <code>mapper</code> returns empty, the pair is discarded.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to the
+ pairs in this <code>BiStream</code>. If <code>mapper</code> returns empty, the pair is discarded.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>5.0</dd>
@@ -2291,7 +2288,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  Map&lt;Doctor, Patient&gt; doctorAndPatients = ...;
  Map&lt;Hospital, Long&gt; hospitalPatientCounts =
     BiStream.from(doctorAndPatients)
-        .mapKeysIfPresent(Doctor::optionalAffliatedHospital)
+        .mapKeysIfPresent(Doctor::optionalAffiliatedHospital)
         .collect(toImmutableMap(counting()));
  </code></pre></div>
 <dl class="notes">
@@ -2401,7 +2398,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  Map&lt;Doctor, Patient&gt; doctorAndPatients = ...;
  ImmutableSetMultimap&lt;Doctor, InsuranceCompany&gt; insurancesPerDoctor =
     BiStream.from(doctorAndPatients)
-        .mapValuesIfPresent(Partient::optionalInsurarnce)
+        .mapValuesIfPresent(Patient::optionalInsurance)
         .collect(toImmutableSetMultimap());
  </code></pre></div>
 <dl class="notes">
@@ -2480,7 +2477,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 
  <pre><code>
  tasks.stream()
-      .collect(crossJoining(Arrays.stream(MachineType.values()))
+      .collect(crossJoining(Arrays.stream(MachineType.values())))
       .skipIf(Worker::blacklistsMachine)
       ...
  </code></pre></div>
@@ -2542,8 +2539,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <code>other</code>.
 
  <p>NOTE: This method is implemented using <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#concat(java.util.stream.Stream,java.util.stream.Stream)" title="class or interface in java.util.stream" class="external-link"><code>Stream.concat(java.util.stream.Stream&lt;? extends T&gt;, java.util.stream.Stream&lt;? extends T&gt;)</code></a>; therefore, the same warnings
-     about deeply-nested combined streams also apply to this method. In particular, avoid
-     calling this method in a loop to combine many streams together.</div>
+ about deeply-nested combined streams also apply to this method. In particular, avoid calling
+ this method in a loop to combine many streams together.</div>
 </div>
 </section>
 </li>
@@ -2556,8 +2553,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <code>map</code>.
 
  <p>NOTE: This method is implemented using <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#concat(java.util.stream.Stream,java.util.stream.Stream)" title="class or interface in java.util.stream" class="external-link"><code>Stream.concat(java.util.stream.Stream&lt;? extends T&gt;, java.util.stream.Stream&lt;? extends T&gt;)</code></a>; therefore, the same warnings
-     about deeply-nested combined streams also apply to this method. In particular, avoid
-     calling this method in a loop to combine many streams together.</div>
+ about deeply-nested combined streams also apply to this method. In particular, avoid calling
+ this method in a loop to combine many streams together.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>8.7</dd>
@@ -2575,8 +2572,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <code>key</code> and <code>value</code>.
 
  <p>NOTE: This method is implemented using <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#concat(java.util.stream.Stream,java.util.stream.Stream)" title="class or interface in java.util.stream" class="external-link"><code>Stream.concat(java.util.stream.Stream&lt;? extends T&gt;, java.util.stream.Stream&lt;? extends T&gt;)</code></a>; therefore, the same warnings
-     about deeply-nested combined streams also apply to this method. In particular, avoid
-     calling this method in a loop to combine many streams together.</div>
+ about deeply-nested combined streams also apply to this method. In particular, avoid calling
+ this method in a loop to combine many streams together.</div>
 </div>
 </section>
 </li>
@@ -2688,8 +2685,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>limit</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</span>&nbsp;<span class="element-name">limit</span><wbr><span class="parameters">(int&nbsp;maxSize)</span></div>
-<div class="block">Returns a <code>BiStream</code> consisting of the only the first <code>maxSize</code> pairs of this
- stream.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of only the first <code>maxSize</code> pairs of this stream.</div>
 </div>
 </section>
 </li>
@@ -2807,13 +2803,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <h3>toMap</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</span>&nbsp;<span class="element-name">toMap</span>()</div>
-<div class="block">Returns an immutable <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> that is the result of collecting the pairs in this stream. If a
- duplicate key is encountered, throws an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a>.
+<div class="block">Returns an immutable <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> that is the result of collecting the pairs in this stream. If
+ a duplicate key is encountered, throws an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a>.
 
  <p>While this is a convenient shortcut of <code>collect(Collectors::toMap)</code>, if you have a
- <code>BiStream&lt;SubFoo, SubBar&gt;</code>, the return type of <code>toMap()</code> will be
- <code>Map&lt;SubFoo, SubBar&gt;</code>. To collect to <code>Map&lt;Foo, Bar&gt;</code>, use the equivalent
- <code>collect(Collectors::toMap)</code> or <code>collect(BiCollectors.toMap())</code>.</div>
+ <code>BiStream&lt;SubFoo, SubBar&gt;</code>, the return type of <code>toMap()</code> will be <code>Map&lt;SubFoo,
+ SubBar&gt;</code>. To collect to <code>Map&lt;Foo, Bar&gt;</code>, use the equivalent <code>
+ collect(Collectors::toMap)</code> or <code>collect(BiCollectors.toMap())</code>.</div>
 </div>
 </section>
 </li>
@@ -2825,9 +2821,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Returns an object of type <code>R</code> that is the result of collecting the pairs in this stream
  using <code>collector</code>.
 
- <p>Please note that any <code>Collector</code>-returning factory method can be directly
- "method referenced" as <a href="BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> if it accepts two <code>Function</code> parameters
- corresponding to the "key" and the "value" parts respectively. For example: <code>
+ <p>Please note that any <code>Collector</code>-returning factory method can be directly "method
+ referenced" as <a href="BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> if it accepts two <code>Function</code> parameters corresponding
+ to the "key" and the "value" parts respectively. For example: <code>
  collect(Collectors::toConcurrentMap)</code>, <code>
  collect(ImmutableSetMultimap::toImmutableSetMultimap)</code>, <code>
  collect(Maps::toImmutableEnumMap)</code>, <code>collect(ImmutableBiMap::toImmutableBiMap)</code>.
@@ -2847,29 +2843,32 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  syntactic noise.
 
  <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
- last* step needs to pass the return value of <code>collect()</code> to a final method call, for
- example: <pre><code>
-   return new Ledger(
-       BiStream.from(...)
-           .mapKeys(...)
-           .flatMapValues(...)
-           ...
-           .collect(toImmutableMap()));
+ last step needs to pass the return value of <code>collect()</code> to a final method call, for
+ example:
+
+ <pre><code>
+ return new Ledger(
+     BiStream.from(...)
+         .mapKeys(...)
+         .flatMapValues(...)
+         ...
+         .collect(toImmutableMap()));
  </code></pre>
 
  This syntax breaks the first-thing-first order of the BiStream pipeline by showing the last
- step at the top-most line. Alternatively, one can declare a local variable to hold the
- return value of <code>collect()</code>. But sometimes it's undesirable if the intermediary
- object's type is implementation-detail-ish or just too verbose.
+ step at the top-most line. Alternatively, one can declare a local variable to hold the return
+ value of <code>collect()</code>. But sometimes it's undesirable if the intermediary object's type is
+ implementation-detail-ish or just too verbose.
 
  <p>Using this method, the above example can be changed to pipeline-friendly syntax with less
  indentation:
+
  <pre><code>
-   return BiStream.from(...)
-       .mapKeys(...)
-       .flatMapValues(...)
-       ...
-       .collect(toImmutableMap(), Ledger::new);
+ return BiStream.from(...)
+     .mapKeys(...)
+     .flatMapValues(...)
+     ...
+     .collect(toImmutableMap(), Ledger::new);
  </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -2884,23 +2883,23 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="type-parameters">&lt;A&gt;</span>&nbsp;<span class="return-type">A</span>&nbsp;<span class="element-name">collect</span><wbr><span class="parameters">(A&nbsp;container,
  <a href="BiAccumulator.html" title="interface in com.google.mu.util.stream">BiAccumulator</a>&lt;? super A, ? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;accumulator)</span></div>
-<div class="block">Performs mutable reduction, as in <code>
- collect(ImmutableMap.builder(), ImmutableMap.Builder::put)</code>.
+<div class="block">Performs mutable reduction, as in <code>collect(ImmutableMap.builder(),
+ ImmutableMap.Builder::put)</code>.
 
  <p>More realistically (since you'd likely use <code>collect(toImmutableMap())</code> instead for
  ImmutableMap), you could collect pairs into two repeated proto fields:
 
  <pre><code>
-   BiStream.zip(shardRequests, shardResponses)
-       .filter(...)
-       .collect(
-           BatchResponse.newBuilder(),
-           (builder, req, resp) -&gt; builder.addShardRequest(req).addShardResponse(resp))
-       .build();
+ BiStream.zip(shardRequests, shardResponses)
+     .filter(...)
+     .collect(
+         BatchResponse.newBuilder(),
+         (builder, req, resp) -&gt; builder.addShardRequest(req).addShardResponse(resp))
+     .build();
  </code></pre>
 
- <p>While <a href="#collect(com.google.mu.util.stream.BiCollector)"><code>collect(BiCollector)</code></a> may perform parallel reduction if the underlying
- stream is parallel, this reduction is guaranteed to be sequential and single-threaded.
+ <p>While <a href="#collect(com.google.mu.util.stream.BiCollector)"><code>collect(BiCollector)</code></a> may perform parallel reduction if the underlying stream
+ is parallel, this reduction is guaranteed to be sequential and single-threaded.
 
  <p>Returns the populated <code>container</code> instance.</div>
 <dl class="notes">
@@ -2978,7 +2977,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  <pre><code>
  biStream(stockPriceDataSortedByTime)
      .groupConsecutiveBy(PriceDatum::day, (a, b) -&gt; a)
-     ,toMap();
+     .toMap();
  </code></pre>
 
  <p>Unlike JDK <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collectors.html#groupingBy(java.util.function.Function)" title="class or interface in java.util.stream" class="external-link"><code>groupingBy()</code></a> collectors, the returned BiStream
@@ -3014,7 +3013,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  consecutive events by year, then by continuity (happened within 24 hours):
 
  <pre><code>
- import static com.google.mu.util.stream.BiiCollectors.collectingAndThen;
+ import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
 
  ImmutableListMultimap&lt;Integer, List&lt;Event&gt;&gt; continuousEventsByYear =
      biStream(events)

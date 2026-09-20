@@ -74,6 +74,12 @@ loadScripts(document, 'script');</script>
      optionally("or {foo}", optionalFoo)</code> because the former allows you to reference <code>
      foo?</code> multiple times in the right hand side snippet.</div>
 </div>
+<div class="col-summary-item-name even-row-color"><a href="com/google/mu/testing/concurrent/Happenstance.html#checkpoint(K)">com.google.mu.testing.concurrent.Happenstance.checkpoint<wbr>(K)</a></div>
+<div class="col-last even-row-color">
+<div class="block">The JIT and the CPU can move the surrounding plain reads and writes across a
+     checkpoint, so the ordering applies to the check-in calls themselves, not to the SUT code
+     around them. Use <a href="com/google/mu/testing/concurrent/Happenstance.html#join(K)"><code>Happenstance.join(K)</code></a> instead.</div>
+</div>
 </div>
 </div>
 </li>

@@ -117,80 +117,84 @@ loadScripts(document, 'script');</script>
  parts of one unit of work. Failure of any sub-task aborts the entire work, automatically. If an
  exception isn't fatal, the sub-task should catch and handle it.
 
- <p>How does it stack against parallel stream itself?
- The parallel stream counterpart to the above example use case may look like:
- <pre>  <code>
-   userDataStream.filter(UserData::isModified).parallel().forEach(userService::save);
+ <p>How does it stack against parallel stream itself? The parallel stream counterpart to the above
+ example use case may look like:
+
+ <pre><code>
+ userDataStream.filter(UserData::isModified).parallel().forEach(userService::save);
  </code></pre>
 
- A few key differences: <ul>
- <li>A parallel stream doesn't use arbitrary <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ExecutorService.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutorService</code></a>. It by default uses
-     either the enclosing <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ForkJoinPool.html" title="class or interface in java.util.concurrent" class="external-link"><code>ForkJoinPool</code></a> or the common <code>ForkJoinPool</code> instance.
- <li>By running in a dedicated <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ForkJoinPool.html" title="class or interface in java.util.concurrent" class="external-link"><code>ForkJoinPool</code></a>, a parallel stream can take a custom target
-     concurrency, but it's not guaranteed to be <em>max</em> concurrency.
- <li>Parallel streams are for CPU-bound computations; while <code>Parallelizer</code> deals with
-     IO-bound operations.
- <li><a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)"><code>parallelize()</code></a> can be interrupted, and can time out;
-     parallel streams are uninterruptible.
- <li>When a task throws, <code>Parallelizer</code> dismisses pending tasks, and cancels all in-flight
-     tasks (it's up to the user code to properly handle thread interruptions).
-     So if a worker thread is waiting on some resource, it'll be interrupted without hanging
-     the thread forever.
- <li><code>Parallelizer</code> wraps exceptions thrown by the worker threads, making stack trace
-     clearer.
+ A few key differences:
+
+ <ul>
+   <li>A parallel stream doesn't use arbitrary <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ExecutorService.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutorService</code></a>. It by default uses either
+       the enclosing <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ForkJoinPool.html" title="class or interface in java.util.concurrent" class="external-link"><code>ForkJoinPool</code></a> or the common <code>ForkJoinPool</code> instance.
+   <li>By running in a dedicated <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ForkJoinPool.html" title="class or interface in java.util.concurrent" class="external-link"><code>ForkJoinPool</code></a>, a parallel stream can take a custom target
+       concurrency, but it's not guaranteed to be <em>max</em> concurrency.
+   <li>Parallel streams are for CPU-bound computations; while <code>Parallelizer</code> deals with
+       IO-bound operations.
+   <li><a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)"><code>parallelize()</code></a> can be interrupted, and can time out; parallel streams
+       are uninterruptible.
+   <li>When a task throws, <code>Parallelizer</code> dismisses pending tasks, and cancels all in-flight
+       tasks (it's up to the user code to properly handle thread interruptions). So if a worker
+       thread is waiting on some resource, it'll be interrupted without hanging the thread
+       forever.
+   <li><code>Parallelizer</code> wraps exceptions thrown by the worker threads, making stack trace
+       clearer.
  </ul>
 
- <p>And how do you choose between <code>Parallelizer</code> and <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ExecutorService.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutorService</code></a>?
- Could you use something like the following instead?
- <pre>  <code>
-   ExecutorService pool = Executors.newFixedThreadPool(3);
-   try {
-     List&lt;Future&lt;?&gt;&gt; futures = userData
-         .filter(...)
-         .map(() -&gt; pool.submit(() -&gt; userService.save(data)))
-         .collect(toList());
-     for (Future&lt;?&gt; future : futures) {
-       future.get();
-     }
-   } finally {
-     pool.shutdownNow();
+ <p>And how do you choose between <code>Parallelizer</code> and <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ExecutorService.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutorService</code></a>? Could you use
+ something like the following instead?
+
+ <pre><code>
+ ExecutorService pool = Executors.newFixedThreadPool(3);
+ try {
+   List&lt;Future&lt;?&gt;&gt; futures = userData
+       .filter(...)
+       .map(() -&gt; pool.submit(() -&gt; userService.save(data)))
+       .collect(toList());
+   for (Future&lt;?&gt; future : futures) {
+     future.get();
    }
+ } finally {
+   pool.shutdownNow();
+ }
  </code></pre>
 
- Some differences for consideration:<ul>
- <li><b>Memory Concern</b>
-     <ul>
-     <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
-         of thousands of task input data from a file), it can run out of memory quickly.
-      <li>Storing all the future objects in a list may also use up too much memory for large
-          number of sub tasks.
-     </ul>
- <li><b>Exception Handling (and fail fast)</b>
-     <ul>
-     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
-         won't be affected.
+ Some differences for consideration:
 
-         <p>But for co-dependent sub tasks that were parallelized only for performance reasons
-         (as in parallel streams), you'll want to abort the whole parallel pipeline upon any
-         critical exception, the same as if they were run sequentially.
-
-         <p>Aborting a parallel pipeline requires complex concurrent logic to coordinate between
-         the sub tasks and the executor in order to dismiss pending sub tasks and also to cancel
-         sub tasks that are already running. Otherwise, when an exception is thrown from a sub
-         task, the other left-over sub tasks will continue to run, some may even hang
-         indefinitely.
-     <li>Automatic cancellation propagation. When <a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)"><code>parallelize()</code></a> is
-         interrupted, all running tasks will be automatically canceled; all pending tasks
-         automatically dismissed.
-     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
-         left-over sub tasks). Although even knowing whether a sub task has failed isn't trivial.
-         The above code example uses <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/Future.html#get()" title="class or interface in java.util.concurrent" class="external-link"><code>Future.get()</code></a>, but it won't help if a sub task
-         submitted earlier is still running or being blocked, while a later-submitted sub task
-         has failed.
-     <li>And, <code>ExecutorService</code>s are often set up centrally and shared among different
-         classes and components in the application. You may not have the option to create and
-         shut down a thread pool of your own.
-     </ul>
+ <ul>
+   <li><b>Memory Concern</b>
+       <ul>
+         <li>The thread pool queues all pending tasks. For large streams (like reading hundreds of
+             thousands of task input data from a file), it can run out of memory quickly.
+         <li>Storing all the future objects in a list may also use up too much memory for large
+             number of sub tasks.
+       </ul>
+   <li><b>Exception Handling (and fail fast)</b>
+       <ul>
+         <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
+             won't be affected.
+             <p>But for co-dependent sub tasks that were parallelized only for performance reasons
+             (as in parallel streams), you'll want to abort the whole parallel pipeline upon any
+             critical exception, the same as if they were run sequentially.
+             <p>Aborting a parallel pipeline requires complex concurrent logic to coordinate
+             between the sub tasks and the executor in order to dismiss pending sub tasks and also
+             to cancel sub tasks that are already running. Otherwise, when an exception is thrown
+             from a sub task, the other left-over sub tasks will continue to run, some may even
+             hang indefinitely.
+         <li>Automatic cancellation propagation. When <a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)"><code>parallelize()</code></a> is
+             interrupted, all running tasks will be automatically canceled; all pending tasks
+             automatically dismissed.
+         <li>You may resort to shutting down the executor to achieve similar result (cancelling
+             the left-over sub tasks). Although even knowing whether a sub task has failed isn't
+             trivial. The above code example uses <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/Future.html#get()" title="class or interface in java.util.concurrent" class="external-link"><code>Future.get()</code></a>, but it won't help if a sub
+             task submitted earlier is still running or being blocked, while a later-submitted sub
+             task has failed.
+         <li>And, <code>ExecutorService</code>s are often set up centrally and shared among different
+             classes and components in the application. You may not have the option to create and
+             shut down a thread pool of your own.
+       </ul>
  </ul>
 
  <p>Stream parameters used in this class are always consumed in the calling thread and don't have
@@ -242,8 +246,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.Iterator,java.util.function.Consumer,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Iterator.html" title="class or interface in java.util" class="external-link">Iterator</a>&lt;? extends T&gt;&nbsp;inputs,
@@ -267,34 +271,34 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.stream.Stream)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, or any
+ exception is thrown upon which all pending tasks are canceled (but the method returns without
+ waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.stream.Stream,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks,
  long&nbsp;heartbeatTimeout,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/TimeUnit.html" title="class or interface in java.util.concurrent" class="external-link">TimeUnit</a>&nbsp;timeUnit)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.stream.Stream,java.time.Duration)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;heartbeatTimeout)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;inputs,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;inputs,
@@ -319,24 +323,24 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelizeUninterruptibly(java.util.Iterator,java.util.function.Consumer)" class="member-name-link">parallelizeUninterruptibly</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Iterator.html" title="class or interface in java.util" class="external-link">Iterator</a>&lt;? extends T&gt;&nbsp;inputs,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelizeUninterruptibly(java.util.stream.Stream)" class="member-name-link">parallelizeUninterruptibly</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ or any exception is thrown upon which all pending tasks are canceled (but the method returns
+ without waiting for the tasks to respond to cancellation).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parallelizeUninterruptibly(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">parallelizeUninterruptibly</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;inputs,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).</div>
 </div>
 </div>
 </div>
@@ -361,12 +365,14 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">Parallelizer</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/ExecutorService.html" title="class or interface in java.util.concurrent" class="external-link">ExecutorService</a>&nbsp;executor,
  int&nbsp;maxConcurrency)</span></div>
-<div class="block">Constructs a <code>Parallelizer</code> that runs tasks with <code>executor</code>.
- At any given time, at most <code>maxConcurrency</code> tasks are allowed to be submitted to
- <code>executor</code>.
+<div class="block">Constructs a <code>Parallelizer</code> that runs tasks with <code>executor</code>. For each <a href="#parallelize(java.util.stream.Stream,java.util.function.Consumer)"><code>parallelize(java.util.stream.Stream&lt;? extends T&gt;, java.util.function.Consumer&lt;? super T&gt;)</code></a> or <a href="#inParallel(java.util.function.Function)"><code>inParallel(java.util.function.Function&lt;? super I, ? extends O&gt;)</code></a> invocation, at most <code>maxConcurrency</code> tasks are
+ allowed to be in flight (submitted to <code>executor</code> and not yet completed) at any given
+ time.
 
- <p>Note that a task being submitted to <code>executor</code> doesn't guarantee immediate
- execution, if for example all worker threads in <code>executor</code> are busy.</div>
+ <p>Note that <code>maxConcurrency</code> is enforced per invocation rather than across concurrent
+ invocations on the same <code>Parallelizer</code> instance, and that a task being submitted to
+ <code>executor</code> doesn't guarantee immediate execution if, for example, all worker threads in
+ <code>executor</code> are busy.</div>
 </div>
 </section>
 </li>
@@ -386,8 +392,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</span>
                      throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link">InterruptedException</a></span></div>
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>inputs</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -408,8 +414,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</span>
                      throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link">InterruptedException</a></span></div>
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>inputs</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -536,9 +542,9 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">parallelizeUninterruptibly</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends T&gt;&nbsp;inputs,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</span></div>
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>inputs</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -555,9 +561,9 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">parallelizeUninterruptibly</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Iterator.html" title="class or interface in java.util" class="external-link">Iterator</a>&lt;? extends T&gt;&nbsp;inputs,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;consumer)</span></div>
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>inputs</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -574,9 +580,9 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">parallelize</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks)</span>
                  throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link">InterruptedException</a></span></div>
-<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, or any
+ exception is thrown upon which all pending tasks are canceled (but the method returns without
+ waiting for the tasks to respond to cancellation).
 
  <p>The <code>tasks</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -594,9 +600,9 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;heartbeatTimeout)</span>
                  throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/TimeoutException.html" title="class or interface in java.util.concurrent" class="external-link">TimeoutException</a>,
 <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link">InterruptedException</a></span></div>
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>tasks</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -619,9 +625,9 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/TimeUnit.html" title="class or interface in java.util.concurrent" class="external-link">TimeUnit</a>&nbsp;timeUnit)</span>
                  throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/concurrent/TimeoutException.html" title="class or interface in java.util.concurrent" class="external-link">TimeoutException</a>,
 <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/InterruptedException.html" title="class or interface in java.lang" class="external-link">InterruptedException</a></span></div>
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).
 
  <p>The <code>tasks</code> stream is consumed only in the calling thread in iteration order.</div>
 <dl class="notes">
@@ -642,8 +648,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">parallelizeUninterruptibly</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&gt;&nbsp;tasks)</span></div>
 <div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ or any exception is thrown upon which all pending tasks are canceled (but the method returns
+ without waiting for the tasks to respond to cancellation).</div>
 </div>
 </section>
 </li>

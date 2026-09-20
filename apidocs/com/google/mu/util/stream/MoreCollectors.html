@@ -110,7 +110,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public final class </span><span class="element-name type-name-label">MoreCollectors</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
-<div class="block">Static utilities pertaining to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> in addition to relevant utilities in JDK and Guava.</div>
+<div class="block">Static utilities pertaining to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> in addition to relevant utilities in JDK and
+ Guava.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>5.2</dd>
@@ -261,7 +262,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T,<wbr>R&gt;&nbsp;<a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a><wbr>&lt;T,<wbr>?,<wbr>R&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#onlyElements(com.google.mu.function.MapFrom8)" class="member-name-link">onlyElements</a><wbr>(<a href="../../function/MapFrom8.html" title="interface in com.google.mu.function">MapFrom8</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Same as <a href="#combining(com.google.mu.function.MapFrom7)"><code>combining(MapFrom7)</code></a>.</div>
+<div class="block">Same as <a href="#combining(com.google.mu.function.MapFrom8)"><code>combining(MapFrom8)</code></a>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T,<wbr>R&gt;&nbsp;<a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a><wbr>&lt;T,<wbr>?,<wbr>R&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#onlyElements(java.util.function.BiFunction)" class="member-name-link">onlyElements</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super T, ? super T, ? extends R&gt;&nbsp;mapper)</code></div>
@@ -388,7 +389,7 @@ loadScripts(document, 'script');</script>
  <pre><code>
  ImmutableMap&lt;EmployeeId, Task&gt; billableTaskAssignments = projects.stream()
      .map(Project::getTaskAssignments)
-     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
+     .collect(flatteningMaps(ImmutableMap::toImmutableMap));
  </code></pre></div>
 </div>
 </section>
@@ -424,13 +425,15 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;T,<wbr>?,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;T&gt;&gt;</span>&nbsp;<span class="element-name">toListAndThen</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;T&gt;&gt;&nbsp;arranger)</span></div>
 <div class="block">Returns a collector that collects input elements into a list, which is then arranged by the
- <code>arranger</code> function before being wrapped as <em>immutable</em> list result.
- List elements are not allowed to be null.
+ <code>arranger</code> function before being wrapped as <em>immutable</em> list result. List elements
+ are not allowed to be null.
 
- <p>Example usages: <ul>
- <li><code>stream.collect(toListAndThen(Collections::reverse))</code> to collect to reverse order.
- <li><code>stream.collect(toListAndThen(Collections::shuffle))</code> to collect and shuffle.
- <li><code>stream.collect(toListAndThen(Collections::sort))</code> to collect and sort.
+ <p>Example usages:
+
+ <ul>
+   <li><code>stream.collect(toListAndThen(Collections::reverse))</code> to collect to reverse order.
+   <li><code>stream.collect(toListAndThen(Collections::shuffle))</code> to collect and shuffle.
+   <li><code>stream.collect(toListAndThen(Collections::sort))</code> to collect and sort.
  </ul></div>
 </div>
 </section>
@@ -444,7 +447,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> that maps the result of <code>upstream</code> collector using the <code>
  finisher</code> BiFunction. Useful when combined with collectors like <a href="#partitioningBy(java.util.function.Predicate,java.util.stream.Collector)"><code>partitioningBy(java.util.function.Predicate&lt;? super E&gt;, java.util.stream.Collector&lt;E, ?, ? extends R&gt;)</code></a>.
 
- <p>For example: <pre><code>
+ <p>For example:
+
+ <pre><code>
  collectingAndThen(partitioningBy(Person::isGood), (good, evil) -&gt; ...)
  </code></pre></div>
 <dl class="notes">
@@ -461,10 +466,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super T, ? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only two elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
- <p>To handle the <code>size() != 2</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,java.util.function.BiFunction)"><code>MoreCollections.findOnlyElements()</code></a> method,
- which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
+ <p>To handle the <code>size() != 2</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,java.util.function.BiFunction)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.6</dd>
@@ -479,10 +483,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom3.html" title="interface in com.google.mu.function">MapFrom3</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only three elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
- <p>To handle the <code>size() != 3</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom3)"><code>MoreCollections.findOnlyElements()</code></a> method,
- which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
+ <p>To handle the <code>size() != 3</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom3)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.6</dd>
@@ -497,10 +500,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom4.html" title="interface in com.google.mu.function">MapFrom4</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only four elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
- <p>To handle the <code>size() != 4</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom4)"><code>MoreCollections.findOnlyElements()</code></a> method,
- which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
+ <p>To handle the <code>size() != 4</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom4)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.6</dd>
@@ -515,10 +517,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom5.html" title="interface in com.google.mu.function">MapFrom5</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only five elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
- <p>To handle the <code>size() != 5</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom5)"><code>MoreCollections.findOnlyElements()</code></a> method,
- which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
+ <p>To handle the <code>size() != 5</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom5)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.6</dd>
@@ -533,10 +534,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom6.html" title="interface in com.google.mu.function">MapFrom6</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only six elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
- <p>To handle the <code>size() != 6</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom6)"><code>MoreCollections.findOnlyElements()</code></a> method,
- which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
+ <p>To handle the <code>size() != 6</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom6)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>6.6</dd>
@@ -551,7 +551,7 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom7.html" title="interface in com.google.mu.function">MapFrom7</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only seven elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
  <p>To handle the <code>size() != 7</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom7)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
@@ -568,7 +568,7 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">combining</span><wbr><span class="parameters">(<a href="../../function/MapFrom8.html" title="interface in com.google.mu.function">MapFrom8</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
 <div class="block">Returns a collector that collects the only eight elements from the input and transforms them
  using the <code>mapper</code> function. If there are fewer or more elements in the input,
- IllegalArgumentExceptioin is thrown.
+ IllegalArgumentException is thrown.
 
  <p>To handle the <code>size() != 8</code> case, consider to use the <a href="../../collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom8)"><code>MoreCollections.findOnlyElements()</code></a> method, which returns <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>.</div>
 <dl class="notes">
@@ -674,7 +674,7 @@ loadScripts(document, 'script');</script>
 <h3>onlyElements</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T,<wbr>R&gt;</span>&nbsp;<span class="return-type"><a href="FixedSizeCollector.html" title="class in com.google.mu.util.stream">FixedSizeCollector</a>&lt;T,<wbr>?,<wbr>R&gt;</span>&nbsp;<span class="element-name">onlyElements</span><wbr><span class="parameters">(<a href="../../function/MapFrom8.html" title="interface in com.google.mu.function">MapFrom8</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</span></div>
-<div class="block">Same as <a href="#combining(com.google.mu.function.MapFrom7)"><code>combining(MapFrom7)</code></a>.</div>
+<div class="block">Same as <a href="#combining(com.google.mu.function.MapFrom8)"><code>combining(MapFrom8)</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>7.2</dd>
@@ -787,8 +787,8 @@ loadScripts(document, 'script');</script>
 <h3>minMax</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;T, ?, <a href="../BiOptional.html" title="class in com.google.mu.util">BiOptional</a>&lt;T,<wbr>T&gt;&gt;</span>&nbsp;<span class="element-name">minMax</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super T&gt;&nbsp;comparator)</span></div>
-<div class="block">Returns a collector that collects the minimum and maximum elements from the input elements.
- the result <code>BiOptional</code>, if present, contains the pair of <code>(min, max)</code>.
+<div class="block">Returns a collector that collects the minimum and maximum elements from the input elements. the
+ result <code>BiOptional</code>, if present, contains the pair of <code>(min, max)</code>.
 
  <p>Null elements are supported as long as <code>comparator</code> supports them.</div>
 <dl class="notes">
@@ -834,7 +834,7 @@ loadScripts(document, 'script');</script>
 
  <pre><code>
  Stream.of("foo", "quux", "banana", "papaya")
-     .collect(greatest(comparingInt(String::length), toImmutableList()))
+     .collect(allMax(comparingInt(String::length), toImmutableList()))
  // returns {"banana", "papaya"}
  </code></pre></div>
 <dl class="notes">

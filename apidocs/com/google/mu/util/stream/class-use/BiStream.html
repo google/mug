@@ -481,8 +481,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>abstract <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="../BiStream.html#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="../BiStream.html#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#limit(int)" class="member-name-link">limit</a><wbr>(int&nbsp;maxSize)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns a <code>BiStream</code> consisting of the only the first <code>maxSize</code> pairs of this
- stream.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of only the first <code>maxSize</code> pairs of this stream.</div>
 </div>
 <div class="col-first odd-row-color"><code>final &lt;K2,<wbr>V2&gt;&nbsp;<a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr>V2&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#map(java.util.function.BiFunction)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../BiStream.html#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="../BiStream.html#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="../../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K2, ? extends V2&gt;&gt;&nbsp;mapper)</code></div>
@@ -500,8 +499,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>final &lt;K2,<wbr>V2&gt;&nbsp;<a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr>V2&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#mapIfPresent(java.util.function.BiFunction)" class="member-name-link">mapIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../BiStream.html#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="../BiStream.html#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="../../BiOptional.html" title="class in com.google.mu.util">BiOptional</a>&lt;? extends K2, ? extends V2&gt;&gt;&nbsp;mapper)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to
- the pairs in this <code>BiStream</code>.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to the
+ pairs in this <code>BiStream</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>&lt;K2&gt;&nbsp;<a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr><a href="../BiStream.html#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#mapKeys(java.util.function.BiFunction)" class="member-name-link">mapKeys</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../BiStream.html#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="../BiStream.html#type-param-V" title="type parameter in BiStream">V</a>, ? extends K2&gt;&nbsp;keyMapper)</code></div>
@@ -918,8 +917,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#toBiStream()" class="member-name-link">toBiStream</a>()</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an equivalent
- <code>BiStream</code>.</div>
+<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an
+ equivalent <code>BiStream</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static &lt;E,<wbr>K,<wbr>V&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;E, ?, <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#toBiStream(java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends <a href="../../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;toPair)</code></div>
@@ -963,8 +962,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>static &lt;K,<wbr>V,<wbr>R&gt;&nbsp;<a href="../BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a><wbr>&lt;K,<wbr>V,<wbr>R&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">BiCollectors.</span><code><a href="../BiCollectors.html#collectingAndThen(java.util.function.Function)" class="member-name-link">collectingAndThen</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;, ? extends R&gt;&nbsp;finisher)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns a <a href="../BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first collects the input pairs into a <a href="../BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> and then applies
- <code>finisher</code> on the intermediary BiStream.</div>
+<div class="block">Returns a <a href="../BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first collects the input pairs into a <a href="../BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> and
+ then applies <code>finisher</code> on the intermediary BiStream.</div>
 </div>
 <div class="col-first odd-row-color"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#concat(java.util.stream.Stream)" class="member-name-link">concat</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;biStreams)</code></div>
@@ -986,8 +985,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">BiCollectors.</span><code><a href="../BiCollectors.html#flatMapping(java.util.function.BiFunction,com.google.mu.util.stream.BiCollector)" class="member-name-link">flatMapping</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super K, ? super V, ? extends <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;? extends K1, ? extends V1&gt;&gt;&nbsp;flattener,
  <a href="../BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a>&lt;K1,<wbr>V1,<wbr>R&gt;&nbsp;downstream)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Returns a <a href="../BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code>
- and then collects the result pairs using <code>downstream</code> collector.</div>
+<div class="block">Returns a <a href="../BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code> and
+ then collects the result pairs using <code>downstream</code> collector.</div>
 </div>
 <div class="col-first odd-row-color"><code>static &lt;T,<wbr>K,<wbr>V,<wbr>R&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T,<wbr>?,<wbr>R&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">MoreCollectors.</span><code><a href="../MoreCollectors.html#flatMapping(java.util.function.Function,com.google.mu.util.stream.BiCollector)" class="member-name-link">flatMapping</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends <a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;flattener,

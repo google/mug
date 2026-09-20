@@ -122,8 +122,9 @@ loadScripts(document, 'script');</script>
  year month day</code>, <code>month day year</code> or <code>day month year</code>) are supported.
 
  <p>For the time part of custom patterns, only <code>HH:mm</code>, <code>HH:mm:ss</code> and <code>
- HH:mm:ss.S</code> variants are supported (the S can be 1 to 9 digits). AM/PM and 12-hour numbers are
- not supported. Though you can explicitly specify them together with placeholders (see below).
+ HH:mm:ss.S</code> variants are supported (the S can be 1 to 9 digits). An AM/PM marker can follow, as
+ in <code>1:00 PM</code> or <code>10:00 PM</code>, in which case a 12-hour clock (<code>h</code> or <code>hh</code>)
+ is inferred and 24-hour values such as <code>15:00 PM</code> are rejected.
 
  <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  explicitly mix the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> specifiers with example placeholders (between a pair
@@ -138,6 +139,51 @@ loadScripts(document, 'script');</script>
  private static final DateTimeFormatter FORMATTER =
      formatOf("&lt;Tue&gt;, dd MM yyyy HH:mm:ss.SSS &lt;America/New_York&gt;");
  </code></pre>
+
+ <p><b><em>Warning</em>: zone abbreviations are lossy across timezones.</b> An abbreviation such
+ as <code>AST</code>, <code>CST</code> or <code>PST</code> is shared by a group of zones. <a href="#formatOf(java.lang.String)"><code>formatOf(java.lang.String)</code></a> can
+ only translate it to the <code>"zzz"</code> format specifier, preferring <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/ZoneId.html#systemDefault()" title="class or interface in java.time" class="external-link"><code>ZoneId.systemDefault()</code></a> when it belongs to that group (which also claims the group's daylight or
+ standard counterpart name, even if the host zone never observes it), and otherwise resolving
+ through CLDR to the group's canonical zone, <b>which may not be the zone that produced the
+ string!</b> Such strings usually come from <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Date.html#toString()" title="class or interface in java.util" class="external-link"><code>Date.toString()</code></a>,
+ which prints an abbreviation whenever CLDR has one for the host's zone. For example, when parsed
+ on a host outside those zones (such as in <code>UTC</code> or <code>America/Los_Angeles</code>):
+
+ <pre><code>
+ // Written by a host in Barbados, which stays on AST (-04:00) year round.
+ // The string denotes 2011-07-15T12:00:00Z.
+ parseToInstant("Fri Jul 15 08:00:00 AST 2011");
+ // =&gt; 2011-07-15T11:00:00Z. "AST" resolves to America/Halifax, which is on ADT (-03:00) in July.
+
+ // Written by a host in Shanghai, which also prints CST.
+ // The string denotes 2026-09-17T00:00:00Z.
+ parseToInstant("Thu Sep 17 08:00:00 CST 2026");
+ // =&gt; 2026-09-17T13:00:00Z. "CST" resolves to America/Chicago: 13 hours off.
+ </code></pre>
+
+ <p>The canonical zone of the most common abbreviations:
+
+ <ul>
+   <li><code>PST</code>, <code>PDT</code>: <code>America/Los_Angeles</code>
+   <li><code>MST</code>, <code>MDT</code>: <code>America/Denver</code>
+   <li><code>CST</code>, <code>CDT</code>: <code>America/Chicago</code>
+   <li><code>EST</code>, <code>EDT</code>: <code>America/New_York</code>
+   <li><code>AST</code>, <code>ADT</code>: <code>America/Halifax</code>
+ </ul>
+
+ <p>The drift is an hour where the group differs only in daylight saving (<code>AEST</code> spans
+ Sydney and Brisbane; <code>CET</code> spans Paris and Algiers), and can exceed half a day where the
+ same letters are used on different continents (<code>CST</code> spans Chicago, Havana and Shanghai;
+ <code>PST</code> spans Los Angeles and Manila; <code>AST</code> spans Halifax, Barbados and Riyadh).
+ Nothing in the string identifies the writer's zone, so this is not recoverable when the reader's
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/ZoneId.html#systemDefault()" title="class or interface in java.time" class="external-link"><code>ZoneId.systemDefault()</code></a> differs from the writer's.
+
+ <p>Prefer a zone id (<code>2011-07-15 08:00:00 America/Barbados</code>) or a numeric offset (<code>
+ 2011-07-15 08:00:00 -04:00</code>); both round-trip exactly. Use an abbreviation only when the producer
+ is known to run in the same <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/ZoneId.html#systemDefault()" title="class or interface in java.time" class="external-link"><code>ZoneId.systemDefault()</code></a>, in the canonical zone, or in a zone
+ that follows the same rules (<code>America/Toronto</code> round-trips through <code>
+ America/New_York</code>). <code>GMT</code>, <code>UTC</code>, <code>UT</code> and <code>GMT±hh:mm</code> are unambiguous
+ and always exact.
 
  <p>i18n isn't supported.</div>
 <dl class="notes">
@@ -248,7 +294,12 @@ loadScripts(document, 'script');</script>
  be any valid date time with zone name or zone offset.
 
  <p>Prefer to pre-construct a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> using <a href="#formatOf(java.lang.String)"><code>formatOf(java.lang.String)</code></a> to get better
- performance and earlier error report in case the format cannot be inferred.</div>
+ performance and earlier error report in case the format cannot be inferred.
+
+ <p>If <code>dateTimeString</code> carries a zone abbreviation such as <code>PST</code> or <code>CST</code>,
+ see the class-level warning: when <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/ZoneId.html#systemDefault()" title="class or interface in java.time" class="external-link"><code>ZoneId.systemDefault()</code></a> is not in that abbreviation's
+ group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+ string.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>dateTimeString</code> - can be the result of <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/Instant.html#toString()" title="class or interface in java.time" class="external-link"><code>Instant.toString()</code></a>, or any other valid date
@@ -270,7 +321,12 @@ loadScripts(document, 'script');</script>
  the <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> for common formats.
 
  <p>Prefer to pre-construct a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/format/DateTimeFormatter.html" title="class or interface in java.time.format" class="external-link"><code>DateTimeFormatter</code></a> using <a href="#formatOf(java.lang.String)"><code>formatOf(java.lang.String)</code></a> to get better
- performance and earlier error report in case the format cannot be inferred.</div>
+ performance and earlier error report in case the format cannot be inferred.
+
+ <p>If <code>dateTimeString</code> carries a zone abbreviation such as <code>PST</code> or <code>CST</code>,
+ see the class-level warning: when <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/ZoneId.html#systemDefault()" title="class or interface in java.time" class="external-link"><code>ZoneId.systemDefault()</code></a> is not in that abbreviation's
+ group, it resolves to CLDR's canonical zone, which may not be the zone that produced the
+ string.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>dateTimeString</code> - must be a string with valid date, time, and zone name or UTC offset</dd>

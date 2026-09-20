@@ -150,14 +150,14 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#inBinaryTree(java.util.function.UnaryOperator,java.util.function.UnaryOperator)" class="member-name-link">inBinaryTree</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;N&gt;&nbsp;getLeft,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;N&gt;&nbsp;getRight)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology
- as observed by <code>getLeft</code> and <code>getRight</code> functions.</div>
+<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology as observed by
+ <code>getLeft</code> and <code>getRight</code> functions.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;N&gt;&nbsp;<a href="GraphWalker.html" title="class in com.google.mu.util.graph">GraphWalker</a><wbr>&lt;N&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#inGraph(java.util.function.Function)" class="member-name-link">inGraph</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super N, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends N&gt;&gt;&nbsp;findSuccessors)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by
- the <code>findSuccessors</code> function, which finds successors of any given graph node.</div>
+<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by the
+ <code>findSuccessors</code> function, which finds successors of any given graph node.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;N&gt;&nbsp;<a href="GraphWalker.html" title="class in com.google.mu.util.graph">GraphWalker</a><wbr>&lt;N&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#inGraph(java.util.function.Function,java.util.function.Predicate)" class="member-name-link">inGraph</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super N, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends N&gt;&gt;&nbsp;findSuccessors,
@@ -217,13 +217,12 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;N&gt;</span>&nbsp;<span class="return-type"><a href="BinaryTreeWalker.html" title="class in com.google.mu.util.graph">BinaryTreeWalker</a>&lt;N&gt;</span>&nbsp;<span class="element-name">inBinaryTree</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;N&gt;&nbsp;getLeft,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;N&gt;&nbsp;getRight)</span></div>
-<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology
- as observed by <code>getLeft</code> and <code>getRight</code> functions. Both functions
- return null to indicate that there is no left or right child.
+<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology as observed by
+ <code>getLeft</code> and <code>getRight</code> functions. Both functions return null to indicate that
+ there is no left or right child.
 
- <p>It's guaranteed that for any given node, <code>getLeft</code> and <code>getRight</code>
- are called lazily, only when the left or the right child is traversed. They are called at
- most once for each node.</div>
+ <p>It's guaranteed that for any given node, <code>getLeft</code> and <code>getRight</code> are called
+ lazily as nodes are traversed, and at most once per node.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.2</dd>
@@ -241,9 +240,8 @@ loadScripts(document, 'script');</script>
 
  <p><code>inTree()</code> is more efficient than <a href="#inGraph(java.util.function.Function)"><code>inGraph()</code></a> because it doesn't need
  to remember nodes that are already visited. On the other hand, the returned <code>Walker</code> can
- walk in cycles if the <code>findChildren</code> function unexpectedly represents a cyclic graph.
- If you need to guard against cycles just in case, you can use <a href="#inGraph(java.util.function.Function,java.util.function.Predicate)"><code>inGraph()</code></a> with a custom node tracker to check for the critical
- precondition:
+ walk in cycles if the <code>findChildren</code> function unexpectedly represents a cyclic graph. If
+ you need to guard against cycles just in case, you can use <a href="#inGraph(java.util.function.Function,java.util.function.Predicate)"><code>inGraph()</code></a> with a custom node tracker to check for the critical precondition:
 
  <pre><code>
  Set&lt;N&gt; visited = new HashSet&lt;&gt;();
@@ -253,12 +251,15 @@ loadScripts(document, 'script');</script>
  });
  </code></pre>
 
- <p>The returned object is idempotent, stateless and immutable as long as <code>findChildren</code> is
- idempotent, stateless and immutable.</div>
+ <p>Streams returned by <code>findChildren</code> are closed automatically once their elements have
+ been traversed, or when the returned traversal stream is closed.
+
+ <p>The returned object is idempotent, stateless and immutable as long as <code>findChildren</code>
+ is idempotent, stateless and immutable.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>findChildren</code> - Function to get the child nodes for a given node.
-        No children if empty stream or null is returned,</dd>
+<dd><code>findChildren</code> - Function to get the child nodes for a given node. No children if empty
+     stream or null is returned,</dd>
 </dl>
 </div>
 </section>
@@ -268,15 +269,18 @@ loadScripts(document, 'script');</script>
 <h3>inGraph</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;N&gt;</span>&nbsp;<span class="return-type"><a href="GraphWalker.html" title="class in com.google.mu.util.graph">GraphWalker</a>&lt;N&gt;</span>&nbsp;<span class="element-name">inGraph</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super N, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends N&gt;&gt;&nbsp;findSuccessors)</span></div>
-<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by
- the <code>findSuccessors</code> function, which finds successors of any given graph node.
+<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by the
+ <code>findSuccessors</code> function, which finds successors of any given graph node.
+
+ <p>Streams returned by <code>findSuccessors</code> are closed automatically once their elements have
+ been traversed, or when the returned traversal stream is closed.
 
  <p>Because the traversal needs to remember which node(s) have been traversed, memory usage is
  linear to the number of traversed nodes.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>findSuccessors</code> - Function to get the successor nodes for a given node.
-        No successor if empty stream or null is returned,</dd>
+<dd><code>findSuccessors</code> - Function to get the successor nodes for a given node. No successor if
+     empty stream or null is returned,</dd>
 </dl>
 </div>
 </section>

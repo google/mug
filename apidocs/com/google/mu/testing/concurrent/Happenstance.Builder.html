@@ -147,9 +147,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="annotations">@CanIgnoreReturnValue
 <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/SafeVarargs.html" title="class or interface in java.lang" class="external-link">@SafeVarargs</a>
 </span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent">Happenstance.Builder</a>&lt;<a href="#type-param-K" title="type parameter in Happenstance.Builder">K</a>&gt;</span>&nbsp;<span class="element-name">sequence</span><wbr><span class="parameters">(<a href="#type-param-K" title="type parameter in Happenstance.Builder">K</a>...&nbsp;sequencePoints)</span></div>
-<div class="block">Defines a ordering between consecutive <code>sequencePoints</code>. For example,
- <code>sequence("A", "B", "C")</code> specifies that sequence points "A", "B", and "C" must
- be completed in that order ("A" before "B", and "B" before "C").
+<div class="block">Defines a ordering between consecutive <code>sequencePoints</code>. For example, <code>
+ sequence("A", "B", "C")</code> specifies that sequence points "A", "B", and "C" must be completed
+ in that order ("A" before "B", and "B" before "C").
 
  <p>NOTE that no order is implied across subsequent <code>sequence()</code> calls.
 

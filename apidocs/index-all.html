@@ -128,6 +128,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Adds all rows from <code>table</code> into this builder.</div>
 </dd>
+<dt><a href="com/google/mu/collect/PrefixSearchTable.Builder.html#addAll(java.lang.Iterable,V)" class="member-name-link">addAll(Iterable&lt;? extends List&lt;? extends K&gt;&gt;, V)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a></dt>
+<dd>
+<div class="block">Maps each key in <code>compoundKeys</code> to <code>value</code>.</div>
+</dd>
 <dt><a href="com/google/mu/collect/PrefixSearchTable.Builder.html#addAll(java.util.Map)" class="member-name-link">addAll(Map&lt;? extends List&lt;? extends K&gt;, ? extends V&gt;)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a></dt>
 <dd>
 <div class="block">Adds all of <code>mappings</code> into this builder.</div>
@@ -533,18 +537,18 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#averagingDouble(java.util.function.ToDoubleBiFunction)" class="member-name-link">averagingDouble(ToDoubleBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of a double-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of a double-valued function
+ applied to the input pair.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#averagingInt(java.util.function.ToIntBiFunction)" class="member-name-link">averagingInt(ToIntBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of an integer-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of an integer-valued function
+ applied to the input pair.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#averagingLong(java.util.function.ToLongBiFunction)" class="member-name-link">averagingLong(ToLongBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of a long-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the arithmetic mean of a long-valued function
+ applied to the input pair.</div>
 </dd>
 </dl>
 <h2 class="title" id="I:B">B</h2>
@@ -626,7 +630,7 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">between(Parser.OrEmpty, Parser.OrEmpty)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
 <div class="block">Returns a production rule that matches <code>this</code> pattern enclosed between <code>prefix</code> and
- <code>suffix</code>,* both allowed to be empty.</div>
+ <code>suffix</code>, both allowed to be empty.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">between(Parser&lt;?&gt;, Parser&lt;?&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
@@ -1140,8 +1144,11 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/testing/concurrent/Happenstance.html#checkpoint(K)" class="member-name-link">checkpoint(K)</a> - Method in class com.google.mu.testing.concurrent.<a href="com/google/mu/testing/concurrent/Happenstance.html" title="class in com.google.mu.testing.concurrent">Happenstance</a></dt>
 <dd>
-<div class="block">Waits for all predecessors of <code>sequencePoint</code> to have checked in, then marks <code>
- sequencePoint</code> as checked-in and returns.</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">The JIT and the CPU can move the surrounding plain reads and writes across a
+     checkpoint, so the ordering applies to the check-in calls themselves, not to the SUT code
+     around them. Use <a href="com/google/mu/testing/concurrent/Happenstance.html#join(K)"><code>Happenstance.join(K)</code></a> instead.</div>
+</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#close()" class="member-name-link">close()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -1161,8 +1168,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#collect(A,com.google.mu.util.stream.BiAccumulator)" class="member-name-link">collect(A, BiAccumulator&lt;? super A, ? super K, ? super V&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="block">Performs mutable reduction, as in <code>
- collect(ImmutableMap.builder(), ImmutableMap.Builder::put)</code>.</div>
+<div class="block">Performs mutable reduction, as in <code>collect(ImmutableMap.builder(),
+ ImmutableMap.Builder::put)</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#collect(com.google.mu.util.stream.BiCollector)" class="member-name-link">collect(BiCollector&lt;? super K, ? super V, R&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -1181,13 +1188,13 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#collectingAndThen(com.google.mu.util.stream.BiCollector,java.util.function.Function)" class="member-name-link">collectingAndThen(BiCollector&lt;K, V, T&gt;, Function&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that maps the result of <code>upstream</code> collector using
- <code>finisher</code>.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that maps the result of <code>upstream</code> collector using <code>
+ finisher</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#collectingAndThen(java.util.function.Function)" class="member-name-link">collectingAndThen(Function&lt;? super BiStream&lt;K, V&gt;, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first collects the input pairs into a <a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> and then applies
- <code>finisher</code> on the intermediary BiStream.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first collects the input pairs into a <a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a> and
+ then applies <code>finisher</code> on the intermediary BiStream.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html#collectingAndThen(java.util.stream.Collector,java.util.function.BiFunction)" class="member-name-link">collectingAndThen(Collector&lt;T, ?, ? extends Both&lt;? extends A, ? extends B&gt;&gt;, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreCollectors.html" title="class in com.google.mu.util.stream">MoreCollectors</a></dt>
 <dd>
@@ -1350,8 +1357,8 @@ loadScripts(document, 'script');</script>
 <dd>Section</dd>
 <dt><a href="com/google/mu/collect/Chain.html#concat(com.google.mu.collect.Chain,com.google.mu.collect.Chain)" class="member-name-link">concat(Chain&lt;? extends T&gt;, Chain&lt;? extends T&gt;)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 <dd>
-<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the
- <code>right</code> Chain, in <em>O(1)</em> time.</div>
+<div class="block">Returns a new Chain concatenating elements from the <code>left</code> Chain and the <code>right</code>
+ Chain, in <em>O(1)</em> time.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#concat(com.google.mu.util.stream.BiStream,com.google.mu.util.stream.BiStream,com.google.mu.util.stream.BiStream...)" class="member-name-link">concat(BiStream&lt;? extends K, ? extends V&gt;, BiStream&lt;? extends K, ? extends V&gt;, BiStream&lt;? extends K, ? extends V&gt;...)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -1441,8 +1448,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreStreams.html#consume(java.util.stream.Stream,int,java.util.function.Consumer)" class="member-name-link">consume(Stream&lt;T&gt;, int, Consumer&lt;? super T&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreStreams.html" title="class in com.google.mu.util.stream">MoreStreams</a></dt>
 <dd>
-<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code>
- in encounter order, then return the remaining elements in a stream.</div>
+<div class="block">Consume up to <code>n</code> elements from <code>stream</code>, pass them to <code>consumer</code> in
+ encounter order, then return the remaining elements in a stream.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Group.Atomic.html#content()" class="member-name-link">content()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Group.Atomic.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Atomic</a></dt>
 <dd>
@@ -1593,6 +1600,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the value of the <code>disabledModifierFlags</code> record component.</div>
 </dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#disabledModifierFlags()" class="member-name-link">disabledModifierFlags()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>disabledModifierFlags</code> record component.</div>
+</dd>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#displayName()" class="member-name-link">displayName()</a> - Method in class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
 <dd>
 <div class="block">Returns the display name of the email address (e.g.</div>
@@ -1673,8 +1684,6 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.CharacterSet.Intersection.html#elementString()" class="member-name-link">elementString()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.CharacterSet.Intersection.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.Intersection</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="com/google/common/labs/regex/RegexPattern.CharacterSet.NoneOf.html#elementString()" class="member-name-link">elementString()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/email/EmailAddress.html" class="type-name-link" title="class in com.google.common.labs.email">EmailAddress</a> - Class in <a href="com/google/common/labs/email/package-summary.html">com.google.common.labs.email</a></dt>
 <dd>
 <div class="block">Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -1709,6 +1718,10 @@ loadScripts(document, 'script');</script>
 <div class="block">An empty SQL</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Group.NonCapturing.html#enabledModifierFlags()" class="member-name-link">enabledModifierFlags()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Group.NonCapturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.NonCapturing</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>enabledModifierFlags</code> record component.</div>
+</dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#enabledModifierFlags()" class="member-name-link">enabledModifierFlags()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>enabledModifierFlags</code> record component.</div>
 </dd>
@@ -1826,6 +1839,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Metadata.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Metadata.html" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></dt>
+<dd>
+<div class="block">Indicates whether some other object is "equal to" this one.</div>
+</dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
@@ -2194,13 +2211,13 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/collect/MoreCollections.html#findFirstElements(java.util.Collection,com.google.mu.function.MapFrom7)" class="member-name-link">findFirstElements(Collection&lt;T&gt;, MapFrom7&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/MoreCollections.html" title="class in com.google.mu.collect">MoreCollections</a></dt>
 <dd>
-<div class="block">If <code>collection</code> has at least 7 elements, passes the first 6 elements to <code>found</code>
+<div class="block">If <code>collection</code> has at least 7 elements, passes the first 7 elements to <code>found</code>
  function and returns the non-null result wrapped in an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>, or else returns <code>
  Optional.empty()</code>.</div>
 </dd>
 <dt><a href="com/google/mu/collect/MoreCollections.html#findFirstElements(java.util.Collection,com.google.mu.function.MapFrom8)" class="member-name-link">findFirstElements(Collection&lt;T&gt;, MapFrom8&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/MoreCollections.html" title="class in com.google.mu.collect">MoreCollections</a></dt>
 <dd>
-<div class="block">If <code>collection</code> has at least 8 elements, passes the first 6 elements to <code>found</code>
+<div class="block">If <code>collection</code> has at least 8 elements, passes the first 8 elements to <code>found</code>
  function and returns the non-null result wrapped in an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>, or else returns <code>
  Optional.empty()</code>.</div>
 </dd>
@@ -2236,13 +2253,13 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom7)" class="member-name-link">findOnlyElements(Collection&lt;T&gt;, MapFrom7&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/MoreCollections.html" title="class in com.google.mu.collect">MoreCollections</a></dt>
 <dd>
-<div class="block">If <code>collection</code> has exactly 7 elements, passes the 6 elements to <code>found</code> function
+<div class="block">If <code>collection</code> has exactly 7 elements, passes the 7 elements to <code>found</code> function
  and returns the non-null result wrapped in an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>, or else returns <code>
  Optional.empty()</code>.</div>
 </dd>
 <dt><a href="com/google/mu/collect/MoreCollections.html#findOnlyElements(java.util.Collection,com.google.mu.function.MapFrom8)" class="member-name-link">findOnlyElements(Collection&lt;T&gt;, MapFrom8&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/MoreCollections.html" title="class in com.google.mu.collect">MoreCollections</a></dt>
 <dd>
-<div class="block">If <code>collection</code> has exactly 8 elements, passes the 6 elements to <code>found</code> function
+<div class="block">If <code>collection</code> has exactly 8 elements, passes the 8 elements to <code>found</code> function
  and returns the non-null result wrapped in an <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link"><code>Optional</code></a>, or else returns <code>
  Optional.empty()</code>.</div>
 </dd>
@@ -2322,13 +2339,13 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#flatMapping(java.util.function.BiFunction,com.google.mu.util.stream.BiCollector)" class="member-name-link">flatMapping(BiFunction&lt;? super K, ? super V, ? extends BiStream&lt;? extends K1, ? extends V1&gt;&gt;, BiCollector&lt;K1, V1, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code>
- and then collects the result pairs using <code>downstream</code> collector.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code> and
+ then collects the result pairs using <code>downstream</code> collector.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#flatMapping(java.util.function.BiFunction,java.util.stream.Collector)" class="member-name-link">flatMapping(BiFunction&lt;? super K, ? super V, ? extends Stream&lt;? extends T&gt;&gt;, Collector&lt;T, ?, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code>
- and then collects the results using <code>downstream</code> collector.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first flattens the input pair using <code>flattener</code> and
+ then collects the results using <code>downstream</code> collector.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html#flatMapping(java.util.function.Function,com.google.mu.util.stream.BiCollector)" class="member-name-link">flatMapping(Function&lt;? super T, ? extends BiStream&lt;? extends K, ? extends V&gt;&gt;, BiCollector&lt;? super K, ? super V, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreCollectors.html" title="class in com.google.mu.util.stream">MoreCollectors</a></dt>
 <dd>
@@ -2482,6 +2499,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Similar to <a href="com/google/guava/labs/collect/BinarySearch.html#forInts(com.google.common.collect.Range)"><code>BinarySearch.forInts(Range)</code></a>, but returns a <a href="com/google/guava/labs/collect/BinarySearch.Table.html" title="class in com.google.guava.labs.collect"><code>BinarySearch.Table</code></a> over the given
  <code>range</code> of <code>long</code> integers.</div>
 </dd>
+<dt><a href="com/google/mu/util/StringFormat.html#format(char)" class="member-name-link">format(char)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
+<dd>
+<div class="block">Returns the string formatted with placeholders filled using the provided 1 placeholder args.</div>
+</dd>
 <dt><a href="com/google/mu/util/StringFormat.html#format(long)" class="member-name-link">format(long)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
 <div class="block">Returns the string formatted with placeholders filled using the provided 1 placeholder args.</div>
@@ -2603,9 +2624,9 @@ loadScripts(document, 'script');</script>
 <dl class="index">
 <dt><a href="com/google/mu/util/stream/MoreStreams.html#generate(T,java.util.function.Function)" class="member-name-link">generate(T, Function&lt;? super T, ? extends Stream&lt;? extends T&gt;&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreStreams.html" title="class in com.google.mu.util.stream">MoreStreams</a></dt>
 <dd>
-<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial
- <code>seed</code>, producing a Stream consisting of seed, elements of step(seed),
- elements of step(x) for each x in step(seed), etc.</div>
+<div class="block">Returns a Stream produced by iterative application of <code>step</code> to the initial <code>seed</code>,
+ producing a Stream consisting of seed, elements of step(seed), elements of step(x) for each x
+ in step(seed), etc.</div>
 </dd>
 <dt><a href="com/google/mu/function/CheckedSupplier.html#get()" class="member-name-link">get()</a> - Method in interface com.google.mu.function.<a href="com/google/mu/function/CheckedSupplier.html" title="interface in com.google.mu.function">CheckedSupplier</a></dt>
 <dd>&nbsp;</dd>
@@ -2759,7 +2780,8 @@ loadScripts(document, 'script');</script>
 <dl class="index">
 <dt><a href="com/google/mu/testing/concurrent/Happenstance.html" class="type-name-link" title="class in com.google.mu.testing.concurrent">Happenstance&lt;K&gt;</a> - Class in <a href="com/google/mu/testing/concurrent/package-summary.html">com.google.mu.testing.concurrent</a></dt>
 <dd>
-<div class="block">A utility to manipulate temporal ordering (via <a href="com/google/mu/testing/concurrent/Happenstance.html#checkpoint(K)"><code>Happenstance.checkpoint(K)</code></a>) or happens-before (via <a href="com/google/mu/testing/concurrent/Happenstance.html#join(K)"><code>Happenstance.join(K)</code></a>) relationships between events in concurrent operations.</div>
+<div class="block">A utility to manipulate happens-before relationships (via <a href="com/google/mu/testing/concurrent/Happenstance.html#join(K)"><code>Happenstance.join(K)</code></a>) between events in
+ concurrent operations.</div>
 </dd>
 <dt><a href="com/google/mu/testing/concurrent/Happenstance.Builder.html" class="type-name-link" title="class in com.google.mu.testing.concurrent">Happenstance.Builder&lt;K&gt;</a> - Class in <a href="com/google/mu/testing/concurrent/package-summary.html">com.google.mu.testing.concurrent</a></dt>
 <dd>
@@ -2866,6 +2888,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Metadata.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Metadata.html" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></dt>
+<dd>
+<div class="block">Returns a hash code value for this object.</div>
+</dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
@@ -3157,7 +3183,7 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
  immediately preceded by the <code>lookbehind</code> string and immediately followed by the <code>
- after</code> string.</div>
+ lookahead</code> string.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.html#in(com.google.mu.cel.CelExpr)" class="member-name-link">in(CelExpr)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
@@ -3179,8 +3205,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/graph/Walker.html#inBinaryTree(java.util.function.UnaryOperator,java.util.function.UnaryOperator)" class="member-name-link">inBinaryTree(UnaryOperator&lt;N&gt;, UnaryOperator&lt;N&gt;)</a> - Static method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/Walker.html" title="class in com.google.mu.util.graph">Walker</a></dt>
 <dd>
-<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology
- as observed by <code>getLeft</code> and <code>getRight</code> functions.</div>
+<div class="block">Returns a <code>BinaryTreeWalker</code> for walking in the binary tree topology as observed by
+ <code>getLeft</code> and <code>getRight</code> functions.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.BoundStyle.html#INCLUSIVE" class="member-name-link">INCLUSIVE</a> - Enum constant in enum class com.google.mu.util.<a href="com/google/mu/util/Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a></dt>
 <dd>
@@ -3223,8 +3249,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/graph/Walker.html#inGraph(java.util.function.Function)" class="member-name-link">inGraph(Function&lt;? super N, ? extends Stream&lt;? extends N&gt;&gt;)</a> - Static method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/Walker.html" title="class in com.google.mu.util.graph">Walker</a></dt>
 <dd>
-<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by
- the <code>findSuccessors</code> function, which finds successors of any given graph node.</div>
+<div class="block">Returns a <code>Walker</code> to walk the graph topology (possibly with cycles) as observed by the
+ <code>findSuccessors</code> function, which finds successors of any given graph node.</div>
 </dd>
 <dt><a href="com/google/mu/util/graph/Walker.html#inGraph(java.util.function.Function,java.util.function.Predicate)" class="member-name-link">inGraph(Function&lt;? super N, ? extends Stream&lt;? extends N&gt;&gt;, Predicate&lt;? super N&gt;)</a> - Static method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/Walker.html" title="class in com.google.mu.util.graph">Walker</a></dt>
 <dd>
@@ -3478,8 +3504,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreStreams.html#iterateThrough(java.util.stream.Stream,com.google.mu.function.CheckedConsumer)" class="member-name-link">iterateThrough(Stream&lt;? extends T&gt;, CheckedConsumer&lt;? super T, E&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreStreams.html" title="class in com.google.mu.util.stream">MoreStreams</a></dt>
 <dd>
-<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code>
- with exceptions propagated.</div>
+<div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code> with
+ exceptions propagated.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/Iteration.html" class="type-name-link" title="class in com.google.mu.util.stream">Iteration&lt;T&gt;</a> - Class in <a href="com/google/mu/util/stream/package-summary.html">com.google.mu.util.stream</a></dt>
 <dd>
@@ -3716,8 +3742,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#limit(int)" class="member-name-link">limit(int)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="block">Returns a <code>BiStream</code> consisting of the only the first <code>maxSize</code> pairs of this
- stream.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of only the first <code>maxSize</code> pairs of this stream.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.Match.html#limit(int)" class="member-name-link">limit(int)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Match.html" title="class in com.google.mu.util">Substring.Match</a></dt>
 <dd>
@@ -3902,8 +3927,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#mapIfPresent(java.util.function.BiFunction)" class="member-name-link">mapIfPresent(BiFunction&lt;? super K, ? super V, ? extends BiOptional&lt;? extends K2, ? extends V2&gt;&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to
- the pairs in this <code>BiStream</code>.</div>
+<div class="block">Returns a <code>BiStream</code> consisting of the results of applying <code>mapper</code> function to the
+ pairs in this <code>BiStream</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#mapKeys(java.util.function.BiFunction)" class="member-name-link">mapKeys(BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -3935,17 +3960,18 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#mapping(java.util.function.BiFunction,com.google.mu.util.stream.BiCollector)" class="member-name-link">mapping(BiFunction&lt;? super K, ? super V, ? extends Both&lt;? extends K1, ? extends V1&gt;&gt;, BiCollector&lt;K1, V1, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair into another pair using <code>mapper</code>.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair into another pair using <code>
+ mapper</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#mapping(java.util.function.BiFunction,java.util.function.BiFunction,com.google.mu.util.stream.BiCollector)" class="member-name-link">mapping(BiFunction&lt;? super K, ? super V, ? extends K1&gt;, BiFunction&lt;? super K, ? super V, ? extends V1&gt;, BiCollector&lt;K1, V1, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair using <code>keyMapper</code> and <code>valueMapper</code>
- respectively, then collects the results using <code>downstream</code> collector.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair using <code>keyMapper</code> and <code>
+ valueMapper</code> respectively, then collects the results using <code>downstream</code> collector.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#mapping(java.util.function.BiFunction,java.util.stream.Collector)" class="member-name-link">mapping(BiFunction&lt;? super K, ? super V, ? extends T&gt;, Collector&lt;T, ?, R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair using <code>mapper</code> and then collects the
- results using <code>downstream</code> collector.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that first maps the input pair using <code>mapper</code> and then
+ collects the results using <code>downstream</code> collector.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html#mapping(java.util.function.Function,java.util.stream.Collector,java.util.function.Function)" class="member-name-link">mapping(Function&lt;? super F, ? extends T&gt;, Collector&lt;T, ?, T1&gt;, Function&lt;? super T1, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreCollectors.html" title="class in com.google.mu.util.stream">MoreCollectors</a></dt>
 <dd>
@@ -4151,6 +4177,8 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns this pattern's metadata that may be useful for static analysis.</div>
 </dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#metadata()" class="member-name-link">metadata()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.PredefinedCharClass.html#metadata()" class="member-name-link">metadata()</a> - Method in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Quantified.html#metadata()" class="member-name-link">metadata()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></dt>
@@ -4200,6 +4228,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the distance between <code>this</code> and <code>that</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#%3Cinit%3E(java.util.List,java.util.List)" class="member-name-link">ModifierDirective(List&lt;RegexPattern.ModifierFlag&gt;, List&lt;RegexPattern.ModifierFlag&gt;)</a> - Constructor for record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
+<dd>
+<div class="block">Creates an instance of a <code>ModifierDirective</code> record class.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.html#modulo(com.google.mu.cel.CelExpr)" class="member-name-link">modulo(CelExpr)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
 <div class="block"><code>a.modulo(b)</code> is equivalent to <code>CelExpr.of("a % b")</code>.</div>
@@ -4214,7 +4246,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html" class="type-name-link" title="class in com.google.mu.util.stream">MoreCollectors</a> - Class in <a href="com/google/mu/util/stream/package-summary.html">com.google.mu.util.stream</a></dt>
 <dd>
-<div class="block">Static utilities pertaining to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> in addition to relevant utilities in JDK and Guava.</div>
+<div class="block">Static utilities pertaining to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> in addition to relevant utilities in JDK and
+ Guava.</div>
 </dd>
 <dt><a href="com/google/mu/collect/MoreIterables.html" class="type-name-link" title="class in com.google.mu.collect">MoreIterables</a> - Class in <a href="com/google/mu/collect/package-summary.html">com.google.mu.collect</a></dt>
 <dd>
@@ -4435,7 +4468,7 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
  be immediately preceded by the <code>lookbehind</code> string and immediately followed by the
- <code>after</code> string.</div>
+ <code>lookahead</code> string.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#notImmediatelyFollowedBy(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">notImmediatelyFollowedBy(CharPredicate, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
@@ -4622,7 +4655,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html#onlyElements(com.google.mu.function.MapFrom8)" class="member-name-link">onlyElements(MapFrom8&lt;? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreCollectors.html" title="class in com.google.mu.util.stream">MoreCollectors</a></dt>
 <dd>
-<div class="block">Same as <a href="com/google/mu/util/stream/MoreCollectors.html#combining(com.google.mu.function.MapFrom7)"><code>MoreCollectors.combining(MapFrom7)</code></a>.</div>
+<div class="block">Same as <a href="com/google/mu/util/stream/MoreCollectors.html#combining(com.google.mu.function.MapFrom8)"><code>MoreCollectors.combining(MapFrom8)</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/MoreCollectors.html#onlyElements(java.util.function.BiFunction)" class="member-name-link">onlyElements(BiFunction&lt;? super T, ? super T, ? extends R&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/MoreCollectors.html" title="class in com.google.mu.util.stream">MoreCollectors</a></dt>
 <dd>
@@ -4940,8 +4973,8 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.Iterator,java.util.function.Consumer)" class="member-name-link">parallelize(Iterator&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.Iterator,java.util.function.Consumer,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize(Iterator&lt;? extends T&gt;, Consumer&lt;? super T&gt;, long, TimeUnit)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
@@ -4957,27 +4990,27 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.stream.Stream)" class="member-name-link">parallelize(Stream&lt;? extends Runnable&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
-<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, or any
+ exception is thrown upon which all pending tasks are canceled (but the method returns without
+ waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.stream.Stream,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize(Stream&lt;? extends Runnable&gt;, long, TimeUnit)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.stream.Stream,java.time.Duration)" class="member-name-link">parallelize(Stream&lt;? extends Runnable&gt;, Duration)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
-<div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>tasks</code> in parallel and blocks until either all tasks have finished, timeout is
+ triggered, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">parallelize(Stream&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
 <div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks until either all tasks have
- finished, or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ finished, or any exception is thrown upon which all pending tasks are canceled (but the method
+ returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelize(java.util.stream.Stream,java.util.function.Consumer,long,java.util.concurrent.TimeUnit)" class="member-name-link">parallelize(Stream&lt;? extends T&gt;, Consumer&lt;? super T&gt;, long, TimeUnit)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
@@ -5003,21 +5036,21 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelizeUninterruptibly(java.util.Iterator,java.util.function.Consumer)" class="member-name-link">parallelizeUninterruptibly(Iterator&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelizeUninterruptibly(java.util.stream.Stream)" class="member-name-link">parallelizeUninterruptibly(Stream&lt;? extends Runnable&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
 <div class="block">Runs <code>tasks</code> in parallel and blocks uninterruptibly until either all tasks have finished,
- or any exception is thrown upon which all pending tasks are canceled
- (but the method returns without waiting for the tasks to respond to cancellation).</div>
+ or any exception is thrown upon which all pending tasks are canceled (but the method returns
+ without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/util/concurrent/Parallelizer.html#parallelizeUninterruptibly(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">parallelizeUninterruptibly(Stream&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a> - Method in class com.google.mu.util.concurrent.<a href="com/google/mu/util/concurrent/Parallelizer.html" title="class in com.google.mu.util.concurrent">Parallelizer</a></dt>
 <dd>
-<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until
- either all tasks have finished, or any exception is thrown upon which all pending tasks are
- canceled (but the method returns without waiting for the tasks to respond to cancellation).</div>
+<div class="block">Runs <code>consumer</code> for <code>inputs</code> in parallel and blocks uninterruptibly until either
+ all tasks have finished, or any exception is thrown upon which all pending tasks are canceled
+ (but the method returns without waiting for the tasks to respond to cancellation).</div>
 </dd>
 <dt><a href="com/google/mu/bigquery/ParameterizedQuery.html" class="type-name-link" title="class in com.google.mu.bigquery">ParameterizedQuery</a> - Class in <a href="com/google/mu/bigquery/package-summary.html">com.google.mu.bigquery</a></dt>
 <dd>
@@ -5444,7 +5477,7 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/util/Substring.Pattern.html#precededBy(java.lang.String)" class="member-name-link">precededBy(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></dt>
 <dd>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
- immediately preceded by the <code>lookahead</code> string.</div>
+ immediately preceded by the <code>lookbehind</code> string.</div>
 </dd>
 <dt><a href="com/google/mu/util/CharPredicate.html#precomputeForAscii()" class="member-name-link">precomputeForAscii()</a> - Method in interface com.google.mu.util.<a href="com/google/mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></dt>
 <dd>
@@ -5793,7 +5826,9 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Backreference.Named.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Backreference.Named</a> - Record Class in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Backreference.Numbered.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Backreference.Numbered</a> - Record Class in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">A backreference to a capturing group by number, like <code>\1</code>.</div>
+</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.CharacterProperty.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a> - Interface in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
 <dd>
 <div class="block">Represents a character property, like <code>\p{Lower}</code> or <code>\P{Lower}</code>.</div>
@@ -5883,6 +5918,11 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Metadata.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a> - Record Class in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
 <dd>
 <div class="block">Common metadata shared by all regex patterns.</div>
+</dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a> - Record Class in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
+<dd>
+<div class="block">A standalone modifier directive, like <code>(?i)</code> or <code>(?is-m)</code>, which turns flags on or
+ off for the remainder of the enclosing group.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.ModifierFlag.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a> - Enum Class in <a href="com/google/common/labs/regex/package-summary.html">com.google.common.labs.regex</a></dt>
 <dd>
@@ -6306,8 +6346,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/Joiner.html#skipEmpties()" class="member-name-link">skipEmpties()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/Joiner.html" title="class in com.google.mu.util.stream">Joiner</a></dt>
 <dd>
-<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using
- this Joiner.</div>
+<div class="block">Returns a Collector that skips null and empty string inputs and joins the remaining using this
+ Joiner.</div>
 </dd>
 <dt><a href="com/google/mu/util/BiOptional.html#skipIf(java.util.function.BiPredicate)" class="member-name-link">skipIf(BiPredicate&lt;? super A, ? super B&gt;)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/BiOptional.html" title="class in com.google.mu.util">BiOptional</a></dt>
 <dd>
@@ -6665,15 +6705,13 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/graph/GraphWalker.html#stronglyConnectedComponentsFrom(java.lang.Iterable)" class="member-name-link">stronglyConnectedComponentsFrom(Iterable&lt;? extends N&gt;)</a> - Method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/GraphWalker.html" title="class in com.google.mu.util.graph">GraphWalker</a></dt>
 <dd>
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.</div>
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.</div>
 </dd>
 <dt><a href="com/google/mu/util/graph/GraphWalker.html#stronglyConnectedComponentsFrom(N...)" class="member-name-link">stronglyConnectedComponentsFrom(N...)</a> - Method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/GraphWalker.html" title="class in com.google.mu.util.graph">GraphWalker</a></dt>
 <dd>
-<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of
- <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
- connected components</a> found in the graph.</div>
+<div class="block">Walks the graph by starting from <code>startNodes</code>, and returns a lazy stream of <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly connected
+ components</a> found in the graph.</div>
 </dd>
 <dt><a href="com/google/mu/protobuf/util/Structor.html#struct(java.lang.CharSequence,java.lang.Object)" class="member-name-link">struct(CharSequence, Object)</a> - Method in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/Structor.html" title="class in com.google.mu.protobuf.util">Structor</a></dt>
 <dd>
@@ -6836,36 +6874,33 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summarizingDouble(java.util.function.ToDoubleBiFunction)" class="member-name-link">summarizingDouble(ToDoubleBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>double</code>-producing
- mapping function to each input pair, and returns summary statistics
- for the resulting values.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>double</code>-producing mapping function to
+ each input pair, and returns summary statistics for the resulting values.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summarizingInt(java.util.function.ToIntBiFunction)" class="member-name-link">summarizingInt(ToIntBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>int</code>-producing
- mapping function to each input pair, and returns summary statistics
- for the resulting values.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>int</code>-producing mapping function to each
+ input pair, and returns summary statistics for the resulting values.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summarizingLong(java.util.function.ToLongBiFunction)" class="member-name-link">summarizingLong(ToLongBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>long</code>-producing
- mapping function to each input pair, and returns summary statistics
- for the resulting values.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> which applies an <code>long</code>-producing mapping function to each
+ input pair, and returns summary statistics for the resulting values.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summingDouble(java.util.function.ToDoubleBiFunction)" class="member-name-link">summingDouble(ToDoubleBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of a double-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of a double-valued function applied to the
+ input pair.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summingInt(java.util.function.ToIntBiFunction)" class="member-name-link">summingInt(ToIntBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of an integer-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of an integer-valued function applied to
+ the input pair.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#summingLong(java.util.function.ToLongBiFunction)" class="member-name-link">summingLong(ToLongBiFunction&lt;? super K, ? super V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
-<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of a long-valued
- function applied to the input pair.</div>
+<div class="block">Returns a <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a> that produces the sum of a long-valued function applied to the
+ input pair.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/Joiner.html#supplier()" class="member-name-link">supplier()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/Joiner.html" title="class in com.google.mu.util.stream">Joiner</a></dt>
 <dd>&nbsp;</dd>
@@ -7007,8 +7042,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#toBiStream()" class="member-name-link">toBiStream()</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an equivalent
- <code>BiStream</code>.</div>
+<div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an
+ equivalent <code>BiStream</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#toBiStream(java.util.function.Function)" class="member-name-link">toBiStream(Function&lt;? super E, ? extends Both&lt;? extends K, ? extends V&gt;&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -7150,8 +7185,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/Ordinal.html#toIndex()" class="member-name-link">toIndex()</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Ordinal.html" title="class in com.google.mu.util">Ordinal</a></dt>
 <dd>
-<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to
- read and write elements in arrays and lists.</div>
+<div class="block">Returns the 0-based index, such that <code>"1st"</code> will map to 0, thus can be used to read and
+ write elements in arrays and lists.</div>
 </dd>
 <dt><a href="com/google/mu/collect/Selection.html#toIntersection()" class="member-name-link">toIntersection()</a> - Static method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>
@@ -7333,6 +7368,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Metadata.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Metadata.html" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></dt>
+<dd>
+<div class="block">Returns a string representation of this record class.</div>
+</dd>
+<dt><a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierDirective.html" title="class in com.google.common.labs.regex">RegexPattern.ModifierDirective</a></dt>
 <dd>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>

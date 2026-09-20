@@ -108,7 +108,7 @@ loadScripts(document, 'script');</script>
  Parser&lt;Integer&gt; calculator = new OperatorTable&lt;Integer&gt;()
      .leftAssociative("+", (l, r) -&gt; l + r, 10)
      .leftAssociative("-", (l, r) -&gt; l - r, 10)
-     .leftAssociative("*", (l, r) -&gt; l * r), 20)
+     .leftAssociative("*", (l, r) -&gt; l * r, 20)
      .rightAssociative("^", (l, r) -&gt; pow(l, r), 30)
      .prefix("-", n -&gt; -n, 40)
      .postfix("++", n -&gt; n + 1, 40)
