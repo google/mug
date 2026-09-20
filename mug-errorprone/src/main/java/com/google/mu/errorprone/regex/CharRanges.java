@@ -10,7 +10,9 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.RegexPatternUtils.Flags;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,8 +84,19 @@ final class CharRanges {
     RangeSet<Integer> folded = TreeRangeSet.create(ranges);
     for (Range<Integer> r : cased.asRanges()) {
       for (int cp = r.lowerEndpoint(); cp < r.upperEndpoint(); cp++) {
-        folded.add(only(Character.toUpperCase(cp)));
-        folded.add(only(Character.toLowerCase(cp)));
+        int upper = Character.toUpperCase(cp);
+        int lower = Character.toLowerCase(cp);
+        folded.add(only(upper));
+        folded.add(only(lower));
+        if (unicodeCase) {
+          int canonical = Character.toLowerCase(upper);
+          int[] extra = UnicodeCased.EXTRA_EQUIVALENTS.get(canonical);
+          if (extra != null) {
+            for (int eq : extra) {
+              folded.add(only(eq));
+            }
+          }
+        }
       }
     }
     return ImmutableRangeSet.copyOf(folded);
@@ -91,13 +104,25 @@ final class CharRanges {
 
   /** Holder so that the code point scan only runs for the patterns that ask for {@code (?u)}. */
   private static final class UnicodeCased {
+    static final Map<Integer, int[]> EXTRA_EQUIVALENTS = new HashMap<>();
     static final ImmutableRangeSet<Integer> CODE_POINTS = scan();
 
     private static ImmutableRangeSet<Integer> scan() {
       RangeSet<Integer> tree = TreeRangeSet.create();
+      Map<Integer, List<Integer>> byCanonical = new HashMap<>();
       for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
-        if (Character.toUpperCase(cp) != cp || Character.toLowerCase(cp) != cp) {
+        int upper = Character.toUpperCase(cp);
+        int lower = Character.toLowerCase(cp);
+        if (upper != cp || lower != cp) {
           tree.add(only(cp));
+          int canonical = Character.toLowerCase(upper);
+          byCanonical.computeIfAbsent(canonical, k -> new ArrayList<>()).add(cp);
+        }
+      }
+      for (Map.Entry<Integer, List<Integer>> entry : byCanonical.entrySet()) {
+        if (entry.getValue().size() > 2) {
+          EXTRA_EQUIVALENTS.put(
+              entry.getKey(), entry.getValue().stream().mapToInt(Integer::intValue).toArray());
         }
       }
       return ImmutableRangeSet.copyOf(tree);

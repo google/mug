@@ -2416,4 +2416,13 @@ public final class ReDosTest {
     ReDos.checkRedosVulnerability(pattern);
     ReDos.checkPolynomialBacktracking(pattern);
   }
+
+  @Test public void checkRedosVulnerability_unsetSelfBackreference_doesNotThrow() {
+    ReDos.checkRedosVulnerability(RegexPattern.of("(\\1a)+$"));
+  }
+
+  @Test public void checkRedosVulnerability_unicodeCaseKelvinSign_throws() {
+    RegexPattern pattern = RegexPattern.of("((?iu)K|(?-i)\\u212a)+$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
 }
