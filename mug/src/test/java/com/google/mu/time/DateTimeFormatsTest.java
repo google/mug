@@ -1260,6 +1260,33 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZoneId.of("Europe/Paris"));
   }
 
+  @Test public void formatOf_pst_parsesAst() {
+    overrideTimeZone("America/Los_Angeles");
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 PST");
+    assertThat(ZonedDateTime.parse("2011-12-03 10:15:30 AST", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 12, 3, 10, 15, 30), ZoneId.of("America/Halifax")));
+  }
+
+  @Test public void formatOf_pst_parsesAdt() {
+    overrideTimeZone("America/Los_Angeles");
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 PST");
+    assertThat(ZonedDateTime.parse("2011-07-03 10:15:30 ADT", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 7, 3, 10, 15, 30), ZoneId.of("America/Halifax")));
+  }
+
+  @Test public void formatOf_pst_parsesEdt() {
+    overrideTimeZone("America/Los_Angeles");
+    DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 PST");
+    assertThat(ZonedDateTime.parse("2011-07-03 10:15:30 EDT", formatter))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2011, 7, 3, 10, 15, 30), ZoneId.of("America/New_York")));
+  }
+
   @Test public void zoneAbbreviation_resolvesSameZoneInEveryLocale() {
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 PST").getZone())
         .isEqualTo(ZoneId.of("America/Los_Angeles"));

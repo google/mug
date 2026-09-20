@@ -12,6 +12,7 @@ import com.google.mu.util.stream.BiStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -30,6 +31,8 @@ final class Nfa {
   final Set<Integer> anchorStates = new HashSet<>();
   private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   private final Deque<RegexPattern.Quantified> quantifierStack = new ArrayDeque<>();
+  private final Map<Integer, List<CharTransition>> reachableCache = new HashMap<>();
+  private final Map<Integer, Boolean> canReachAcceptCache = new HashMap<>();
   private Flags flags = Flags.NONE;
   int startState;
   int acceptState;
@@ -49,7 +52,18 @@ final class Nfa {
       ImmutableRangeSet<Integer> chars,
       int target,
       RegexPattern astNode,
-      List<RegexPattern.Quantified> enclosingQuantifiers) {}
+      List<RegexPattern.Quantified> enclosingQuantifiers,
+      Flags flags) {
+    CharTransition(
+        int id,
+        int source,
+        ImmutableRangeSet<Integer> chars,
+        int target,
+        RegexPattern astNode,
+        List<RegexPattern.Quantified> enclosingQuantifiers) {
+      this(id, source, chars, target, astNode, enclosingQuantifiers, Flags.NONE);
+    }
+  }
 
   private record Fragment(int start, int accept) {}
 
@@ -65,17 +79,21 @@ final class Nfa {
 
   private void addCharTransition(
       int from, ImmutableRangeSet<Integer> chars, int to, RegexPattern astNode) {
-    chars = flags.fold(chars);
     if (chars.isEmpty()) {
       return;
     }
     CharTransition t = new CharTransition(
-        charTransitions.size(), from, chars, to, astNode, List.copyOf(quantifierStack));
+        charTransitions.size(), from, chars, to, astNode, List.copyOf(quantifierStack), flags);
     charTransitions.add(t);
   }
 
   static Nfa from(RegexPattern pattern) {
+    return from(pattern, Flags.NONE);
+  }
+
+  static Nfa from(RegexPattern pattern, Flags initialFlags) {
     Nfa nfa = new Nfa();
+    nfa.flags = initialFlags;
     Fragment fragment = nfa.compile(pattern);
     nfa.startState = fragment.start;
     nfa.acceptState = fragment.accept;
@@ -90,12 +108,13 @@ final class Nfa {
   private Fragment compile(RegexPattern pattern) {
     Fragment f = switch (pattern) {
       case RegexPattern.Literal lit -> compileLiteral(lit);
-      case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs), cs);
-      case RegexPattern.PredefinedCharClass pcc -> compileCharRanges(CharRanges.from(pcc), pcc);
-      case RegexPattern.PosixCharClass pcc -> compileCharRanges(CharRanges.from(pcc), pcc);
+      case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs, flags), cs);
+      case RegexPattern.PredefinedCharClass pcc ->
+          compileCharRanges(CharRanges.from(pcc, flags), pcc);
+      case RegexPattern.PosixCharClass pcc -> compileCharRanges(CharRanges.from(pcc, flags), pcc);
       case RegexPattern.CharacterProperty.Negated neg ->
-          compileCharRanges(CharRanges.from(neg), neg);
-      case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up), up);
+          compileCharRanges(CharRanges.from(neg, flags), neg);
+      case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up, flags), up);
       case RegexPattern.Sequence seq -> compileSequence(seq.elements());
       case RegexPattern.Alternation alt -> compileAlternation(alt.alternatives());
       case RegexPattern.Group.NonCapturing g -> compileScoped(g);
@@ -144,7 +163,7 @@ final class Nfa {
     int[] codePoints = s.codePoints().toArray();
     for (int cp : codePoints) {
       State next = newState();
-      addCharTransition(current.id, CharRanges.of(cp), next.id, lit);
+      addCharTransition(current.id, flags.fold(CharRanges.of(cp)), next.id, lit);
       current = next;
     }
     return new Fragment(first.id, current.id);
@@ -178,51 +197,56 @@ final class Nfa {
     return new Fragment(start.id, accept.id);
   }
 
-  private static final int MAX_UNROLL = 5;
+  private static final int MAX_UNROLL = RegexPatternUtils.MAX_BOUNDED_REPETITIONS;
+
+  private Fragment compileAtLeast(RegexPattern element, int rawMin) {
+    int min = Math.min(rawMin, MAX_UNROLL);
+    if (min == 0) {
+      Fragment f = compile(element);
+      State start = newState();
+      State accept = newState();
+      addEpsilon(start.id, f.start);
+      addEpsilon(start.id, accept.id);
+      addEpsilon(f.accept, f.start);
+      addEpsilon(f.accept, accept.id);
+      return new Fragment(start.id, accept.id);
+    } else if (min == 1) {
+      Fragment f = compile(element);
+      State start = newState();
+      State accept = newState();
+      addEpsilon(start.id, f.start);
+      addEpsilon(f.accept, f.start);
+      addEpsilon(f.accept, accept.id);
+      return new Fragment(start.id, accept.id);
+    } else {
+      List<Fragment> parts = new ArrayList<>();
+      for (int i = 0; i < min - 1; i++) {
+        parts.add(compile(element));
+      }
+      Fragment f = compile(element);
+      State start = newState();
+      State accept = newState();
+      addEpsilon(start.id, f.start);
+      addEpsilon(f.accept, f.start);
+      addEpsilon(f.accept, accept.id);
+      parts.add(new Fragment(start.id, accept.id));
+      for (int i = 0; i < parts.size() - 1; i++) {
+        addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
+      }
+      return new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
+    }
+  }
 
   private Fragment compileQuantified(RegexPattern.Quantified quantified) {
     quantifierStack.addLast(quantified);
     try {
       RegexPattern.Quantifier q = quantified.quantifier();
       return switch (q) {
-        case RegexPattern.AtLeast atLeast -> {
-          int min = Math.min(atLeast.min(), MAX_UNROLL);
-          if (min == 0) {
-            Fragment f = compile(quantified.element());
-            State start = newState();
-            State accept = newState();
-            addEpsilon(start.id, f.start);
-            addEpsilon(start.id, accept.id);
-            addEpsilon(f.accept, f.start);
-            addEpsilon(f.accept, accept.id);
-            yield new Fragment(start.id, accept.id);
-          } else if (min == 1) {
-            Fragment f = compile(quantified.element());
-            State start = newState();
-            State accept = newState();
-            addEpsilon(start.id, f.start);
-            addEpsilon(f.accept, f.start);
-            addEpsilon(f.accept, accept.id);
-            yield new Fragment(start.id, accept.id);
-          } else {
-            List<Fragment> parts = new ArrayList<>();
-            for (int i = 0; i < min - 1; i++) {
-              parts.add(compile(quantified.element()));
-            }
-            Fragment f = compile(quantified.element());
-            State start = newState();
-            State accept = newState();
-            addEpsilon(start.id, f.start);
-            addEpsilon(f.accept, f.start);
-            addEpsilon(f.accept, accept.id);
-            parts.add(new Fragment(start.id, accept.id));
-            for (int i = 0; i < parts.size() - 1; i++) {
-              addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
-            }
-            yield new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
-          }
-        }
+        case RegexPattern.AtLeast atLeast -> compileAtLeast(quantified.element(), atLeast.min());
         case RegexPattern.AtMost atMost -> {
+          if (RegexPatternUtils.isUnbounded(quantified)) {
+            yield compileAtLeast(quantified.element(), 0);
+          }
           if (atMost.max() == 1) {
             Fragment f = compile(quantified.element());
             State start = newState();
@@ -247,6 +271,9 @@ final class Nfa {
           }
         }
         case RegexPattern.Limited limited -> {
+          if (RegexPatternUtils.isUnbounded(quantified)) {
+            yield compileAtLeast(quantified.element(), limited.min());
+          }
           List<Fragment> parts = new ArrayList<>();
           int min = Math.min(limited.min(), MAX_UNROLL);
           for (int i = 0; i < min; i++) {
@@ -306,8 +333,12 @@ final class Nfa {
   }
 
   List<CharTransition> reachableCharTransitions(int state) {
-    Set<Integer> closure = epsilonClosure(state);
-    return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
+    return reachableCache.computeIfAbsent(
+        state,
+        s -> {
+          Set<Integer> closure = epsilonClosure(s);
+          return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
+        });
   }
 
   boolean canReachWithoutAnchors(int fromState, int toState) {
@@ -331,7 +362,8 @@ final class Nfa {
   }
 
   boolean canReachAccept(int state) {
-    return epsilonClosure(state).contains(acceptState);
+    return canReachAcceptCache.computeIfAbsent(
+        state, s -> epsilonClosure(s).contains(acceptState));
   }
 
   String shortestPathToString(int from, int to) {

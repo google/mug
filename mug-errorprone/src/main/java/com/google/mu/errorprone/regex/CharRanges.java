@@ -9,9 +9,13 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.RegexPatternUtils.Flags;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntPredicate;
 
 /**
  * Utility functions for operating on Unicode character sets represented as {@link
@@ -102,38 +106,54 @@ final class CharRanges {
   }
 
   static ImmutableRangeSet<Integer> from(RegexPattern.CharSetElement element) {
+    return from(element, Flags.NONE);
+  }
+
+  static ImmutableRangeSet<Integer> from(
+      RegexPattern.CharSetElement element, Flags flags) {
     return switch (element) {
-      case RegexPattern.LiteralChar lc -> of(lc.codePoint());
-      case RegexPattern.CharRange cr -> ImmutableRangeSet.of(range(cr.start(), cr.end()));
-      case RegexPattern.PredefinedCharClass pcc -> from(pcc);
-      case RegexPattern.PosixCharClass pcc -> from(pcc);
-      case RegexPattern.CharacterProperty.Negated neg -> complement(from(neg.property()));
-      case RegexPattern.UnicodeProperty up -> fromUnicodeProperty(up.propertyName());
-      case RegexPattern.CharacterSet cs -> from(cs);
+      case RegexPattern.LiteralChar lc -> flags.fold(of(lc.codePoint()));
+      case RegexPattern.CharRange cr ->
+          flags.fold(ImmutableRangeSet.of(range(cr.start(), cr.end())));
+      case RegexPattern.PredefinedCharClass pcc ->
+          pcc == RegexPattern.PredefinedCharClass.ANY_CHAR && flags.dotAll()
+              ? ANY
+              : from(pcc);
+      case RegexPattern.PosixCharClass pcc -> flags.fold(from(pcc));
+      case RegexPattern.CharacterProperty.Negated neg ->
+          complement(from(neg.property(), flags));
+      case RegexPattern.UnicodeProperty up ->
+          flags.fold(fromUnicodeProperty(up.propertyName()));
+      case RegexPattern.CharacterSet cs -> from(cs, flags);
       default -> ANY;
     };
   }
 
   static ImmutableRangeSet<Integer> from(RegexPattern.CharacterSet characterSet) {
+    return from(characterSet, Flags.NONE);
+  }
+
+  static ImmutableRangeSet<Integer> from(
+      RegexPattern.CharacterSet characterSet, Flags flags) {
     return switch (characterSet) {
       case RegexPattern.CharacterSet.AnyOf anyOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : anyOf.elements()) {
-          tree.addAll(from(e));
+          tree.addAll(from(e, flags));
         }
         yield ImmutableRangeSet.copyOf(tree);
       }
       case RegexPattern.CharacterSet.NoneOf noneOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : noneOf.elements()) {
-          tree.addAll(from(e));
+          tree.addAll(from(e, flags));
         }
         yield complement(tree);
       }
       case RegexPattern.CharacterSet.Intersection is -> {
         ImmutableRangeSet<Integer> result = ANY;
         for (RegexPattern.CharacterSet operand : is.operands()) {
-          result = intersection(result, from(operand));
+          result = intersection(result, from(operand, flags));
         }
         yield result;
       }
@@ -595,8 +615,72 @@ final class CharRanges {
       return CATEGORIES.get(Ascii.toLowerCase(cat));
     }
 
+    private static final ConcurrentHashMap<String, ImmutableRangeSet<Integer>>
+        DYNAMIC_BINARY_PROPERTIES = new ConcurrentHashMap<>();
+
     private static ImmutableRangeSet<Integer> resolveBinaryProperty(String prop) {
-      return BINARY_PROPERTIES.get(Ascii.toLowerCase(prop));
+      String lower = Ascii.toLowerCase(prop);
+      ImmutableRangeSet<Integer> known = BINARY_PROPERTIES.get(lower);
+      if (known != null) {
+        return known;
+      }
+      IntPredicate predicate = switch (lower) {
+        case "javalowercase" -> Character::isLowerCase;
+        case "javauppercase" -> Character::isUpperCase;
+        case "javatitlecase" -> Character::isTitleCase;
+        case "javadigit" -> Character::isDigit;
+        case "javadefined" -> Character::isDefined;
+        case "javaletter" -> Character::isLetter;
+        case "javaletterordigit" -> Character::isLetterOrDigit;
+        case "javajavaidentifierstart" -> Character::isJavaIdentifierStart;
+        case "javajavaidentifierpart" -> Character::isJavaIdentifierPart;
+        case "javaunicodeidentifierstart" -> Character::isUnicodeIdentifierStart;
+        case "javaunicodeidentifierpart" -> Character::isUnicodeIdentifierPart;
+        case "javaidentifierignorable" -> Character::isIdentifierIgnorable;
+        case "javaspacechar" -> Character::isSpaceChar;
+        case "javawhitespace" -> Character::isWhitespace;
+        case "javaisocontrol" -> Character::isISOControl;
+        case "javamirrored" -> Character::isMirrored;
+        case "javaalphabetic" -> Character::isAlphabetic;
+        case "javaideographic" -> Character::isIdeographic;
+        case "emoji" -> Character::isEmoji;
+        case "emoji_presentation", "emojipresentation" -> Character::isEmojiPresentation;
+        case "emoji_modifier", "emojimodifier" -> Character::isEmojiModifier;
+        case "emoji_modifier_base", "emojimodifierbase" -> Character::isEmojiModifierBase;
+        case "emoji_component", "emojicomponent" -> Character::isEmojiComponent;
+        case "extended_pictographic", "extendedpictographic" -> Character::isExtendedPictographic;
+        case "hex_digit", "hexdigit" -> XDIGIT::contains;
+        case "join_control", "joincontrol" -> cp -> cp == 0x200C || cp == 0x200D;
+        case "noncharacter_code_point", "noncharactercodepoint" ->
+            cp -> (cp & 0xFFFE) == 0xFFFE || (cp >= 0xFDD0 && cp <= 0xFDEF);
+        case "any" -> cp -> true;
+        case "assigned" -> Character::isDefined;
+        default -> null;
+      };
+      if (predicate == null) {
+        return null;
+      }
+      return DYNAMIC_BINARY_PROPERTIES.computeIfAbsent(lower, k -> scanPredicate(predicate));
+    }
+
+    private static ImmutableRangeSet<Integer> scanPredicate(
+        IntPredicate predicate) {
+      ImmutableRangeSet.Builder<Integer> builder = ImmutableRangeSet.builder();
+      int start = -1;
+      for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
+        if (predicate.test(cp)) {
+          if (start < 0) {
+            start = cp;
+          }
+        } else if (start >= 0) {
+          builder.add(closedOpen(start, cp));
+          start = -1;
+        }
+      }
+      if (start >= 0) {
+        builder.add(closedOpen(start, MAX_CODE_POINT + 1));
+      }
+      return builder.build();
     }
 
     private static ImmutableRangeSet<Integer> resolveBlock(String blockName) {
@@ -609,25 +693,46 @@ final class CharRanges {
       }
     }
 
+    private static final class ScriptRanges {
+      static final Map<Character.UnicodeScript, ImmutableRangeSet<Integer>> BY_SCRIPT = buildAll();
+
+      private static Map<Character.UnicodeScript, ImmutableRangeSet<Integer>> buildAll() {
+        Character.UnicodeScript[] scripts = Character.UnicodeScript.values();
+        @SuppressWarnings("unchecked")
+        ImmutableRangeSet.Builder<Integer>[] builders =
+            (ImmutableRangeSet.Builder<Integer>[])
+                new ImmutableRangeSet.Builder<?>[scripts.length];
+        for (int i = 0; i < scripts.length; i++) {
+          builders[i] = ImmutableRangeSet.builder();
+        }
+        Character.UnicodeScript current = null;
+        int start = -1;
+        for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
+          Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+          if (s != current) {
+            if (current != null) {
+              builders[current.ordinal()].add(closedOpen(start, cp));
+            }
+            current = s;
+            start = cp;
+          }
+        }
+        if (current != null) {
+          builders[current.ordinal()].add(closedOpen(start, MAX_CODE_POINT + 1));
+        }
+        EnumMap<Character.UnicodeScript, ImmutableRangeSet<Integer>> map =
+            new EnumMap<>(Character.UnicodeScript.class);
+        for (int i = 0; i < scripts.length; i++) {
+          map.put(scripts[i], builders[i].build());
+        }
+        return Collections.unmodifiableMap(map);
+      }
+    }
+
     private static ImmutableRangeSet<Integer> resolveScript(String scriptName) {
       try {
         Character.UnicodeScript script = Character.UnicodeScript.forName(scriptName);
-        ImmutableRangeSet.Builder<Integer> builder = ImmutableRangeSet.builder();
-        int start = -1;
-        for (int cp = 0; cp <= MAX_CODE_POINT; cp++) {
-          if (Character.UnicodeScript.of(cp) == script) {
-            if (start < 0) {
-              start = cp;
-            }
-          } else if (start >= 0) {
-            builder.add(closedOpen(start, cp));
-            start = -1;
-          }
-        }
-        if (start >= 0) {
-          builder.add(closedOpen(start, MAX_CODE_POINT + 1));
-        }
-        return builder.build();
+        return ScriptRanges.BY_SCRIPT.get(script);
       } catch (IllegalArgumentException e) {
         return null;
       }
