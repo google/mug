@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-@SuppressWarnings("DateTimeExampleStringCheck")
 public class DateTimeFormatsCoverageTest {
 
   @Test public void iso8601Date_supported() {
@@ -61,7 +60,8 @@ public class DateTimeFormatsCoverageTest {
         .isEqualTo(LocalDate.of(2022, 7, 25));
   }
 
-  @Test public void mixedChineseAndColonTimeUnits_notSupported() {
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void mixedChineseAndColonTimeUnits_notSupported() {
     assertThrows(DateTimeException.class, () -> formatOf("2020-08-10 15点19:01"));
   }
 
@@ -94,7 +94,8 @@ public class DateTimeFormatsCoverageTest {
     assertThat(DateTimeFormats.parseLocalDate("2018-4-10")).isEqualTo(LocalDate.of(2018, 4, 10));
   }
 
-  @Test public void singleDigitTimeWithoutAmPm_rejectedByDesign() {
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void singleDigitTimeWithoutAmPm_rejectedByDesign() {
     assertThrows(DateTimeException.class, () -> formatOf("2:12:12"));
     assertThrows(DateTimeException.class, () -> formatOf("12:2"));
   }
@@ -103,7 +104,8 @@ public class DateTimeFormatsCoverageTest {
     assertThat(DateTimeFormats.parseLocalDate("2017.02.01")).isEqualTo(LocalDate.of(2017, 2, 1));
   }
 
-  @Test public void pureNumericDateTime_rejectedByDesign() {
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void pureNumericDateTime_rejectedByDesign() {
     assertThrows(DateTimeException.class, () -> formatOf("20170201122345"));
   }
 
@@ -112,7 +114,8 @@ public class DateTimeFormatsCoverageTest {
         .isEqualTo(ZonedDateTime.parse("2019-06-04T16:25:15+08:00"));
   }
 
-  @Test public void jdkLegacyDateToStringWithoutTime_rejectedByDesign() {
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void jdkLegacyDateToStringWithoutTime_rejectedByDesign() {
     assertThrows(DateTimeException.class, () -> formatOf("Wed Sep 16 CST 2009"));
   }
 
@@ -122,7 +125,8 @@ public class DateTimeFormatsCoverageTest {
         .isEqualTo(expected);
   }
 
-  @Test public void ambiguousMonthAndDay_rejected() {
+  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  public void ambiguousMonthAndDay_rejected() {
     assertThrows(DateTimeException.class, () -> formatOf("01/02/03"));
     assertThrows(DateTimeException.class, () -> formatOf("01/02/2003"));
   }
