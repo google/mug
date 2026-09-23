@@ -64,7 +64,7 @@ final class Regexes {
 
   record PrefixAnalyzer(CaseSensitivity forLiteral, Set<String> digitPrefixes) {
     PrefixAnalyzer() {
-      this(CaseSensitivity.CASE_SENSITIVE, CharacterSet.DECIMAL.getAsciiPrefixes());
+      this(CaseSensitivity.CASE_SENSITIVE, CharacterRangeSet.DECIMAL.getAsciiPrefixes());
     }
 
     Set<String> prefixesOf(RegexPattern pattern) {
@@ -179,7 +179,7 @@ final class Regexes {
     }
 
     private PrefixAnalyzer usingAsciiCharClass() {
-      return new PrefixAnalyzer(forLiteral, CharacterSet.DECIMAL.getAsciiPrefixes());
+      return new PrefixAnalyzer(forLiteral, CharacterRangeSet.DECIMAL.getAsciiPrefixes());
     }
   }
 

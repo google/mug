@@ -15,7 +15,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -261,7 +261,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
+  private static Parser<String> chars(int n, CharacterRangeSet characterSet, String name) {
     return chars(n, characterSet.getAsciiPrefixes(), name)
         .source()
         .suchThat(characterSet::matchesAllOf, name);
@@ -300,7 +300,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> digits(int n) {
-    return chars(n, CharacterSet.DECIMAL, n + " digits");
+    return chars(n, CharacterRangeSet.DECIMAL, n + " digits");
   }
 
   /**
@@ -309,7 +309,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> hexDigits(int n) {
-    return chars(n, CharacterSet.HEX, n + " hex digits");
+    return chars(n, CharacterRangeSet.HEX, n + " hex digits");
   }
 
   /**
@@ -2713,7 +2713,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
+    return predicate instanceof CharacterRangeSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   private static BitSet blockedCommonAsciiChars(CharPredicate predicate) {

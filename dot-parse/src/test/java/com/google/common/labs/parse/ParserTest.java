@@ -1,6 +1,6 @@
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.caseInsensitiveWord;
@@ -59,7 +59,7 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ParserTest {
-  private static final CharacterSet DIGIT = charsIn("[0-9]");
+  private static final CharacterRangeSet DIGIT = charsIn("[0-9]");
 
   @Test public void first_atBeginning_followedBy() {
     assertThat(first("foo").followedBy(string("bar")).parse("foobar")).isEqualTo("foo");

@@ -15,7 +15,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.consecutive;
@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
  * @since 10.8
  */
 public final class Parsers {
-  static final Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
+  static final Parser<String> DIGITS = consecutive(CharacterRangeSet.DECIMAL, "digits");
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
@@ -75,10 +75,10 @@ public final class Parsers {
           char c = (char) read;
           int index = from + 1;
           if (c >= '1' && c <= '9') {
-            return input.skipWhile(CharacterSet.DECIMAL, index);
+            return input.skipWhile(CharacterRangeSet.DECIMAL, index);
           }
           if (c == '0') {
-            return input.startsWith(CharacterSet.DECIMAL, index) ? from : index;
+            return input.startsWith(CharacterRangeSet.DECIMAL, index) ? from : index;
           }
           return from;
         }
