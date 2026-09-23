@@ -1776,8 +1776,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * jsonRecord.skipping(whitespace()).parseToStream(input);
    * }</pre>
    *
-   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} (or using
-   * {@link #charsIn}) on {@code charsToSkip} and storing it in a {@code static final} constant to
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} on
+   * {@code charsToSkip} and storing it in a {@code static final} constant to
    * speed up character matching.
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
@@ -1811,8 +1811,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
    *
-   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} (or using
-   * {@link #charsIn}) on {@code charsToSkip} and storing it in a {@code static final} constant to
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii}
+   * on {@code charsToSkip} and storing it in a {@code static final} constant to
    * speed up character matching.
    */
   @Override public final T parseSkipping(CharPredicate charsToSkip, String input) {
