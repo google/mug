@@ -5694,6 +5694,19 @@ public class ParserTest {
     assertThat(digits().skipping(CharPredicate.ALPHA).parse("abc123def")).isEqualTo("123");
   }
 
+  @Test public void skipping_charPredicateNotPrecomputed() {
+    StringBuilder tested = new StringBuilder();
+    assertThat(
+            string("a")
+                .skipping(c -> {
+                  tested.append(c);
+                  return c == ' ';
+                })
+                .parse(" a"))
+        .isEqualTo("a");
+    assertThat(tested.toString()).isEqualTo(" a");
+  }
+
   @Test public void skipping_alpha_longerThanFourChars() {
     assertThat(digits().skipping(charsIn("[a-zA-Z]")).parse("abcdefgh123ijklmnop"))
         .isEqualTo("123");

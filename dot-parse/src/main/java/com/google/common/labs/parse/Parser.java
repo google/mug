@@ -1775,10 +1775,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <pre>{@code
    * jsonRecord.skipping(whitespace()).parseToStream(input);
    * }</pre>
+   *
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} (or using
+   * {@link #charsIn}) on {@code charsToSkip} and storing it in a {@code static final} constant to
+   * speed up character matching.
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    CharPredicate precomputed = charsToSkip.precomputeForAscii();
-    return new Lexical((input, start) -> input.skipWhile(precomputed, start));
+    requireNonNull(charsToSkip);
+    return new Lexical((input, start) -> input.skipWhile(charsToSkip, start));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
@@ -1806,6 +1810,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Parses {@code input} while {@code charsToSkip} around atomic matches.
    *
    * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
+   *
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} (or using
+   * {@link #charsIn}) on {@code charsToSkip} and storing it in a {@code static final} constant to
+   * speed up character matching.
    */
   @Override public final T parseSkipping(CharPredicate charsToSkip, String input) {
     return skipping(charsToSkip).parse(input);
