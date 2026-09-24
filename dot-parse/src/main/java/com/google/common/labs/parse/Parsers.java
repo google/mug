@@ -19,7 +19,6 @@ import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -103,7 +102,46 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
+      new Parser<Void>() {
+        @Override MatchResult<Void> skipAndMatch(
+            Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
+            ErrorContext context) {
+          start = Parser.skipIfAny(preskipper, input, start);
+          int end = scanUnsignedDecimal(input, start, context);
+          return (end == start)
+              ? context.expecting("decimal", start)
+              : new MatchResult.Success<>(start, end, null);
+        }
+
+        @Override Set<String> getExpectedSymbols() {
+          return Set.of("decimal");
+        }
+
+        @Override Set<String> computePrefixes() {
+          return CharacterRangeSet.DECIMAL.getAsciiPrefixes();
+        }
+      }.source();
+
+  /**
+   * Returns the end of the unsigned decimal starting at {@code from}, or {@code from} if none.
+   *
+   * <p>A '.' not followed by digits is left unconsumed, and the missing digits are recorded in
+   * {@code context} so that a failing parse reports them instead of the unconsumed '.'.
+   */
+  private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
+    int end = scanUnsignedInt(input, from);
+    if (end == from) return from;
+    if (input.charAtOrEof(end) == '.') {
+      int fracStart = end + 1;
+      int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
+      if (fracEnd > fracStart) {
+        end = fracEnd;
+      } else {
+        var danglingDot = context.expecting("digits", fracStart);
+      }
+    }
+    return end;
+  }
 
   /**
    * Parses double-precision numbers that support scientific notation, conforming to <a
@@ -135,18 +173,9 @@ public final class Parsers {
         ErrorContext context) {
       start = Parser.skipIfAny(preskipper, input, start);
       int intStart = input.charAtOrEof(start) == '-' ? start + 1 : start;
-      int end = scanUnsignedInt(input, intStart);
+      int end = scanUnsignedDecimal(input, intStart, context);
       if (end == intStart) {
         return context.expecting(intStart > start ? "integer" : "double", intStart);
-      }
-      if (input.charAtOrEof(end) == '.') {
-        int fracStart = end + 1;
-        int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
-        if (fracEnd > fracStart) {
-          end = fracEnd;
-        } else {
-          var danglingDot = context.expecting("digits", fracStart);
-        }
       }
       int exp = input.charAtOrEof(end);
       if (exp == 'e' || exp == 'E') {

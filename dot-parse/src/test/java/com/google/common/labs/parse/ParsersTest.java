@@ -473,7 +473,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 <EOF>
                 ^
             """);
@@ -552,7 +552,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 -1s
                 ^
             """);
@@ -564,7 +564,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 foo
                 ^
             """);
@@ -776,7 +776,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 -1
                 ^
             """);
@@ -789,7 +789,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 +1
                 ^
             """);
@@ -802,7 +802,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 .5
                 ^
             """);
@@ -815,7 +815,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <one or more [0-9]>, encountered:
+            at 1:5: expecting <digits>, encountered:
                 123.
                     ^
             """);
@@ -828,7 +828,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 .
                 ^
             """);
@@ -841,7 +841,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 05
                 ^
             """);
@@ -854,7 +854,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 00.5
                 ^
             """);
@@ -880,7 +880,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <one or more [0-9]>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 1..2
                   ^
             """);
@@ -906,7 +906,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 a
                 ^
             """);
@@ -919,7 +919,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 <EOF>
                 ^
             """);
