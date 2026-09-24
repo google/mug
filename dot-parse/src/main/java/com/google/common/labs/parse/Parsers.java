@@ -122,12 +122,6 @@ public final class Parsers {
         }
       }.source();
 
-  /**
-   * Returns the end of the unsigned decimal starting at {@code from}, or {@code from} if none.
-   *
-   * <p>A '.' not followed by digits is left unconsumed, and the missing digits are recorded in
-   * {@code context} so that a failing parse reports them instead of the unconsumed '.'.
-   */
   private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
     int end = scanUnsignedInt(input, from);
     if (end == from) return from;
