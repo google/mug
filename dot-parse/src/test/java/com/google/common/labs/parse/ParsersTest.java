@@ -15,6 +15,8 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import java.io.StringReader;
 import java.time.Duration;
 import java.util.Arrays;
@@ -24,9 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class ParsersTest {
 
   @Test public void regex_matchesSimplePattern() {
@@ -925,9 +926,10 @@ public class ParsersTest {
             """);
   }
 
-  @Test public void unsignedDecimal_getPrefixes_effectiveInAnyOf() {
+  @Test public void unsignedDecimal_getPrefixes_everyLeadingDigitEffectiveInAnyOf(
+      @TestParameter({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
     Parser<String> parser = anyOf(Parsers.UNSIGNED_DECIMAL, string("abc"));
-    assertThat(parser.parse("1.5")).isEqualTo("1.5");
+    assertThat(parser.parse(input)).isEqualTo(input);
   }
 
   @Test public void unsignedDecimal_inAnyOf_aggregatesExpectedSymbol() {
@@ -1071,6 +1073,12 @@ public class ParsersTest {
     assertThat(parser.parse("abc")).isEqualTo("abc");
   }
 
+  @Test public void unsignedInteger_getPrefixes_everyLeadingDigitEffectiveInAnyOf(
+      @TestParameter({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
+    Parser<String> parser = anyOf(UNSIGNED_INTEGER, string("abc"));
+    assertThat(parser.parse(input)).isEqualTo(input);
+  }
+
   @Test public void signedDouble_zero() {
     assertThat(SIGNED_DOUBLE.parse("0")).isEqualTo(0.0);
   }
@@ -1129,9 +1137,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <double>, encountered:
+            at 1:1: expecting <double>, encountered:
                 -
-                 ^
+                ^
             """);
   }
 
@@ -1306,14 +1314,10 @@ public class ParsersTest {
     assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
   }
 
-  @Test public void signedDouble_getPrefixes_digitEffectiveInAnyOf() {
+  @Test public void signedDouble_getPrefixes_everyLeadingCharEffectiveInAnyOf(
+      @TestParameter({"-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
     Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
-    assertThat(parser.parse("1.5")).isEqualTo(1.5);
-  }
-
-  @Test public void signedDouble_getPrefixes_minusEffectiveInAnyOf() {
-    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
-    assertThat(parser.parse("-1.5")).isEqualTo(-1.5);
+    assertThat(parser.parse(input)).isEqualTo(Double.parseDouble(input));
   }
 
   @Test public void signedDouble_inAnyOf_aggregatesExpectedSymbol() {

@@ -191,7 +191,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     return new Scanner(name) {
-      @Override int scan(CharInput input, int index) {
+      @Override int scan(CharInput input, int index, ErrorContext context) {
         return input.skipWhile(matcher, index);
       }
 
@@ -247,7 +247,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static Parser<Void> chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     return new Scanner(name) {
-      @Override int scan(CharInput input, int from) {
+      @Override int scan(CharInput input, int from, ErrorContext context) {
         return input.isInRange(from + n - 1) ? from + n : from;
       }
 

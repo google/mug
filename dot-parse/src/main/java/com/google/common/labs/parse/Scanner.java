@@ -14,14 +14,14 @@ abstract class Scanner extends Parser<Void> {
   @Override final MatchResult<Void> skipAndMatch(
       Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context) {
     start = Parser.skipIfAny(preskipper, input, start);
-    int end = scan(input, start);
+    int end = scan(input, start, context);
     return end > start
         ? new MatchResult.Success<>(start, end, null)
         : context.expecting(name, start);
   }
 
   /** Matches one or more chars starting from {@code index} and returns the ending index. */
-  abstract int scan(CharInput input, int from);
+  abstract int scan(CharInput input, int from, ErrorContext context);
 
   @Override Set<String> getExpectedSymbols() {
     return Set.of(name);

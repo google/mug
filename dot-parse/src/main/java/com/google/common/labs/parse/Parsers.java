@@ -67,7 +67,7 @@ public final class Parsers {
    */
   public static final Parser<String> UNSIGNED_INTEGER =
       new Scanner("integer") {
-        @Override int scan(CharInput input, int from) {
+        @Override int scan(CharInput input, int from, ErrorContext context) {
           return scanUnsignedInt(input, from);
         }
 
@@ -102,19 +102,9 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      new Parser<Void>() {
-        @Override MatchResult<Void> skipAndMatch(
-            Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
-            ErrorContext context) {
-          start = Parser.skipIfAny(preskipper, input, start);
-          int end = scanUnsignedDecimal(input, start, context);
-          return (end == start)
-              ? context.expecting("decimal", start)
-              : new MatchResult.Success<>(start, end, null);
-        }
-
-        @Override Set<String> getExpectedSymbols() {
-          return Set.of("decimal");
+      new Scanner("decimal") {
+        @Override int scan(CharInput input, int from, ErrorContext context) {
+          return scanUnsignedDecimal(input, from, context);
         }
 
         @Override Set<String> computePrefixes() {
@@ -159,41 +149,36 @@ public final class Parsers {
    * evaluate to {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY}, and values
    * that underflow evaluate to {@code 0.0}.
    */
-  public static final Parser<Double> SIGNED_DOUBLE = new Parser<Void>() {
-    @Override MatchResult<Void> skipAndMatch(
-        Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
-        ErrorContext context) {
-      start = Parser.skipIfAny(preskipper, input, start);
-      int intStart = input.charAtOrEof(start) == '-' ? start + 1 : start;
-      int end = scanUnsignedDecimal(input, intStart, context);
-      if (end == intStart) {
-        return context.expecting("double", intStart);
-      }
-      int exp = input.charAtOrEof(end);
-      if (exp == 'e' || exp == 'E') {
-        int expStart = end + 1;
-        int sign = input.charAtOrEof(expStart);
-        if (sign == '+' || sign == '-') {
-          expStart++;
-        }
-        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
-        if (expEnd > expStart) {
-          end = expEnd;
-        } else {
-          var danglingE = context.expecting("exponent", expStart);
-        }
-      }
-      return new MatchResult.Success<>(start, end, null);
-    }
-
-    @Override Set<String> getExpectedSymbols() {
-      return Set.of("double");
+  public static final Parser<Double> SIGNED_DOUBLE = new Scanner("double") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      return scanSignedDouble(input, from, context);
     }
 
     @Override Set<String> computePrefixes() {
       return Set.of("-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
     }
   }.source().elidableMap(Double::parseDouble);
+
+  private static int scanSignedDouble(CharInput input, int from, ErrorContext context) {
+    int intStart = input.charAtOrEof(from) == '-' ? from + 1 : from;
+    int end = scanUnsignedDecimal(input, intStart, context);
+    if (end == intStart) return from;
+    int exp = input.charAtOrEof(end);
+    if (exp == 'e' || exp == 'E') {
+      int expStart = end + 1;
+      int sign = input.charAtOrEof(expStart);
+      if (sign == '+' || sign == '-') {
+        expStart++;
+      }
+      int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+      if (expEnd > expStart) {
+        end = expEnd;
+      } else {
+        var danglingE = context.expecting("exponent", expStart);
+      }
+    }
+    return end;
+  }
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
@@ -830,7 +815,7 @@ public final class Parsers {
   private static Parser<Void> regex(RegexPattern ast, Pattern jdkPattern, String name) {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Scanner(name) {
-      @Override int scan(CharInput input, int from) {
+      @Override int scan(CharInput input, int from, ErrorContext context) {
         return input.match(jdkPattern, metadata, from);
       }
 
