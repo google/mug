@@ -1166,9 +1166,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <digits>, encountered:
+            at 1:2: expecting <EOF>, encountered:
                 5.
-                  ^
+                 ^
             """);
   }
 
@@ -1178,9 +1178,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <exponent>, encountered:
+            at 1:2: expecting <EOF>, encountered:
                 1e
-                  ^
+                 ^
             """);
   }
 
@@ -1190,10 +1190,28 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <exponent>, encountered:
+            at 1:2: expecting <EOF>, encountered:
                 1e+
-                   ^
+                 ^
             """);
+  }
+
+  @Test public void signedDouble_dotWithoutFractionNotConsumed() {
+    Parser<Range<Double>> range =
+        sequence(SIGNED_DOUBLE.followedBy(".."), SIGNED_DOUBLE, Range::closed);
+    assertThat(range.parse("1..2")).isEqualTo(Range.closed(1.0, 2.0));
+  }
+
+  @Test public void signedDouble_eWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("em").parse("10em")).isEqualTo(10.0);
+  }
+
+  @Test public void signedDouble_eSignWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("e+").parse("1e+")).isEqualTo(1.0);
+  }
+
+  @Test public void signedDouble_fractionThenEWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("em").parse("1.5em")).isEqualTo(1.5);
   }
 
   @Test public void signedDouble_fractionalExponentThrows() {

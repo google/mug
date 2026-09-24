@@ -138,10 +138,9 @@ public final class Parsers {
         return context.expecting(intStart > start ? "integer" : "double", intStart);
       }
       if (input.charAtOrEof(end) == '.') {
-        int fracStart = end + 1;
-        end = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
-        if (end == fracStart) {
-          return context.expecting("digits", fracStart);
+        int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, end + 1);
+        if (fracEnd > end + 1) {
+          end = fracEnd;
         }
       }
       int exp = input.charAtOrEof(end);
@@ -151,9 +150,9 @@ public final class Parsers {
         if (sign == '+' || sign == '-') {
           expStart++;
         }
-        end = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
-        if (end == expStart) {
-          return context.expecting("exponent", expStart);
+        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+        if (expEnd > expStart) {
+          end = expEnd;
         }
       }
       return new MatchResult.Success<>(start, end, null);
