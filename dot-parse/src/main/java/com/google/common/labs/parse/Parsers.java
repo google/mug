@@ -128,6 +128,8 @@ public final class Parsers {
    * that underflow evaluate to {@code 0.0}.
    */
   public static final Parser<Double> SIGNED_DOUBLE = new Parser<Void>() {
+    private static final Set<String> PREFIXES = charsIn("[0-9-]").getAsciiPrefixes();
+
     @Override MatchResult<Void> skipAndMatch(
         Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
         ErrorContext context) {
@@ -138,9 +140,12 @@ public final class Parsers {
         return context.expecting(intStart > start ? "integer" : "double", intStart);
       }
       if (input.charAtOrEof(end) == '.') {
-        int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, end + 1);
-        if (fracEnd > end + 1) {
+        int fracStart = end + 1;
+        int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
+        if (fracEnd > fracStart) {
           end = fracEnd;
+        } else {
+          var danglingDot = context.expecting("digits", fracStart);
         }
       }
       int exp = input.charAtOrEof(end);
@@ -153,6 +158,8 @@ public final class Parsers {
         int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
         if (expEnd > expStart) {
           end = expEnd;
+        } else {
+          var danglingE = context.expecting("exponent", expStart);
         }
       }
       return new MatchResult.Success<>(start, end, null);
@@ -163,7 +170,7 @@ public final class Parsers {
     }
 
     @Override Set<String> computePrefixes() {
-      return charsIn("[0-9-]").getAsciiPrefixes();
+      return PREFIXES;
     }
   }.source().elidableMap(Double::parseDouble);
 

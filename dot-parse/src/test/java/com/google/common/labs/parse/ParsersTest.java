@@ -1166,9 +1166,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <EOF>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 5.
-                 ^
+                  ^
             """);
   }
 
@@ -1178,9 +1178,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <EOF>, encountered:
+            at 1:3: expecting <exponent>, encountered:
                 1e
-                 ^
+                  ^
             """);
   }
 
@@ -1190,9 +1190,9 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <EOF>, encountered:
+            at 1:4: expecting <exponent>, encountered:
                 1e+
-                 ^
+                   ^
             """);
   }
 
