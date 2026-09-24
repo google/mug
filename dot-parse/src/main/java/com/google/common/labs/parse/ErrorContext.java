@@ -54,9 +54,9 @@ class ErrorContext {
 
     @Override <V> MatchResult.Failure<V> failAt(
         int at, long frontier, String messageTemplate, Object symbol) {
-      MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbol);
+      var failure = new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
       // prefer the farthest then the most recent failure
-      if (isFarthest(failure.frontier())) {
+      if (isFarthest(frontier)) {
         farthestFailure = failure;
       }
       return failure;
