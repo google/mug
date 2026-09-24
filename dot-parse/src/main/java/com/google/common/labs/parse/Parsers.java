@@ -151,34 +151,30 @@ public final class Parsers {
    */
   public static final Parser<Double> SIGNED_DOUBLE = new Scanner("double") {
     @Override int scan(CharInput input, int from, ErrorContext context) {
-      return scanSignedDouble(input, from, context);
+      int intStart = input.charAtOrEof(from) == '-' ? from + 1 : from;
+      int end = scanUnsignedDecimal(input, intStart, context);
+      if (end == intStart) return from;
+      int exp = input.charAtOrEof(end);
+      if (exp == 'e' || exp == 'E') {
+        int expStart = end + 1;
+        int sign = input.charAtOrEof(expStart);
+        if (sign == '+' || sign == '-') {
+          expStart++;
+        }
+        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+        if (expEnd > expStart) {
+          end = expEnd;
+        } else {
+          var danglingE = context.expecting("exponent", expStart);
+        }
+      }
+      return end;
     }
 
     @Override Set<String> computePrefixes() {
       return Set.of("-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
     }
   }.source().elidableMap(Double::parseDouble);
-
-  private static int scanSignedDouble(CharInput input, int from, ErrorContext context) {
-    int intStart = input.charAtOrEof(from) == '-' ? from + 1 : from;
-    int end = scanUnsignedDecimal(input, intStart, context);
-    if (end == intStart) return from;
-    int exp = input.charAtOrEof(end);
-    if (exp == 'e' || exp == 'E') {
-      int expStart = end + 1;
-      int sign = input.charAtOrEof(expStart);
-      if (sign == '+' || sign == '-') {
-        expStart++;
-      }
-      int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
-      if (expEnd > expStart) {
-        end = expEnd;
-      } else {
-        var danglingE = context.expecting("exponent", expStart);
-      }
-    }
-    return end;
-  }
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
