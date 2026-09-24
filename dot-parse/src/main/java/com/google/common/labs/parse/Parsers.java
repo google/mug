@@ -169,7 +169,7 @@ public final class Parsers {
       int intStart = input.charAtOrEof(start) == '-' ? start + 1 : start;
       int end = scanUnsignedDecimal(input, intStart, context);
       if (end == intStart) {
-        return context.expecting(intStart > start ? "integer" : "double", intStart);
+        return context.expecting("double", intStart);
       }
       int exp = input.charAtOrEof(end);
       if (exp == 'e' || exp == 'E') {

@@ -1106,7 +1106,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <integer>, encountered:
+            at 1:2: expecting <double>, encountered:
                 -
                  ^
             """);
