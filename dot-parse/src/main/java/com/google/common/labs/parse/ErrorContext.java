@@ -40,7 +40,7 @@ class ErrorContext {
 
     @Override void missing(String symbolName, int at) {
       if (isFarthest(at)) {
-        farthestFailure = super.failAt(at, at, EXPECTING, symbolName);
+        farthestFailure = new MatchResult.Failure<>(at, at, EXPECTING, symbolName);
       }
     }
 
