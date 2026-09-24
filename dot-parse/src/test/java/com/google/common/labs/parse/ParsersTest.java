@@ -925,6 +925,24 @@ public class ParsersTest {
             """);
   }
 
+  @Test public void unsignedDecimal_getPrefixes_effectiveInAnyOf() {
+    Parser<String> parser = anyOf(Parsers.UNSIGNED_DECIMAL, string("abc"));
+    assertThat(parser.parse("1.5")).isEqualTo("1.5");
+  }
+
+  @Test public void unsignedDecimal_inAnyOf_aggregatesExpectedSymbol() {
+    Parser<String> parser = anyOf(Parsers.UNSIGNED_DECIMAL, string("abc"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [abc, decimal], encountered:
+                x
+                ^
+            """);
+  }
+
   @Test public void unsignedDecimal_rangeParsingSuccess() {
     Parser<Range<String>> rangeParser =
         sequence(Parsers.UNSIGNED_DECIMAL.followedBy(".."), Parsers.UNSIGNED_DECIMAL, Range::closed)
@@ -952,6 +970,11 @@ public class ParsersTest {
                 0 . 1
                   ^
             """);
+  }
+
+  @Test public void unsignedDecimal_parseSkipping_leadingWhitespace() {
+    assertThat(Parsers.UNSIGNED_DECIMAL.parseSkipping(Character::isWhitespace, " 1.5"))
+        .isEqualTo("1.5");
   }
 
   @Test public void unsignedInteger_parseZero() {
@@ -1275,8 +1298,35 @@ public class ParsersTest {
     assertThat(SIGNED_DOUBLE.parse("1e-999")).isEqualTo(0.0);
   }
 
+  @Test public void signedDouble_parseSkipping_leadingWhitespace() {
+    assertThat(SIGNED_DOUBLE.parseSkipping(Character::isWhitespace, " -1.5")).isEqualTo(-1.5);
+  }
+
   @Test public void signedDouble_sourceMatchesOverflow() {
     assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
+  }
+
+  @Test public void signedDouble_getPrefixes_digitEffectiveInAnyOf() {
+    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
+    assertThat(parser.parse("1.5")).isEqualTo(1.5);
+  }
+
+  @Test public void signedDouble_getPrefixes_minusEffectiveInAnyOf() {
+    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
+    assertThat(parser.parse("-1.5")).isEqualTo(-1.5);
+  }
+
+  @Test public void signedDouble_inAnyOf_aggregatesExpectedSymbol() {
+    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [abc, double], encountered:
+                x
+                ^
+            """);
   }
 
   @Test public void codePoint_zero() {
