@@ -65,16 +65,15 @@ public final class Parsers {
    *     (sign, num) -> sign * num);
    * }</pre>
    */
-  public static final Parser<String> UNSIGNED_INTEGER =
-      new Scanner("integer") {
-        @Override int scan(CharInput input, int from, ErrorContext context) {
-          return scanUnsignedInt(input, from);
-        }
+  public static final Parser<String> UNSIGNED_INTEGER = new Scanner("integer") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      return scanUnsignedInt(input, from);
+    }
 
-        @Override Set<String> computePrefixes() {
-          return DIGITS.getPrefixes();
-        }
-      }.source();
+    @Override Set<String> computePrefixes() {
+      return DIGITS.getPrefixes();
+    }
+  }.source();
 
   private static int scanUnsignedInt(CharInput input, int from) {
     int read = input.charAtOrEof(from);
@@ -101,16 +100,15 @@ public final class Parsers {
    *     (sign, num) -> sign * num);
    * }</pre>
    */
-  public static final Parser<String> UNSIGNED_DECIMAL =
-      new Scanner("decimal") {
-        @Override int scan(CharInput input, int from, ErrorContext context) {
-          return scanUnsignedDecimal(input, from, context);
-        }
+  public static final Parser<String> UNSIGNED_DECIMAL = new Scanner("decimal") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      return scanUnsignedDecimal(input, from, context);
+    }
 
-        @Override Set<String> computePrefixes() {
-          return DIGITS.getPrefixes();
-        }
-      }.source();
+    @Override Set<String> computePrefixes() {
+      return DIGITS.getPrefixes();
+    }
+  }.source();
 
   private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
     int end = scanUnsignedInt(input, from);
