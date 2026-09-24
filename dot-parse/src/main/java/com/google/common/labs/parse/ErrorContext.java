@@ -3,6 +3,9 @@ package com.google.common.labs.parse;
 class ErrorContext {
   static final ErrorContext MINIMAL = new ErrorContext();
 
+  /** Note down that {@code symbol} was missing at the specified index. */
+  void missing(String symbolName, int at) {}
+
   final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
     return expecting(symbolName, at, at);
   }
@@ -32,10 +35,17 @@ class ErrorContext {
   }
 
   static final class ErrorTracker extends ErrorContext {
+    private static final String EXPECTING = "expecting <{name}>, encountered:{snippet}";
     private MatchResult.Failure<?> farthestFailure = null;
 
+    @Override void missing(String symbolName, int at) {
+      if (isFarthest(at)) {
+        farthestFailure = super.failAt(at, at, EXPECTING, symbolName);
+      }
+    }
+
     @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
-      return failAt(at, frontier, "expecting <{name}>, encountered:{snippet}", symbolName);
+      return failAt(at, frontier, EXPECTING, symbolName);
     }
 
     @Override <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
@@ -46,16 +56,20 @@ class ErrorContext {
         int at, long frontier, String messageTemplate, Object symbol) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbol);
       // prefer the farthest then the most recent failure
-      if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
+      if (isFarthest(failure.frontier())) {
         farthestFailure = failure;
       }
       return failure;
     }
 
     Parser.ParseException report(MatchResult.Failure<?> failure, CharInput input) {
-      return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
+      return isFarthest(failure.frontier())
           ? failure.toException(input)
           : farthestFailure.toException(input);
+    }
+
+    private boolean isFarthest(long index) {
+      return farthestFailure == null || index >= farthestFailure.frontier();
     }
   }
 }

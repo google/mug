@@ -119,7 +119,7 @@ public final class Parsers {
       if (fracEnd > fracStart) {
         end = fracEnd;
       } else {
-        var danglingDot = context.expecting("digits", fracStart);
+        context.missing("digits", fracStart);
       }
     }
     return end;
@@ -163,7 +163,7 @@ public final class Parsers {
         if (expEnd > expStart) {
           end = expEnd;
         } else {
-          var danglingE = context.expecting("exponent", expStart);
+          context.missing("exponent", expStart);
         }
       }
       return end;
