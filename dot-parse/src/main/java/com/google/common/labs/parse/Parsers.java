@@ -27,16 +27,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
-import java.time.Duration;
-import java.util.BitSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -46,6 +36,15 @@ import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
+import java.time.Duration;
+import java.util.BitSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -175,10 +174,11 @@ public final class Parsers {
           expStart++;
         }
         int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
-        if (expEnd == expStart) {
-          return context.expecting("digits", expStart);
+        if (expEnd > expStart) {
+          end = expEnd;
+        } else {
+          var errorReported = context.expecting("digits", expStart);
         }
-        end = expEnd;
       }
       return new MatchResult.Success<>(start, end, null);
     }
@@ -470,10 +470,10 @@ public final class Parsers {
    * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
    * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
    * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
-   * UnsupportedOperationException} when calling {@link Parser#parseToStream(java.io.Reader)} or {@link
-   * Parser#probe(java.io.Reader)}, because Java regex requires the input to be fully loaded into memory,
-   * defeating the purpose of lazy loading from {@code Reader} - you might as well just explicitly
-   * load into a {@code String} before parsing.
+   * UnsupportedOperationException} when calling {@link Parser#parseToStream(java.io.Reader)} or
+   * {@link Parser#probe(java.io.Reader)}, because Java regex requires the input to be fully loaded
+   * into memory, defeating the purpose of lazy loading from {@code Reader} - you might as well just
+   * explicitly load into a {@code String} before parsing.
    *
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
    * (v10.9+) compiler plugin.

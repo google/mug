@@ -950,6 +950,10 @@ public class ParsersTest {
     assertThat(rangeParser.parse("[1..2]")).isEqualTo(Range.closed(1.0, 2.0));
   }
 
+  @Test public void signedDouble_followedByUnitStartingWithE() {
+    assertThat(Parsers.SIGNED_DOUBLE.followedBy("em").parse("10em")).isEqualTo(10.0);
+  }
+
   @Test public void unsignedDecimal_skippingWhitespace() {
     // Normal parsing without space succeeds
     assertThat(Parsers.UNSIGNED_DECIMAL.parseSkipping(Character::isWhitespace, "0.1"))
