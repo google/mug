@@ -19,6 +19,7 @@ import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -37,7 +38,6 @@ import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
 import java.time.Duration;
-import java.util.BitSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -75,10 +75,6 @@ public final class Parsers {
         @Override Set<String> computePrefixes() {
           return DIGITS.getPrefixes();
         }
-
-        @Override BitSet computeBlocklist() {
-          return DIGITS.getBlocklist();
-        }
       }.source();
 
   private static int scanUnsignedInt(CharInput input, int from) {
@@ -107,30 +103,7 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      new Scanner("integer") {
-        @Override int scan(CharInput input, int from, ErrorContext context) {
-          return scanUnsignedDecimal(input, from, context);
-        }
-
-        @Override Set<String> computePrefixes() {
-          return DIGITS.getPrefixes();
-        }
-
-        @Override BitSet computeBlocklist() {
-          return DIGITS.getBlocklist();
-        }
-      }.source();
-
-  private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
-    int end = scanUnsignedInt(input, from);
-    if (end > from && input.charAtOrEof(end) == '.') {
-      int afterDot = end + 1;
-      int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, afterDot);
-      if (fracEnd > afterDot) return fracEnd;
-      var errorReported = context.expecting("digits", afterDot);
-    }
-    return end;
-  }
+      literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
 
   /**
    * Parses double-precision numbers that support scientific notation, conforming to <a
@@ -155,16 +128,21 @@ public final class Parsers {
    * that underflow evaluate to {@code 0.0}.
    */
   public static final Parser<Double> SIGNED_DOUBLE = new Parser<Void>() {
-    private static final Parser<?> FIRST_CHAR = one("[0-9-]");
-
     @Override MatchResult<Void> skipAndMatch(
         Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
         ErrorContext context) {
       start = Parser.skipIfAny(preskipper, input, start);
       int intStart = input.charAtOrEof(start) == '-' ? start + 1 : start;
-      int end = scanUnsignedDecimal(input, intStart, context);
+      int end = scanUnsignedInt(input, intStart);
       if (end == intStart) {
         return context.expecting(intStart > start ? "integer" : "double", intStart);
+      }
+      if (input.charAtOrEof(end) == '.') {
+        int fracStart = end + 1;
+        end = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
+        if (end == fracStart) {
+          return context.expecting("digits", fracStart);
+        }
       }
       int exp = input.charAtOrEof(end);
       if (exp == 'e' || exp == 'E') {
@@ -173,11 +151,9 @@ public final class Parsers {
         if (sign == '+' || sign == '-') {
           expStart++;
         }
-        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
-        if (expEnd > expStart) {
-          end = expEnd;
-        } else {
-          var errorReported = context.expecting("digits", expStart);
+        end = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+        if (end == expStart) {
+          return context.expecting("exponent", expStart);
         }
       }
       return new MatchResult.Success<>(start, end, null);
@@ -188,11 +164,7 @@ public final class Parsers {
     }
 
     @Override Set<String> computePrefixes() {
-      return FIRST_CHAR.getPrefixes();
-    }
-
-    @Override BitSet computeBlocklist() {
-      return FIRST_CHAR.getBlocklist();
+      return charsIn("[0-9-]").getAsciiPrefixes();
     }
   }.source().elidableMap(Double::parseDouble);
 

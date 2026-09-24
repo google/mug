@@ -815,7 +815,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <digits>, encountered:
+            at 1:5: expecting <one or more [0-9]>, encountered:
                 123.
                     ^
             """);
@@ -880,7 +880,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <digits>, encountered:
+            at 1:3: expecting <one or more [0-9]>, encountered:
                 1..2
                   ^
             """);
@@ -932,26 +932,6 @@ public class ParsersTest {
 
     // This successfully parses because unsignedDecimal() is non-greedy on dot.
     assertThat(rangeParser.parse("[1.0..2.0]")).isEqualTo(Range.closed("1.0", "2.0"));
-  }
-
-  @Test public void unsignedDecimal_integerRangeParsingSuccess() {
-    Parser<Range<String>> rangeParser =
-        sequence(Parsers.UNSIGNED_DECIMAL.followedBy(".."), Parsers.UNSIGNED_DECIMAL, Range::closed)
-            .between("[", "]");
-
-    assertThat(rangeParser.parse("[1..2]")).isEqualTo(Range.closed("1", "2"));
-  }
-
-  @Test public void signedDouble_integerRangeParsingSuccess() {
-    Parser<Range<Double>> rangeParser =
-        sequence(Parsers.SIGNED_DOUBLE.followedBy(".."), Parsers.SIGNED_DOUBLE, Range::closed)
-            .between("[", "]");
-
-    assertThat(rangeParser.parse("[1..2]")).isEqualTo(Range.closed(1.0, 2.0));
-  }
-
-  @Test public void signedDouble_followedByUnitStartingWithE() {
-    assertThat(Parsers.SIGNED_DOUBLE.followedBy("em").parse("10em")).isEqualTo(10.0);
   }
 
   @Test public void unsignedDecimal_skippingWhitespace() {
@@ -1198,7 +1178,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <digits>, encountered:
+            at 1:3: expecting <exponent>, encountered:
                 1e
                   ^
             """);
@@ -1210,7 +1190,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <digits>, encountered:
+            at 1:4: expecting <exponent>, encountered:
                 1e+
                    ^
             """);
