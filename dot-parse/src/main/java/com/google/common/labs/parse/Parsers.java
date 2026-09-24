@@ -118,7 +118,7 @@ public final class Parsers {
         }
 
         @Override Set<String> computePrefixes() {
-          return CharacterRangeSet.DECIMAL.getAsciiPrefixes();
+          return DIGITS.getPrefixes();
         }
       }.source();
 
