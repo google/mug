@@ -815,7 +815,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <one or more [0-9]>, encountered:
+            at 1:5: expecting <digits>, encountered:
                 123.
                     ^
             """);
@@ -880,7 +880,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <one or more [0-9]>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 1..2
                   ^
             """);
@@ -932,6 +932,22 @@ public class ParsersTest {
 
     // This successfully parses because unsignedDecimal() is non-greedy on dot.
     assertThat(rangeParser.parse("[1.0..2.0]")).isEqualTo(Range.closed("1.0", "2.0"));
+  }
+
+  @Test public void unsignedDecimal_integerRangeParsingSuccess() {
+    Parser<Range<String>> rangeParser =
+        sequence(Parsers.UNSIGNED_DECIMAL.followedBy(".."), Parsers.UNSIGNED_DECIMAL, Range::closed)
+            .between("[", "]");
+
+    assertThat(rangeParser.parse("[1..2]")).isEqualTo(Range.closed("1", "2"));
+  }
+
+  @Test public void signedDouble_integerRangeParsingSuccess() {
+    Parser<Range<Double>> rangeParser =
+        sequence(Parsers.SIGNED_DOUBLE.followedBy(".."), Parsers.SIGNED_DOUBLE, Range::closed)
+            .between("[", "]");
+
+    assertThat(rangeParser.parse("[1..2]")).isEqualTo(Range.closed(1.0, 2.0));
   }
 
   @Test public void unsignedDecimal_skippingWhitespace() {
@@ -1094,9 +1110,21 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 <EOF>
                 ^
+            """);
+  }
+
+  @Test public void signedDouble_loneMinusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("-"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: expecting <integer>, encountered:
+                -
+                 ^
             """);
   }
 
@@ -1106,7 +1134,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 +123
                 ^
             """);
@@ -1118,7 +1146,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 05
                 ^
             """);
@@ -1130,7 +1158,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 00.5
                 ^
             """);
@@ -1142,7 +1170,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 .5
                 ^
             """);
@@ -1154,7 +1182,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <one or more [0-9]>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 5.
                   ^
             """);
@@ -1214,7 +1242,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 NaN
                 ^
             """);
@@ -1227,7 +1255,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 Infinity
                 ^
             """);

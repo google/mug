@@ -17,10 +17,8 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -28,6 +26,16 @@ import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
+
+import java.time.Duration;
+import java.util.BitSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
@@ -38,14 +46,6 @@ import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
-import java.time.Duration;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -69,24 +69,32 @@ public final class Parsers {
    */
   public static final Parser<String> UNSIGNED_INTEGER =
       new Scanner("integer") {
-        @Override int scan(CharInput input, final int from) {
-          int read = input.charAtOrEof(from);
-          if (read < 0) return from;
-          char c = (char) read;
-          int index = from + 1;
-          if (c >= '1' && c <= '9') {
-            return input.skipWhile(CharacterRangeSet.DECIMAL, index);
-          }
-          if (c == '0') {
-            return input.startsWith(CharacterRangeSet.DECIMAL, index) ? from : index;
-          }
-          return from;
+        @Override int scan(CharInput input, int from) {
+          return scanUnsignedInt(input, from);
         }
 
         @Override Set<String> computePrefixes() {
           return DIGITS.getPrefixes();
         }
+
+        @Override BitSet computeBlocklist() {
+          return DIGITS.getBlocklist();
+        }
       }.source();
+
+  private static int scanUnsignedInt(CharInput input, int from) {
+    int read = input.charAtOrEof(from);
+    if (read < 0) return from;
+    char c = (char) read;
+    int index = from + 1;
+    if (c >= '1' && c <= '9') {
+      return input.skipWhile(CharacterRangeSet.DECIMAL, index);
+    }
+    if (c == '0') {
+      return input.startsWith(CharacterRangeSet.DECIMAL, index) ? from : index;
+    }
+    return from;
+  }
 
   /**
    * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15}, {@code 0}.
@@ -100,7 +108,30 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
+      new Scanner("integer") {
+        @Override int scan(CharInput input, int from, ErrorContext context) {
+          return scanUnsignedDecimal(input, from, context);
+        }
+
+        @Override Set<String> computePrefixes() {
+          return DIGITS.getPrefixes();
+        }
+
+        @Override BitSet computeBlocklist() {
+          return DIGITS.getBlocklist();
+        }
+      }.source();
+
+  private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
+    int end = scanUnsignedInt(input, from);
+    if (end > from && input.charAtOrEof(end) == '.') {
+      int afterDot = end + 1;
+      int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, afterDot);
+      if (fracEnd > afterDot) return fracEnd;
+      var errorReported = context.expecting("digits", afterDot);
+    }
+    return end;
+  }
 
   /**
    * Parses double-precision numbers that support scientific notation, conforming to <a
@@ -124,11 +155,46 @@ public final class Parsers {
    * evaluate to {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY}, and values
    * that underflow evaluate to {@code 0.0}.
    */
-  public static final Parser<Double> SIGNED_DOUBLE = literally(
-          one('-').optional(), UNSIGNED_DECIMAL,
-          sequence(caseInsensitive("e"), one("[+-]").optional(), DIGITS).optional())
-      .source()
-      .elidableMap(Double::parseDouble);
+  public static final Parser<Double> SIGNED_DOUBLE = new Parser<Void>() {
+    private static final Parser<?> FIRST_CHAR = one("[0-9-]");
+
+    @Override MatchResult<Void> skipAndMatch(
+        Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
+        ErrorContext context) {
+      start = Parser.skipIfAny(preskipper, input, start);
+      int intStart = input.charAtOrEof(start) == '-' ? start + 1 : start;
+      int end = scanUnsignedDecimal(input, intStart, context);
+      if (end == intStart) {
+        return context.expecting(intStart > start ? "integer" : "double", intStart);
+      }
+      int exp = input.charAtOrEof(end);
+      if (exp == 'e' || exp == 'E') {
+        int expStart = end + 1;
+        int sign = input.charAtOrEof(expStart);
+        if (sign == '+' || sign == '-') {
+          expStart++;
+        }
+        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+        if (expEnd == expStart) {
+          return context.expecting("digits", expStart);
+        }
+        end = expEnd;
+      }
+      return new MatchResult.Success<>(start, end, null);
+    }
+
+    @Override Set<String> getExpectedSymbols() {
+      return Set.of("double");
+    }
+
+    @Override Set<String> computePrefixes() {
+      return FIRST_CHAR.getPrefixes();
+    }
+
+    @Override BitSet computeBlocklist() {
+      return FIRST_CHAR.getBlocklist();
+    }
+  }.source().elidableMap(Double::parseDouble);
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
@@ -404,8 +470,8 @@ public final class Parsers {
    * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
    * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
    * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
-   * UnsupportedOperationException} when calling {@link Parser#parseToStream(Reader)} or {@link
-   * Parser#probe(Reader)}, because Java regex requires the input to be fully loaded into memory,
+   * UnsupportedOperationException} when calling {@link Parser#parseToStream(java.io.Reader)} or {@link
+   * Parser#probe(java.io.Reader)}, because Java regex requires the input to be fully loaded into memory,
    * defeating the purpose of lazy loading from {@code Reader} - you might as well just explicitly
    * load into a {@code String} before parsing.
    *
