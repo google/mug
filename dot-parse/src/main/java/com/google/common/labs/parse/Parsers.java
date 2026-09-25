@@ -157,14 +157,14 @@ public final class Parsers {
   public static final Parser<Double> SIGNED_DOUBLE = new Scanner("double") {
     @Override int scan(CharInput input, int from, ErrorContext context) {
       int sign = input.charAtOrEof(from);
-      int intStart = (sign == '+' || sign == '-') ? from + 1 : from;
+      int intStart = (sign == '-' || sign == '+') ? from + 1 : from;
       int end = scanUnsignedDecimal(input, intStart, context);
       if (end == intStart) return from;
       int exp = input.charAtOrEof(end);
       if (exp == 'e' || exp == 'E') {
         int expStart = end + 1;
         int expSign = input.charAtOrEof(expStart);
-        if (expSign == '+' || expSign == '-') {
+        if (expSign == '-' || expSign == '+') {
           expStart++;
         }
         int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
