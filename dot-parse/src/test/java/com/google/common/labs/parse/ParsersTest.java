@@ -1143,14 +1143,94 @@ public class ParsersTest {
             """);
   }
 
-  @Test public void signedDouble_leadingPlusThrows() {
-    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+123"));
+  @Test public void signedDouble_leadingPlus() {
+    assertThat(SIGNED_DOUBLE.parse("+123")).isEqualTo(123.0);
+  }
+
+  @Test public void signedDouble_leadingPlusFloatWithExponent() {
+    assertThat(SIGNED_DOUBLE.parse("+1.5e+2")).isEqualTo(150.0);
+  }
+
+  @Test public void signedDouble_strictJsonRecipe_acceptsNegative() {
+    Parser<Double> jsonNumber = SIGNED_DOUBLE
+        .source()
+        .suchThat(s -> !s.startsWith("+"), "json number")
+        .map(Double::parseDouble);
+    assertThat(jsonNumber.parse("-1.5")).isEqualTo(-1.5);
+  }
+
+  @Test public void signedDouble_strictJsonRecipe_rejectsLeadingPlus() {
+    Parser<Double> jsonNumber = SIGNED_DOUBLE
+        .source()
+        .suchThat(s -> !s.startsWith("+"), "json number")
+        .map(Double::parseDouble);
+    ParseException thrown = assertThrows(ParseException.class, () -> jsonNumber.parse("+1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <json number>, encountered:
+                +1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_lonePlusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <double>, encountered:
-                +123
+                +
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusThenMinusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+-1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +-1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_doublePlusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("++1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                ++1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusMissingIntegerThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+.5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +.5
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusLeadingZeroThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+05"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +05
                 ^
             """);
   }
@@ -1315,7 +1395,7 @@ public class ParsersTest {
   }
 
   @Test public void signedDouble_getPrefixes_everyLeadingCharEffectiveInAnyOf(
-      @TestParameter({"-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
+      @TestParameter({"-1", "+1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
     Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
     assertThat(parser.parse(input)).isEqualTo(Double.parseDouble(input));
   }

@@ -34,7 +34,7 @@ Regex Pattern      | Parser Equivalent                                          
 `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
 `0\|[1-9]\d*`       | `Parsers.UNSIGNED_INTEGER`                                 | Matches an unsigned integer without leading zeros.
 `(?:0\|[1-9]\d*)(?:\.\d+)?` | `Parsers.UNSIGNED_DECIMAL`                         | Matches an unsigned decimal point number.
-`-?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`         | Matches a JSON-compliant signed double-precision number.
+`[+-]?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`     | Matches a signed double-precision number (JSON number syntax plus an optional leading `+`).
 `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 `if\b`             | `word("if")`                                                | Matches the whole word "if".
 `(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.

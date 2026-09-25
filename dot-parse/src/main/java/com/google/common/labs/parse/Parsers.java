@@ -126,10 +126,8 @@ public final class Parsers {
   }
 
   /**
-   * Parses double-precision numbers that support scientific notation, conforming to <a
-   * href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec).
-   *
-   * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
+   * Parses double-precision numbers that support scientific notation, e.g., {@code 123}, {@code
+   * +1}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
    *
    * <p>The input string is parsed into a {@link Double}. You can also call {@code .source()} if you
    * prefer to obtain the raw matched string or parse into a different type such as {@code
@@ -139,9 +137,18 @@ public final class Parsers {
    * Parser<BigDecimal> bigDecimal = Parsers.SIGNED_DOUBLE.source().map(BigDecimal::new);
    * }</pre>
    *
-   * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
-   * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
-   * as per the JSON standard.
+   * <p>A single leading sign ({@code +} or {@code -}) is allowed. Leading zeros on integers (e.g.,
+   * {@code 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not.
+   *
+   * <p>Other than the leading {@code +}, the syntax conforms to <a
+   * href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec). To also reject the leading
+   * {@code +} for strict JSON:
+   *
+   * <pre>{@code
+   * Parser<Double> jsonNumber = Parsers.SIGNED_DOUBLE.source()
+   *     .suchThat(s -> !s.startsWith("+"), "json number")
+   *     .map(Double::parseDouble);
+   * }</pre>
    *
    * <p>Per {@link Double#parseDouble(String)}, values that overflow the range of {@code double}
    * evaluate to {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY}, and values
@@ -149,14 +156,15 @@ public final class Parsers {
    */
   public static final Parser<Double> SIGNED_DOUBLE = new Scanner("double") {
     @Override int scan(CharInput input, int from, ErrorContext context) {
-      int intStart = input.charAtOrEof(from) == '-' ? from + 1 : from;
+      int sign = input.charAtOrEof(from);
+      int intStart = (sign == '+' || sign == '-') ? from + 1 : from;
       int end = scanUnsignedDecimal(input, intStart, context);
       if (end == intStart) return from;
       int exp = input.charAtOrEof(end);
       if (exp == 'e' || exp == 'E') {
         int expStart = end + 1;
-        int sign = input.charAtOrEof(expStart);
-        if (sign == '+' || sign == '-') {
+        int expSign = input.charAtOrEof(expStart);
+        if (expSign == '+' || expSign == '-') {
           expStart++;
         }
         int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
@@ -170,7 +178,7 @@ public final class Parsers {
     }
 
     @Override Set<String> computePrefixes() {
-      return Set.of("-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+      return Set.of("+", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
     }
   }.source().elidableMap(Double::parseDouble);
 
