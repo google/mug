@@ -85,7 +85,7 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 | **Jackson Databind** (Lenient) | 1.058 | 0.314 |
 | **Gson** (Lenient) | 0.803 | 0.306 |
 | **`dot-parse`** (Our leading Java combinator) | **0.755** | **0.355** 🚀 ☕ |
-| **JavaCC** (Best) | 0.166 | 0.068 |
+| **JavaCC** | 0.166 | 0.068 |
 
 #### Reference Streaming Baselines (8,000 Rows, ~8MB JSONL)
 To evaluate continuous data ingestion performance, we benchmarked incremental record streaming from a `Reader` on an 8,000-row (~8.1 MB total) JSONL file:
