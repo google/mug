@@ -4,7 +4,7 @@ class ErrorContext {
   static final ErrorContext MINIMAL = new ErrorContext();
 
   /** Note down that {@code symbol} was missing at the specified index. */
-  void missing(String symbolName, int at) {}
+  void missed(String symbolName, int at) {}
 
   final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
     return expecting(symbolName, at, at);
@@ -38,7 +38,7 @@ class ErrorContext {
     private static final String EXPECTING = "expecting <{name}>, encountered:{snippet}";
     private MatchResult.Failure<?> farthestFailure = null;
 
-    @Override void missing(String symbolName, int at) {
+    @Override void missed(String symbolName, int at) {
       if (isFarthest(at)) {
         farthestFailure = new MatchResult.Failure<>(at, at, EXPECTING, symbolName);
       }
