@@ -218,53 +218,54 @@ public final class Parsers {
    *   <li>Negative values (e.g., {@code "-2s"}) are not supported.
    * </ul>
    */
-  public static final Parser<Duration> DURATION = literally(
-          sequence(
-                  UNSIGNED_DECIMAL,
-                  anyOf(DurationUnit.values())
-                      .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
-                  (num, unit) -> {
+  public static final Parser<Duration> DURATION =
+      literally(DurationSegment.PARSER.atLeastOnce())
+          .map(durations -> {
+            adjacentPairsFrom(durations)
+                .forEach((prev, next) -> {
+                  if (prev instanceof DurationSegment.Fractional) {
+                    throw Parser.fail(
+                        "Only the last duration segment is allowed to be fractional: " + prev);
+                  }
+                  if (prev.unit().compareTo(next.unit()) <= 0) {
+                    throw Parser.fail("Duration units must be specified in order: " + prev + next);
+                  }
+                });
+            try {
+              return durations.stream()
+                  .map(seg -> {
                     try {
-                      return num.contains(".")
-                          ? new TimeSpan.Fractional(Double.parseDouble(num), unit)
-                          : new TimeSpan.Integral(Long.parseLong(num), unit);
-                    } catch (NumberFormatException e) {
-                      throw Parser.fail(e.getMessage());
+                      return seg.toDuration();
+                    } catch (ArithmeticException e) {
+                      throw Parser.fail("duration out of range: " + seg);
                     }
                   })
-              .atLeastOnce())
-      .map(durations -> {
-        adjacentPairsFrom(durations)
-            .forEach((prev, next) -> {
-              if (prev instanceof TimeSpan.Fractional) {
-                throw Parser.fail(
-                    "Only the last duration segment is allowed to be fractional: " + prev);
-              }
-              if (prev.unit().compareTo(next.unit()) <= 0) {
-                throw Parser.fail("Duration units must be specified in order: " + prev + next);
-              }
-            });
-        try {
-          return durations.stream()
-              .map(seg -> {
-                try {
-                  return seg.toDuration();
-                } catch (ArithmeticException e) {
-                  throw Parser.fail("duration out of range: " + seg);
-                }
-              })
-              .reduce(Duration::plus)
-              .get();
-        } catch (ArithmeticException e) {
-          throw Parser.fail("duration out of range");
-        }
-      });
+                  .reduce(Duration::plus)
+                  .get();
+            } catch (ArithmeticException e) {
+              throw Parser.fail("duration out of range");
+            }
+          });
 
-  private sealed interface TimeSpan {
+  private sealed interface DurationSegment {
+    static Parser<DurationSegment> PARSER = sequence(
+        UNSIGNED_DECIMAL,
+        anyOf(DurationUnit.values())
+            .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
+        (num, unit) -> {
+          try {
+            return num.contains(".")
+                ? new Fractional(Double.parseDouble(num), unit)
+                : new Integral(Long.parseLong(num), unit);
+          } catch (NumberFormatException e) {
+            throw Parser.fail(e.getMessage());
+          }
+        });
+
     DurationUnit unit();
     Duration toDuration();
 
-    record Integral(long n, DurationUnit unit) implements TimeSpan {
+    record Integral(long n, DurationUnit unit) implements DurationSegment {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
@@ -274,7 +275,7 @@ public final class Parsers {
       }
     }
 
-    record Fractional(double n, DurationUnit unit) implements TimeSpan {
+    record Fractional(double n, DurationUnit unit) implements DurationSegment {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
