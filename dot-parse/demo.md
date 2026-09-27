@@ -35,7 +35,7 @@ Examples, with parsed values written as Java literals:
 | [jjparse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jjparse/JjparseMapFlagParser.java) | 37 | Moderate; fluent combinators mixed with regexes. |
 | [JParsec](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java) | 38 | Moderate; manual whitespace wrapping and scanner adapters. |
 | [taker](../mug-examples/src/main/java/com/google/mu/examples/mapflag/taker/TakerMapFlagParser.java) | 38 | Moderate; lookaheads and casts clutter combinators. |
-| [ParsecJ](../mug-examples/src/main/java/com/google/mu/examples/mapflag/parsecj/ParsecjMapFlagParser.java) | 43 | Moderate; nested monadic binds add noise. |
+| [ParsecJ](../mug-examples/src/main/java/com/google/mu/examples/mapflag/parsecj/ParsecjMapFlagParser.java) | 43 | Moderate; manual whitespace wrapping and monadic-bind noise. |
 | [Regex](../mug-examples/src/main/java/com/google/mu/examples/mapflag/regex/RegexMapFlagParser.java) | 51 | Low; dense regexes and imperative loop. |
 | [ANTLR 4](../mug-examples/src/main/java/com/google/mu/examples/mapflag/antlr/AntlrMapFlagParser.java) | 55 (13 `.g4` + 42 `.java`) | Moderate; clear grammar, verbose Java plumbing. |
 | [PetitParser](../mug-examples/src/main/java/com/google/mu/examples/mapflag/petitparser/PetitParserMapFlagParser.java) | 68 | Low; untyped lists and positional indexing. |
