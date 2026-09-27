@@ -5,7 +5,7 @@ Low-boilerplate, fast, idiomatic Java parser combinator, aimed to replace regex 
 ### How is dot-parse different from the other 27 parser combinators created in the past 15 years?
 
 - The first and _only_ Java combinator designed to **supersede Regex**.
-- One of the few that prioritizes **developer velocity** and learning curve over academic "monad" theory.
+- One of the few that prioritizes **developer velocity** and learning curve over academic "monad" theory ([code comparison](./demo.md)).
 - The first and _only_ Java combinator that completely eliminates nasty **infinite loops** and ***`StackOverflowError`*** from left recursion.
 - **Freakin fast**! (faster than regex, and mainstream parser generators like ANTLR and JavaCC - [benchmark](./BENCHMARK.md)).
 - Idiomatic Java API - you don't need to know Haskell, Scala or the Monad theory.
