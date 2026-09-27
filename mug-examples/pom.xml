@@ -68,6 +68,8 @@
           <testExcludes>
             <exclude>**/mapflag/MapFlagBenchmark.java</exclude>
             <exclude>**/mapflag/antlr/**</exclude>
+            <exclude>**/mapflag/betterparse/**</exclude>
+            <exclude>**/mapflag/catsparse/**</exclude>
             <exclude>**/mapflag/jjparse/**</exclude>
             <exclude>**/mapflag/jparsec/**</exclude>
             <exclude>**/mapflag/parsecj/**</exclude>
@@ -82,6 +84,8 @@
         <configuration>
           <excludes>
             <exclude>**/mapflag/antlr/**</exclude>
+            <exclude>**/mapflag/betterparse/**</exclude>
+            <exclude>**/mapflag/catsparse/**</exclude>
             <exclude>**/mapflag/jjparse/**</exclude>
             <exclude>**/mapflag/jparsec/**</exclude>
             <exclude>**/mapflag/parsecj/**</exclude>
@@ -175,6 +179,26 @@
           <version>4.13.1</version>
         </dependency>
         <dependency>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+          <version>2.13.12</version>
+        </dependency>
+        <dependency>
+          <groupId>org.typelevel</groupId>
+          <artifactId>cats-parse_2.13</artifactId>
+          <version>1.0.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>1.9.22</version>
+        </dependency>
+        <dependency>
+          <groupId>com.github.h0tk3y.betterParse</groupId>
+          <artifactId>better-parse-jvm</artifactId>
+          <version>0.4.4</version>
+        </dependency>
+        <dependency>
           <groupId>org.openjdk.jmh</groupId>
           <artifactId>jmh-core</artifactId>
           <version>1.37</version>
@@ -222,6 +246,47 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>4.8.1</version>
+            <executions>
+              <execution>
+                <id>scala-compile</id>
+                <goals>
+                  <goal>add-source</goal>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <scalaVersion>2.13.12</scalaVersion>
+              <includes>
+                <include>**/*.scala</include>
+              </includes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>1.9.22</version>
+            <executions>
+              <execution>
+                <id>kotlin-compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+            </executions>
+            <configuration>
+              <jvmTarget>21</jvmTarget>
+            </configuration>
           </plugin>
         </plugins>
       </build>

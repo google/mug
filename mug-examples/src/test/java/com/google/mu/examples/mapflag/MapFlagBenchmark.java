@@ -2,8 +2,12 @@ package com.google.mu.examples.mapflag;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.util.stream.Collectors.joining;
+import static scala.jdk.javaapi.CollectionConverters.asJava;
 
+import com.google.common.collect.Maps;
 import com.google.mu.examples.mapflag.antlr.AntlrMapFlagParser;
+import com.google.mu.examples.mapflag.betterparse.BetterParseMapFlagParser;
+import com.google.mu.examples.mapflag.catsparse.CatsParseMapFlagParser;
 import com.google.mu.examples.mapflag.dotparse.DotParseMapFlagParser;
 import com.google.mu.examples.mapflag.jjparse.JjparseMapFlagParser;
 import com.google.mu.examples.mapflag.jparsec.JparsecMapFlagParser;
@@ -25,6 +29,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import scala.collection.Seq;
+import scala.util.Either;
 
 /**
  * Compares the map-flag parsers in dot-parse/demo.md on the same inputs.
@@ -75,6 +81,8 @@ public class MapFlagBenchmark {
     assertWithMessage("regex").that(regex()).isEqualTo(expected);
     assertWithMessage("antlr").that(antlr()).isEqualTo(expected);
     assertWithMessage("petitParser").that(petitParser()).isEqualTo(expected);
+    assertWithMessage("catsParse").that(catsParseToJava()).isEqualTo(expected);
+    assertWithMessage("betterParse").that(betterParse()).isEqualTo(expected);
   }
 
   @Benchmark
@@ -115,6 +123,26 @@ public class MapFlagBenchmark {
   @Benchmark
   public Map<String, Object> petitParser() {
     return PetitParserMapFlagParser.parse(flag);
+  }
+
+  @Benchmark
+  public Either<?, ?> catsParse() {
+    return CatsParseMapFlagParser.parse(flag);
+  }
+
+  @Benchmark
+  public Map<String, Object> betterParse() {
+    return BetterParseMapFlagParser.INSTANCE.parse(flag);
+  }
+
+  private Map<String, Object> catsParseToJava() {
+    return CatsParseMapFlagParser.parse(flag)
+        .fold(
+            error -> {
+              throw new IllegalArgumentException(error.toString());
+            },
+            map ->
+                Maps.transformValues(asJava(map), v -> v instanceof Seq<?> seq ? asJava(seq) : v));
   }
 
   private static String generateEntries(int count) {

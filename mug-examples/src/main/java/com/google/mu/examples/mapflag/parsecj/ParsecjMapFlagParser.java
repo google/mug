@@ -20,6 +20,7 @@ import org.javafp.parsecj.input.Input;
 
 public final class ParsecjMapFlagParser {
   private static final Parser<Character, Character> COMMA = tok(chr(','));
+  private static final Parser<Character, Character> EQUALS = tok(chr('='));
 
   private static final Parser<Character, Object> SCALAR = or(
       tok(regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?"))
@@ -31,16 +32,16 @@ public final class ParsecjMapFlagParser {
               .between(chr('"'), chr('"')))
           .map(IList::listToString));
 
-  // Entries are built with bind() over the key and map() over the value;
   // sepEndBy(COMMA) parses 0+ items separated and optionally terminated by COMMA.
+  private static final Parser<Character, Object> VALUE = or(
+      SCALAR,
+      SCALAR.sepEndBy(COMMA)
+          .between(tok(chr('[')), tok(chr(']')))
+          .map(IList::toList));
+
+  // Entries are built with bind() over the key and map() over the value.
   private static final Parser<Character, Map<String, Object>> MAP = tok(regex("[a-zA-Z0-9_-]+"))
-      .bind(k -> tok(chr('='))
-          .then(
-              or(
-                  SCALAR,
-                  SCALAR.sepEndBy(COMMA)
-                      .between(tok(chr('[')), tok(chr(']')))
-                      .map(IList::toList)))
+      .bind(k -> EQUALS.then(VALUE)
           .map(v -> Map.entry(k, v)))
       .sepEndBy(COMMA)
       .between(tok(chr('{')), tok(chr('}')))

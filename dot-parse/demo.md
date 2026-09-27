@@ -30,8 +30,8 @@ Examples, with parsed values written as Java literals:
 | Library | LoC | Clarity |
 |---|---|---|
 | [dot-parse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/dotparse/DotParseMapFlagParser.java) | 21 | High; reads directly like the grammar. |
-| cats-parse (Scala) | 33 | Low; compact, but obscured by symbolic operators. |
-| better-parse (Kotlin) | 37 | Moderate; clear grammar, verbose token declarations. |
+| [cats-parse (Scala)](../mug-examples/src/main/scala/com/google/mu/examples/mapflag/catsparse/CatsParseMapFlagParser.scala) | 34 | Low; compact, but obscured by symbolic operators. |
+| [better-parse (Kotlin)](../mug-examples/src/main/kotlin/com/google/mu/examples/mapflag/betterparse/BetterParseMapFlagParser.kt) | 37 | Moderate; clear grammar, verbose token declarations. |
 | [jjparse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jjparse/JjparseMapFlagParser.java) | 38 | Moderate; fluent combinators mixed with regexes. |
 | [taker](../mug-examples/src/main/java/com/google/mu/examples/mapflag/taker/TakerMapFlagParser.java) | 38 | Moderate; lookaheads and casts clutter combinators. |
 | [JParsec](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java) | 39 | Moderate; manual whitespace wrapping and scanner adapters. |
@@ -85,12 +85,12 @@ public final class DotParseMapFlagParser {
 
 ---
 
-## 2. cats-parse (Scala)
+## 2. cats-parse ([CatsParseMapFlagParser.scala](../mug-examples/src/main/scala/com/google/mu/examples/mapflag/catsparse/CatsParseMapFlagParser.scala))
 
 ```scala
 import cats.parse.{Numbers, Parser => P, Parser0}
 
-object FlagMap {
+object CatsParseMapFlagParser {
   // .with1 bridges Parser0 (nullable) into P (non-empty); <* and *> discard one side.
   private val ws0: Parser0[Unit] = P.charsWhile0(_.isWhitespace).void
   private def sym(c: Char): P[Unit] = P.char(c) <* ws0
@@ -123,8 +123,9 @@ object FlagMap {
           | items(scalar)
               .with1.between(sym('['), sym(']')))
     ).with1.between(sym('{'), sym('}'))
-      .filter(kvs => kvs.map(_._1).distinct.size == kvs.size)
-      .map(_.toMap)
+      .flatMap(kvs =>
+        if (kvs.map(_._1).distinct.size == kvs.size) P.pure(kvs.toMap)
+        else P.failWith("Duplicate key"))
 
   def parse(input: String) = map.parseAll(input)
 }
@@ -132,10 +133,10 @@ object FlagMap {
 
 ---
 
-## 3. better-parse (Kotlin)
+## 3. better-parse ([BetterParseMapFlagParser.kt](../mug-examples/src/main/kotlin/com/google/mu/examples/mapflag/betterparse/BetterParseMapFlagParser.kt))
 
 ```kotlin
-object FlagMapGrammar : Grammar<Map<String, Any>>() {
+object BetterParseMapFlagParser : Grammar<Map<String, Any>>() {
     val ws by regexToken("\\p{javaWhitespace}+", ignore = true)
     val lbrace by literalToken("{")
     val rbrace by literalToken("}")
@@ -171,7 +172,7 @@ object FlagMapGrammar : Grammar<Map<String, Any>>() {
         -optional(comma) *
         -rbrace map { entries ->
             buildMap {
-                for ((k, v) in entries) require(put(k, v) == null) { "duplicate key: $k" }
+                for ((k, v) in entries) require(put(k, v) == null) { "Duplicate key: $k" }
             }
         }
 
@@ -344,6 +345,7 @@ public final class JparsecMapFlagParser {
 ```java
 public final class ParsecjMapFlagParser {
   private static final Parser<Character, Character> COMMA = tok(chr(','));
+  private static final Parser<Character, Character> EQUALS = tok(chr('='));
 
   private static final Parser<Character, Object> SCALAR = or(
       tok(regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?"))
@@ -355,16 +357,16 @@ public final class ParsecjMapFlagParser {
               .between(chr('"'), chr('"')))
           .map(IList::listToString));
 
-  // Entries are built with bind() over the key and map() over the value;
   // sepEndBy(COMMA) parses 0+ items separated and optionally terminated by COMMA.
+  private static final Parser<Character, Object> VALUE = or(
+      SCALAR,
+      SCALAR.sepEndBy(COMMA)
+          .between(tok(chr('[')), tok(chr(']')))
+          .map(IList::toList));
+
+  // Entries are built with bind() over the key and map() over the value.
   private static final Parser<Character, Map<String, Object>> MAP = tok(regex("[a-zA-Z0-9_-]+"))
-      .bind(k -> tok(chr('='))
-          .then(
-              or(
-                  SCALAR,
-                  SCALAR.sepEndBy(COMMA)
-                      .between(tok(chr('[')), tok(chr(']')))
-                      .map(IList::toList)))
+      .bind(k -> EQUALS.then(VALUE)
           .map(v -> Map.entry(k, v)))
       .sepEndBy(COMMA)
       .between(tok(chr('{')), tok(chr('}')))
@@ -619,29 +621,35 @@ public final class PetitParserMapFlagParser {
 
 ## Performance
 
-The eight Java implementations were benchmarked with JMH ([MapFlagBenchmark.java](../mug-examples/src/test/java/com/google/mu/examples/mapflag/MapFlagBenchmark.java)); the Scala and Kotlin versions are not included. There are three inputs:
+All ten implementations were benchmarked with JMH ([MapFlagBenchmark.java](../mug-examples/src/test/java/com/google/mu/examples/mapflag/MapFlagBenchmark.java)) on three inputs:
 
 - **SMALL**: the example flag from [The Format](#the-format) (36 characters).
 - **MEDIUM**: 10 entries, including string and number lists, escapes, an empty list, and a trailing comma (230 characters).
 - **LARGE**: 100 generated entries cycling through integers, negative decimals, escaped strings, and mixed lists (2,201 characters).
 
-Before measuring, the benchmark checks that all eight implementations return the same map for each input.
+Before measuring, the benchmark checks that all ten implementations return the same map for each input.
 
 Throughput (higher is better):
 
 | Library | SMALL (ops/ms) | MEDIUM (ops/ms) | LARGE (ops/ms) |
 |---|---|---|---|
-| dot-parse | 2,124 | 513 | 37.4 |
-| taker | 1,006 | 232 | 22.3 |
-| JParsec | 920 | 196 | 19.6 |
-| PetitParser | 709 | 142 | 15.2 |
-| Regex | 682 | 167 | 15.0 |
-| ANTLR 4 | 503 | 163 | 15.6 |
-| ParsecJ | 359 | 77.5 | 7.99 |
-| jjparse | 14.2 | 4.42 | 0.316 |
+| dot-parse | 2,057 | 519 | 38.5 |
+| taker | 1,004 | 218 | 20.9 |
+| JParsec | 935 | 183 | 17.9 |
+| cats-parse (Scala) | 682 | 141 | 18.3 |
+| Regex | 681 | 137 | 13.5 |
+| PetitParser | 681 | 136 | 15.2 |
+| ANTLR 4 | 512 | 158 | 16.9 |
+| better-parse (Kotlin) | 363 | 91.1 | 8.82 |
+| ParsecJ | 355 | 76.0 | 7.41 |
+| jjparse | 14.5 | 4.51 | 0.411 |
 
 Snapshot: 2026-09-27, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 1 fork, 3 warmup and 5 measurement iterations of 1 second each.
 
-Error margins (99.9% confidence) are within ±5%, except on SMALL for PetitParser (±11%), ANTLR 4 (±12%), and jjparse (±6%), and on MEDIUM for jjparse (±9%). PetitParser and Regex on SMALL, Regex and ANTLR 4 on MEDIUM, and PetitParser, Regex, and ANTLR 4 on LARGE are within each other's error margins.
+Error margins (99.9% confidence) are within ±5%, except on SMALL for PetitParser (±17%) and ANTLR 4 (±6%), and on LARGE for ANTLR 4 (±8%), ParsecJ (±19%), and jjparse (±6%). These groups are within each other's error margins:
+
+- SMALL: taker and JParsec; cats-parse, Regex, and PetitParser; better-parse and ParsecJ.
+- MEDIUM: cats-parse, Regex, and PetitParser.
+- LARGE: JParsec, cats-parse, and ANTLR 4; better-parse and ParsecJ.
 
 jjparse formats an error message, with line and column, every time a match fails, including failed whitespace skips and rejected alternatives.
