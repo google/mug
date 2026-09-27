@@ -66,6 +66,7 @@
             <exclude>**/mapflag/taker/**</exclude>
           </excludes>
           <testExcludes>
+            <exclude>**/mapflag/MapFlagBenchmark.java</exclude>
             <exclude>**/mapflag/antlr/**</exclude>
             <exclude>**/mapflag/jjparse/**</exclude>
             <exclude>**/mapflag/jparsec/**</exclude>
@@ -173,6 +174,12 @@
           <artifactId>antlr4-runtime</artifactId>
           <version>4.13.1</version>
         </dependency>
+        <dependency>
+          <groupId>org.openjdk.jmh</groupId>
+          <artifactId>jmh-core</artifactId>
+          <version>1.37</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
       <build>
         <plugins>
@@ -183,6 +190,13 @@
               <useIncrementalCompilation>false</useIncrementalCompilation>
               <excludes combine.self="override"/>
               <testExcludes combine.self="override"/>
+              <annotationProcessorPaths combine.children="append">
+                <path>
+                  <groupId>org.openjdk.jmh</groupId>
+                  <artifactId>jmh-generator-annprocess</artifactId>
+                  <version>1.37</version>
+                </path>
+              </annotationProcessorPaths>
             </configuration>
           </plugin>
           <plugin>

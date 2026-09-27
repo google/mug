@@ -25,6 +25,7 @@ public final class RegexMapFlagParser {
           + "(" + SCALAR + "|" + LIST + ")"
           + "\\s*(?:,\\s*|\\z)");
   private static final Pattern SCALAR_PATTERN = Pattern.compile(SCALAR);
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
 
   public static Map<String, Object> parse(String input) {
     Matcher braces = BRACES.matcher(input);
@@ -59,8 +60,8 @@ public final class RegexMapFlagParser {
 
   private static Object toScalar(String scalar) {
     return scalar.startsWith("\"")
-        ? scalar.substring(1, scalar.length() - 1)
-            .replaceAll("(?s)\\\\(.)", "$1")
+        ? ESCAPE.matcher(scalar.substring(1, scalar.length() - 1))
+            .replaceAll("$1")
         : toNumber(scalar);
   }
 }

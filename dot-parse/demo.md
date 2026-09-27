@@ -31,13 +31,13 @@ Examples, with parsed values written as Java literals:
 |---|---|---|
 | [dot-parse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/dotparse/DotParseMapFlagParser.java) | 21 | High; reads directly like the grammar. |
 | cats-parse (Scala) | 33 | Low; compact, but obscured by symbolic operators. |
-| better-parse (Kotlin) | 36 | Moderate; clear grammar, verbose token declarations. |
-| [jjparse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jjparse/JjparseMapFlagParser.java) | 37 | Moderate; fluent combinators mixed with regexes. |
-| [JParsec](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java) | 38 | Moderate; manual whitespace wrapping and scanner adapters. |
+| better-parse (Kotlin) | 37 | Moderate; clear grammar, verbose token declarations. |
+| [jjparse](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jjparse/JjparseMapFlagParser.java) | 38 | Moderate; fluent combinators mixed with regexes. |
 | [taker](../mug-examples/src/main/java/com/google/mu/examples/mapflag/taker/TakerMapFlagParser.java) | 38 | Moderate; lookaheads and casts clutter combinators. |
+| [JParsec](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java) | 39 | Moderate; manual whitespace wrapping and scanner adapters. |
 | [ParsecJ](../mug-examples/src/main/java/com/google/mu/examples/mapflag/parsecj/ParsecjMapFlagParser.java) | 43 | Moderate; manual whitespace wrapping and monadic-bind noise. |
-| [Regex](../mug-examples/src/main/java/com/google/mu/examples/mapflag/regex/RegexMapFlagParser.java) | 51 | Low; dense regexes and imperative loop. |
-| [ANTLR 4](../mug-examples/src/main/java/com/google/mu/examples/mapflag/antlr/AntlrMapFlagParser.java) | 55 (13 `.g4` + 42 `.java`) | Moderate; clear grammar, verbose Java plumbing. |
+| [Regex](../mug-examples/src/main/java/com/google/mu/examples/mapflag/regex/RegexMapFlagParser.java) | 52 | Low; dense regexes and imperative loop. |
+| [ANTLR 4](../mug-examples/src/main/java/com/google/mu/examples/mapflag/antlr/AntlrMapFlagParser.java) | 56 (13 `.g4` + 43 `.java`) | Moderate; clear grammar, verbose Java plumbing. |
 | [PetitParser](../mug-examples/src/main/java/com/google/mu/examples/mapflag/petitparser/PetitParserMapFlagParser.java) | 68 | Low; untyped lists and positional indexing. |
 
 For brevity, the Java implementations share a number-conversion helper, [ParseUtils.java](../mug-examples/src/main/java/com/google/mu/examples/mapflag/ParseUtils.java):
@@ -149,11 +149,12 @@ object FlagMapGrammar : Grammar<Map<String, Any>>() {
     val decimal by regexToken("-?(?:0|[1-9]\\d*)\\.\\d+(?![\\w-])")
     val key by regexToken("[\\w-]+")
 
+    private val ESCAPE = Regex("(?s)\\\\(.)")
     val scalar: Parser<Any> by
         (int use { text.toInt() }) or
         (decimal use { text.toDouble() }) or
         (string use { text.substring(1, text.length - 1)
-            .replace(Regex("(?s)\\\\(.)"), "$1") })
+            .replace(ESCAPE, "$1") })
 
     // Unary '-' drops the matched token from the sequence tuple.
     override val rootParser by
@@ -185,6 +186,7 @@ object FlagMapGrammar : Grammar<Map<String, Any>>() {
 ```java
 // StringParsing skips whitespace before every terminal and EOF.
 public final class JjparseMapFlagParser extends StringParsing {
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
   private static final JjparseMapFlagParser INSTANCE = new JjparseMapFlagParser();
 
   private final Parser<Character> comma = character(',');
@@ -192,8 +194,8 @@ public final class JjparseMapFlagParser extends StringParsing {
       regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?")
           .map(ParseUtils::toNumber),
       regex("(?s)\"([^\"\\\\]|\\\\.)*\"")
-          .map(s -> s.substring(1, s.length() - 1)
-              .replaceAll("(?s)\\\\(.)", "$1")));
+          .map(s -> ESCAPE.matcher(s.substring(1, s.length() - 1))
+              .replaceAll("$1")));
   private final Parser<Map<String, Object>> map = regex("[a-zA-Z0-9_-]+")
       .andl(character('='))
       .and(
@@ -231,59 +233,7 @@ public final class JjparseMapFlagParser extends StringParsing {
 
 ---
 
-## 5. JParsec ([JparsecMapFlagParser.java](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java))
-
-```java
-public final class JparsecMapFlagParser {
-  private static final Parser<?> COMMA = tok(isChar(','));
-
-  private static final Parser<Object> SCALAR = or(
-      tok(regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?")
-              .toScanner("number")
-              .source())
-          .map(ParseUtils::toNumber),
-      tok(DOUBLE_QUOTE_STRING)
-          .map(s -> s.substring(1, s.length() - 1)
-              .replaceAll("(?s)\\\\(.)", "$1")));
-
-  // sepEndBy(COMMA) parses 0+ items separated and optionally terminated by COMMA.
-  private static final Parser<List<Map.Entry<String, Object>>> ENTRIES = sequence(
-          tok(regex("[a-zA-Z0-9_-]+")
-                  .toScanner("key")
-                  .source())
-              .followedBy(tok(isChar('='))),
-          or(
-              SCALAR,
-              SCALAR.sepEndBy(COMMA)
-                  .between(tok(isChar('[')), tok(isChar(']')))),
-          Map::entry)
-      .sepEndBy(COMMA)
-      .between(
-          WHITESPACES.skipMany().next(tok(isChar('{'))),
-          tok(isChar('}')));
-
-  public static Map<String, Object> parse(String input) {
-    // Built outside the parser, which would wrap the duplicate-key exception in ParserException.
-    return ENTRIES.parse(input).stream()
-        .collect(
-            toMap(
-                Map.Entry::getKey, Map.Entry::getValue,
-                (a, b) -> {
-                  throw new IllegalArgumentException("Duplicate key");
-                },
-                LinkedHashMap::new));
-  }
-
-  // Scanner-level JParsec has no global whitespace skipping; each terminal is wrapped in tok().
-  private static <T> Parser<T> tok(Parser<T> p) {
-    return p.followedBy(WHITESPACES.skipMany());
-  }
-}
-```
-
----
-
-## 6. taker ([TakerMapFlagParser.java](../mug-examples/src/main/java/com/google/mu/examples/mapflag/taker/TakerMapFlagParser.java))
+## 5. taker ([TakerMapFlagParser.java](../mug-examples/src/main/java/com/google/mu/examples/mapflag/taker/TakerMapFlagParser.java))
 
 ```java
 public final class TakerMapFlagParser {
@@ -330,6 +280,59 @@ public final class TakerMapFlagParser {
   @SuppressWarnings("unchecked") // Taker only produces A
   private static <A> Taker<A> widen(Taker<? extends A> taker) {
     return (Taker<A>) taker;
+  }
+}
+```
+
+---
+
+## 6. JParsec ([JparsecMapFlagParser.java](../mug-examples/src/main/java/com/google/mu/examples/mapflag/jparsec/JparsecMapFlagParser.java))
+
+```java
+public final class JparsecMapFlagParser {
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
+  private static final Parser<?> COMMA = tok(isChar(','));
+
+  private static final Parser<Object> SCALAR = or(
+      tok(regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?")
+              .toScanner("number")
+              .source())
+          .map(ParseUtils::toNumber),
+      tok(DOUBLE_QUOTE_STRING)
+          .map(s -> ESCAPE.matcher(s.substring(1, s.length() - 1))
+              .replaceAll("$1")));
+
+  // sepEndBy(COMMA) parses 0+ items separated and optionally terminated by COMMA.
+  private static final Parser<List<Map.Entry<String, Object>>> ENTRIES = sequence(
+          tok(regex("[a-zA-Z0-9_-]+")
+                  .toScanner("key")
+                  .source())
+              .followedBy(tok(isChar('='))),
+          or(
+              SCALAR,
+              SCALAR.sepEndBy(COMMA)
+                  .between(tok(isChar('[')), tok(isChar(']')))),
+          Map::entry)
+      .sepEndBy(COMMA)
+      .between(
+          WHITESPACES.skipMany().next(tok(isChar('{'))),
+          tok(isChar('}')));
+
+  public static Map<String, Object> parse(String input) {
+    // Built outside the parser, which would wrap the duplicate-key exception in ParserException.
+    return ENTRIES.parse(input).stream()
+        .collect(
+            toMap(
+                Map.Entry::getKey, Map.Entry::getValue,
+                (a, b) -> {
+                  throw new IllegalArgumentException("Duplicate key");
+                },
+                LinkedHashMap::new));
+  }
+
+  // Scanner-level JParsec has no global whitespace skipping; each terminal is wrapped in tok().
+  private static <T> Parser<T> tok(Parser<T> p) {
+    return p.followedBy(WHITESPACES.skipMany());
   }
 }
 ```
@@ -414,6 +417,7 @@ public final class RegexMapFlagParser {
           + "(" + SCALAR + "|" + LIST + ")"
           + "\\s*(?:,\\s*|\\z)");
   private static final Pattern SCALAR_PATTERN = Pattern.compile(SCALAR);
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
 
   public static Map<String, Object> parse(String input) {
     Matcher braces = BRACES.matcher(input);
@@ -448,8 +452,8 @@ public final class RegexMapFlagParser {
 
   private static Object toScalar(String scalar) {
     return scalar.startsWith("\"")
-        ? scalar.substring(1, scalar.length() - 1)
-            .replaceAll("(?s)\\\\(.)", "$1")
+        ? ESCAPE.matcher(scalar.substring(1, scalar.length() - 1))
+            .replaceAll("$1")
         : toNumber(scalar);
   }
 }
@@ -488,6 +492,8 @@ public final class AntlrMapFlagParser {
     }
   };
 
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
+
   public static Map<String, Object> parse(String input) {
     FlagMapLexer lexer = new FlagMapLexer(CharStreams.fromString(input));
     lexer.removeErrorListeners();
@@ -519,8 +525,8 @@ public final class AntlrMapFlagParser {
   private static Object toScalar(ScalarContext s) {
     if (s.STRING() != null) {
       String raw = s.STRING().getText();
-      return raw.substring(1, raw.length() - 1)
-          .replaceAll("(?s)\\\\(.)", "$1");
+      return ESCAPE.matcher(raw.substring(1, raw.length() - 1))
+          .replaceAll("$1");
     }
     return toNumber(s.getText());
   }
@@ -608,3 +614,34 @@ public final class PetitParserMapFlagParser {
   }
 }
 ```
+
+---
+
+## Performance
+
+The eight Java implementations were benchmarked with JMH ([MapFlagBenchmark.java](../mug-examples/src/test/java/com/google/mu/examples/mapflag/MapFlagBenchmark.java)); the Scala and Kotlin versions are not included. There are three inputs:
+
+- **SMALL**: the example flag from [The Format](#the-format) (36 characters).
+- **MEDIUM**: 10 entries, including string and number lists, escapes, an empty list, and a trailing comma (230 characters).
+- **LARGE**: 100 generated entries cycling through integers, negative decimals, escaped strings, and mixed lists (2,201 characters).
+
+Before measuring, the benchmark checks that all eight implementations return the same map for each input.
+
+Throughput (higher is better):
+
+| Library | SMALL (ops/ms) | MEDIUM (ops/ms) | LARGE (ops/ms) |
+|---|---|---|---|
+| dot-parse | 2,124 | 513 | 37.4 |
+| taker | 1,006 | 232 | 22.3 |
+| JParsec | 920 | 196 | 19.6 |
+| PetitParser | 709 | 142 | 15.2 |
+| Regex | 682 | 167 | 15.0 |
+| ANTLR 4 | 503 | 163 | 15.6 |
+| ParsecJ | 359 | 77.5 | 7.99 |
+| jjparse | 14.2 | 4.42 | 0.316 |
+
+Snapshot: 2026-09-27, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 1 fork, 3 warmup and 5 measurement iterations of 1 second each.
+
+Error margins (99.9% confidence) are within ±5%, except on SMALL for PetitParser (±11%), ANTLR 4 (±12%), and jjparse (±6%), and on MEDIUM for jjparse (±9%). PetitParser and Regex on SMALL, Regex and ANTLR 4 on MEDIUM, and PetitParser, Regex, and ANTLR 4 on LARGE are within each other's error margins.
+
+jjparse formats an error message, with line and column, every time a match fails, including failed whitespace skips and rejected alternatives.

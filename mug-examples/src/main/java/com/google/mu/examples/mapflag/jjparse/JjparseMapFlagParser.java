@@ -6,12 +6,14 @@ import static java.util.stream.Collectors.toMap;
 import com.google.mu.examples.mapflag.ParseUtils;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import jjparse.StringParsing;
 import jjparse.data.Product;
 import jjparse.input.Input;
 
 // StringParsing skips whitespace before every terminal and EOF.
 public final class JjparseMapFlagParser extends StringParsing {
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
   private static final JjparseMapFlagParser INSTANCE = new JjparseMapFlagParser();
 
   private final Parser<Character> comma = character(',');
@@ -19,8 +21,8 @@ public final class JjparseMapFlagParser extends StringParsing {
       regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?")
           .map(ParseUtils::toNumber),
       regex("(?s)\"([^\"\\\\]|\\\\.)*\"")
-          .map(s -> s.substring(1, s.length() - 1)
-              .replaceAll("(?s)\\\\(.)", "$1")));
+          .map(s -> ESCAPE.matcher(s.substring(1, s.length() - 1))
+              .replaceAll("$1")));
   private final Parser<Map<String, Object>> map = regex("[a-zA-Z0-9_-]+")
       .andl(character('='))
       .and(

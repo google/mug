@@ -12,9 +12,11 @@ import com.google.mu.examples.mapflag.ParseUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.jparsec.Parser;
 
 public final class JparsecMapFlagParser {
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
   private static final Parser<?> COMMA = tok(isChar(','));
 
   private static final Parser<Object> SCALAR = or(
@@ -23,8 +25,8 @@ public final class JparsecMapFlagParser {
               .source())
           .map(ParseUtils::toNumber),
       tok(DOUBLE_QUOTE_STRING)
-          .map(s -> s.substring(1, s.length() - 1)
-              .replaceAll("(?s)\\\\(.)", "$1")));
+          .map(s -> ESCAPE.matcher(s.substring(1, s.length() - 1))
+              .replaceAll("$1")));
 
   // sepEndBy(COMMA) parses 0+ items separated and optionally terminated by COMMA.
   private static final Parser<List<Map.Entry<String, Object>>> ENTRIES = sequence(

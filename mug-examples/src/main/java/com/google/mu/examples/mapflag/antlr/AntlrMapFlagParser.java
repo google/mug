@@ -9,6 +9,7 @@ import com.google.mu.examples.mapflag.antlr.FlagMapParser.SingleContext;
 import com.google.mu.examples.mapflag.antlr.FlagMapParser.ValueContext;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -23,6 +24,8 @@ public final class AntlrMapFlagParser {
       throw new IllegalArgumentException(line + ":" + (col + 1) + " " + msg);
     }
   };
+
+  private static final Pattern ESCAPE = Pattern.compile("(?s)\\\\(.)");
 
   public static Map<String, Object> parse(String input) {
     FlagMapLexer lexer = new FlagMapLexer(CharStreams.fromString(input));
@@ -55,8 +58,8 @@ public final class AntlrMapFlagParser {
   private static Object toScalar(ScalarContext s) {
     if (s.STRING() != null) {
       String raw = s.STRING().getText();
-      return raw.substring(1, raw.length() - 1)
-          .replaceAll("(?s)\\\\(.)", "$1");
+      return ESCAPE.matcher(raw.substring(1, raw.length() - 1))
+          .replaceAll("$1");
     }
     return toNumber(s.getText());
   }
