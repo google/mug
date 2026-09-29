@@ -2432,4 +2432,55 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown.getAttackPayload()).isEqualTo("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk!");
   }
+
+  @Test public void checkRedosVulnerability_sixRepetitionsInPrefix_unrolledInPayload() {
+    RegexPattern pattern = RegexPattern.of("a{6}b(x+)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("aaaaaab" + "x".repeat(30) + "!");
+  }
+
+  @Test public void checkRedosVulnerability_sevenRepetitionsInPrefix_pseudoRegexInPayload() {
+    RegexPattern pattern = RegexPattern.of("a{7}b(x+)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("a{7}b" + "x".repeat(30) + "!");
+  }
+
+  @Test public void checkRedosVulnerability_largeRepetitionInPrefix_pseudoRegexInPayload() {
+    RegexPattern pattern = RegexPattern.of("a{12345}b(x+)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("a{12345}b" + "x".repeat(30) + "!");
+  }
+
+  @Test public void checkRedosVulnerability_largeRangeMinInPrefix_pseudoRegexInPayload() {
+    RegexPattern pattern = RegexPattern.of("a{100,200}b(x+)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("a{100}b" + "x".repeat(30) + "!");
+  }
+
+  @Test public void checkRedosVulnerability_largeRepetitionOfSequenceInPrefix_groupedInPayload() {
+    RegexPattern pattern = RegexPattern.of("(?:ab){7}c(x+)+$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("(ab){7}c" + "x".repeat(30) + "!");
+  }
+
+  @Test public void checkPolynomialBacktracking_sixRepetitionsInPrefix_unrolledInPayload() {
+    RegexPattern pattern = RegexPattern.of("x{6}\\d+\\w+");
+    VulnerableRegexException thrown =
+        assertThrows(
+            VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("xxxxxx" + "0".repeat(30) + "!");
+  }
+
+  @Test public void checkPolynomialBacktracking_largeRepetitionInPrefix_pseudoRegexInPayload() {
+    RegexPattern pattern = RegexPattern.of("x{12345}\\d+\\w+");
+    VulnerableRegexException thrown =
+        assertThrows(
+            VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("x{12345}" + "0".repeat(30) + "!");
+  }
 }
