@@ -10,6 +10,8 @@ import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.hexDigits;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.nestedBy;
+import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedBy;
@@ -869,6 +871,177 @@ public class ParserTest {
     assertThat(parser.optional().parse("(a\\\\)", i -> {})).hasValue("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
+  }
+
+  @Test public void nestedBy_unclosedOuter_reportsMissingAfterAtEof() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> nestedBy("(", ")").parse("(foo (bar)"));
+    assertThat(thrown).hasMessageThat().contains("1:11");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
+  }
+
+  @Test public void nestedBy_noClosingDelimiter_reportsMissingAfterAtEof() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> nestedBy("(", ")").parse("(foo"));
+    assertThat(thrown).hasMessageThat().contains("1:5");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
+  }
+
+  @Test public void nestedBy_beforeOverlappingAfter_countsBefore() {
+    assertThat(nestedBy("(*", "*)").parse("(*a(*)b*)*)")).isEqualTo("a(*)b*)");
+  }
+
+  @Test public void nestedBy_beforeAndAfterAtSamePosition_afterWins() {
+    assertThat(nestedBy("ab", "a").followedBy("ba").parse("abxaba")).isEqualTo("x");
+  }
+
+  @Test public void nestedBy_overlappingBeforeOccurrences_consumedLeftToRight() {
+    assertThat(nestedBy("aa", "b").parse("aaaaabb")).isEqualTo("aaab");
+  }
+
+  @Test public void nestedBy_beforeLongerThanAfter_closedAtEndOfInput() {
+    assertThat(nestedBy("<<<", ">").parse("<<<a>")).isEqualTo("a");
+  }
+
+  @Test public void nestedBy_withReader_success() {
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader("(foo (bar) baz)")))
+        .containsExactly("foo (bar) baz");
+  }
+
+  @Test public void nestedBy_withReader_contentSpanningMultiplePages() {
+    String content = "x".repeat(10000) + "(y)" + "z".repeat(10000);
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader("(" + content + ")")))
+        .containsExactly(content);
+  }
+
+  @Test public void nestedBy_withReader_innerBeforeAcrossPageBoundary() {
+    String content = "x".repeat(8189) + "<<y>>";
+    assertThat(nestedBy("<<", ">>").parseToStream(new StringReader("<<" + content + ">>")))
+        .containsExactly(content);
+  }
+
+  @Test public void nestedBy_withReader_beforeOverlappingAfterAcrossPageBoundary() {
+    // The nested "x<<y" occupies indexes 8189-8192, straddling the 8192-char read buffer.
+    String content = "-".repeat(8185) + "x<<y<<";
+    assertThat(nestedBy("x<<y", "<<").parseToStream(new StringReader("x<<y" + content + "<<")))
+        .containsExactly(content);
+  }
+
+  @Test public void nestedBy_withReader_beforeAndAfterAtSamePosition_afterWins() {
+    assertThat(nestedBy("ab", "a").followedBy("ba").parseToStream(new StringReader("abxaba")))
+        .containsExactly("x");
+  }
+
+  @Test public void nestedBy_withReader_unclosed_reportsMissingAfterAtEof() {
+    ParseException thrown = assertThrows(
+        ParseException.class,
+        () -> nestedBy("(", ")").parseToStream(new StringReader("(foo (bar)")).count());
+    assertThat(thrown).hasMessageThat().contains("1:11");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
+  }
+
+  @Test public void nestedBy_withReader_noClosingDelimiter_reportsMissingAfterAtEof() {
+    ParseException thrown = assertThrows(
+        ParseException.class,
+        () -> nestedBy("(", ")").parseToStream(new StringReader("(foo")).count());
+    assertThat(thrown).hasMessageThat().contains("1:5");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
+  }
+
+  @Test public void nestedByWithEscapes_unclosedOuter_reportsMissingAfterAtEof() {
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> nestedByWithEscapes('(', ')', chars(1)).parse("(foo (bar)"));
+    assertThat(thrown).hasMessageThat().contains("1:11");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
+  }
+
+  @Test public void nestedByWithEscapes_danglingEscape_reportsAtEof() {
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> nestedByWithEscapes('(', ')', chars(1)).parse("(foo \\"));
+    assertThat(thrown).hasMessageThat().contains("1:7");
+    assertThat(thrown).hasMessageThat().contains("expecting <1 char(s)>");
+  }
+
+  @Test public void nestedByWithEscapes_invalidEscape_reportsAtEscapedChar() {
+    Parser<String> parser = nestedByWithEscapes('(', ')', one("[()]").map(String::valueOf));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("(foo \\a)"));
+    assertThat(thrown).hasMessageThat().contains("1:7");
+    assertThat(thrown).hasMessageThat().contains("expecting <[()]>");
+  }
+
+  @Test public void nestedByWithEscapes_escapeAtStart() {
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parse("(\\)foo)")).isEqualTo(")foo");
+  }
+
+  @Test public void nestedByWithEscapes_escapeBeforeClosingDelimiter() {
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parse("(foo\\))")).isEqualTo("foo)");
+  }
+
+  @Test public void nestedByWithEscapes_consecutiveEscapes() {
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parse("(\\(\\))")).isEqualTo("()");
+  }
+
+  @Test public void nestedByWithEscapes_nestedDelimitersAfterEscape_keptLiterally() {
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parse("(a\\)b(c)d)")).isEqualTo("a)b(c)d");
+  }
+
+  @Test public void nestedByWithEscapes_nestedDelimitersBeforeEscape_keptLiterally() {
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parse("(a(b)c\\)d)")).isEqualTo("a(b)c)d");
+  }
+
+  @Test public void nestedByWithEscapes_zeroWidthEscapeBeforeClosingDelimiter_keepsBackslash() {
+    Parser<String> parser =
+        nestedByWithEscapes('(', ')', one("[!]").map(String::valueOf).orElse("\\"));
+    assertThat(parser.parse("(a\\)")).isEqualTo("a\\");
+  }
+
+  @Test public void nestedByWithEscapes_nulAfterDelimiter_notTreatedAsEof() {
+    assertThat(nestedByWithEscapes('(', '\0', chars(1)).parse("(a\0")).isEqualTo("a");
+  }
+
+  @Test public void nestedByWithEscapes_withReader_noEscape() {
+    assertThat(
+            nestedByWithEscapes('(', ')', chars(1))
+                .parseToStream(new StringReader("(foo (bar) baz)")))
+        .containsExactly("foo (bar) baz");
+  }
+
+  @Test public void nestedByWithEscapes_withReader_withEscape() {
+    assertThat(
+            nestedByWithEscapes('(', ')', chars(1))
+                .parseToStream(new StringReader("(foo \\) (bar) baz)")))
+        .containsExactly("foo ) (bar) baz");
+  }
+
+  @Test public void nestedByWithEscapes_withReader_contentSpanningMultiplePages() {
+    String input = "(" + "x".repeat(10000) + "\\(" + "y".repeat(10000) + ")";
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parseToStream(new StringReader(input)))
+        .containsExactly("x".repeat(10000) + "(" + "y".repeat(10000));
+  }
+
+  @Test public void nestedByWithEscapes_withReader_escapeAcrossPageBoundary() {
+    // The backslash is the last char of the 8192-char read buffer.
+    String input = "(" + "x".repeat(8190) + "\\)y)";
+    assertThat(nestedByWithEscapes('(', ')', chars(1)).parseToStream(new StringReader(input)))
+        .containsExactly("x".repeat(8190) + ")y");
+  }
+
+  @Test public void nestedByWithEscapes_withReader_escapeAfterBufferCompaction() {
+    // The 200K chars consumed by the first match exceed the 128K buffer compaction threshold.
+    String input = "(" + "x".repeat(200_000) + ")" + "(a\\)b)";
+    assertThat(
+            nestedByWithEscapes('(', ')', chars(1)).parseToStream(new StringReader(input)).skip(1))
+        .containsExactly("a)b");
+  }
+
+  @Test public void nestedByWithEscapes_withReader_unclosed_reportsMissingAfterAtEof() {
+    ParseException thrown = assertThrows(
+        ParseException.class,
+        () -> nestedByWithEscapes('(', ')', chars(1))
+            .parseToStream(new StringReader("(foo (bar)"))
+            .count());
+    assertThat(thrown).hasMessageThat().contains("1:11");
+    assertThat(thrown).hasMessageThat().contains("expecting <)>");
   }
 
   @Test public void testNulls() throws Exception {

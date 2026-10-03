@@ -137,9 +137,14 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | **120 Programming Keywords (CS)** | **28.72** 🚀 ☕ | 0.92 | 0.47 | 0.71 | 0.49 | 0.19 | 14.23 | 6.67 | 0.10 | 0.53 | — | **`dot`** 🚀 ☕ |
 | **120 Programming Keywords (CI)** | **19.00** 🚀 ☕ | 0.82 | 0.45 | 0.73 | 0.45 | 0.07 | 0.44 | 6.66 | 0.07 | 0.60 | — | **`dot`** 🚀 ☕ |
 | **Calculator (Math)** | **701** ☕ | 345 | **1,163** 🚀 | 407 | 411 | 190 | 113 | 366 | 184 | 350 | 238 | **`fastparse`** 🚀<br>Java: **`dot`** ☕ |
-| **Nested Comments** | **10,681** 🚀 ☕ | 2,229 | 5,037 | 2,162 | 706 | 591 | 352 | 1,087 | 245 | 971 | 1,349 | **`dot`** 🚀 ☕ |
+| **Nested Comments** | **24,205** 🚀 ☕ | 2,344 | 4,737 | 2,131 | 696 | 642 | 389 | 1,104 | 251 | 1,018 | 1,339 | **`dot`** 🚀 ☕ |
 | **US Phone (Single)** | **15,005** 🚀 ☕ | 7,107 | 8,446 | 11,439 | 13,992 | 8,501 | 4,226 | 5,851 | 3,183 | 6,666 | 9,607 | **`dot`** 🚀 ☕ |
 | **US Phone (1,000-List)** | **11.67** 🚀 ☕ | 9.31 | 8.97 | 11.20 | 8.53 | 1.83 | 3.68 | 7.50 | 2.81 | 5.32 | 5.28 | **`dot`** 🚀 ☕ |
+
+The *Nested Comments* row was re-measured on 2026-10-03 (JDK 24.0.1, Apple M3 Pro, macOS 15.7.9)
+after `nestedBy()` switched to `indexOf()`-based delimiter search. Each number is the mean of 7
+single-fork JMH passes (3 warmup and 5 measurement iterations each); the 95% confidence intervals
+are ± 265 for `dot-parse` and ± 151 for `fastparse`.
 
 ---
 
