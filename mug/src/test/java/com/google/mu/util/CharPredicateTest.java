@@ -288,6 +288,24 @@ public class CharPredicateTest {
     assertThrows(NullPointerException.class, () -> CharPredicate.ANY.and(null));
   }
 
+  @Test public void any_or_returnsAny() {
+    CharPredicate digits = CharPredicate.range('0', '9');
+    assertThat(CharPredicate.ANY.or(digits)).isSameInstanceAs(CharPredicate.ANY);
+  }
+
+  @Test public void any_or_nullPredicate_throws() {
+    assertThrows(NullPointerException.class, () -> CharPredicate.ANY.or((CharPredicate) null));
+  }
+
+  @Test public void none_and_returnsNone() {
+    CharPredicate digits = CharPredicate.range('0', '9');
+    assertThat(CharPredicate.NONE.and(digits)).isSameInstanceAs(CharPredicate.NONE);
+  }
+
+  @Test public void none_and_nullPredicate_throws() {
+    assertThrows(NullPointerException.class, () -> CharPredicate.NONE.and(null));
+  }
+
   @Test public void default_skipLeading_emptyCharSequence() {
     CharPredicate isA = c -> c == 'a';
     assertThat(isA.skipLeading("", 0)).isEqualTo(0);

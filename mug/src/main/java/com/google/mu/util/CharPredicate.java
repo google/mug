@@ -69,6 +69,11 @@ public interface CharPredicate {
       return true;
     }
 
+    @Override public CharPredicate or(CharPredicate that) {
+      requireNonNull(that);
+      return this;
+    }
+
     @Override public CharPredicate and(CharPredicate that) {
       return requireNonNull(that);
     }
@@ -98,6 +103,11 @@ public interface CharPredicate {
 
     @Override public CharPredicate or(CharPredicate that) {
       return requireNonNull(that);
+    }
+
+    @Override public CharPredicate and(CharPredicate that) {
+      requireNonNull(that);
+      return this;
     }
 
     @Override public CharPredicate not() {
