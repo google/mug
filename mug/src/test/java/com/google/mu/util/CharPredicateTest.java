@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
 import org.junit.Test;
@@ -269,6 +270,24 @@ public class CharPredicateTest {
     assertThat(CharPredicate.NONE.not()).isSameInstanceAs(CharPredicate.ANY);
   }
 
+  @Test public void none_or_returnsThat() {
+    CharPredicate digits = CharPredicate.range('0', '9');
+    assertThat(CharPredicate.NONE.or(digits)).isSameInstanceAs(digits);
+  }
+
+  @Test public void none_or_nullPredicate_throws() {
+    assertThrows(NullPointerException.class, () -> CharPredicate.NONE.or((CharPredicate) null));
+  }
+
+  @Test public void any_and_returnsThat() {
+    CharPredicate digits = CharPredicate.range('0', '9');
+    assertThat(CharPredicate.ANY.and(digits)).isSameInstanceAs(digits);
+  }
+
+  @Test public void any_and_nullPredicate_throws() {
+    assertThrows(NullPointerException.class, () -> CharPredicate.ANY.and(null));
+  }
+
   @Test public void default_skipLeading_emptyCharSequence() {
     CharPredicate isA = c -> c == 'a';
     assertThat(isA.skipLeading("", 0)).isEqualTo(0);
@@ -340,6 +359,66 @@ public class CharPredicateTest {
 
   @Test public void noneOf_skipLeading_matchesNonChars() {
     assertThat(CharPredicate.noneOf("abc").skipLeading("xyz123abc", 0)).isEqualTo(6);
+  }
+
+  @Test public void isNot_skipLeading_stopsAtChar() {
+    assertThat(isNot('\'').skipLeading("abc'def", 0)).isEqualTo(3);
+  }
+
+  @Test public void isNot_skipLeading_charAbsent_returnsLength() {
+    assertThat(isNot('\'').skipLeading("abcdef", 0)).isEqualTo(6);
+  }
+
+  @Test public void isNot_skipLeading_charAtFromIndex_returnsFromIndex() {
+    assertThat(isNot('\'').skipLeading("ab'cd", 2)).isEqualTo(2);
+  }
+
+  @Test public void isNot_skipLeading_fromOffset_ignoresEarlierChar() {
+    assertThat(isNot('\'').skipLeading("'ab'cd", 1)).isEqualTo(3);
+  }
+
+  @Test public void isNot_skipLeading_emptyString() {
+    assertThat(isNot('\'').skipLeading("", 0)).isEqualTo(0);
+  }
+
+  @Test public void isNot_skipLeading_fromIndexAtEnd_returnsLength() {
+    assertThat(isNot('\'').skipLeading("abc", 3)).isEqualTo(3);
+  }
+
+  @Test public void isNot_skipLeading_fromIndexPastEnd_returnsFromIndex() {
+    assertThat(isNot('\'').skipLeading("abc", 5)).isEqualTo(5);
+  }
+
+  @Test public void isNot_skipLeading_negativeFromIndex_throws() {
+    assertThrows(IndexOutOfBoundsException.class, () -> isNot('\'').skipLeading("abc", -1));
+  }
+
+  @Test public void isNot_skipLeading_nullCharSequence_throws() {
+    assertThrows(NullPointerException.class, () -> isNot('\'').skipLeading(null, 0));
+  }
+
+  @Test public void isNot_skipLeading_utf16String_stopsAtChar() {
+    assertThat(isNot('\'').skipLeading("\u4E2D\u6587'x", 0)).isEqualTo(2);
+  }
+
+  @Test public void isNot_skipLeading_nonLatin1Char_stopsAtChar() {
+    assertThat(isNot('\u6587').skipLeading("\u4E2D\u6587x", 0)).isEqualTo(1);
+  }
+
+  @Test public void isNot_skipLeading_nonLatin1CharAbsentFromLatin1String_returnsLength() {
+    assertThat(isNot('\u6587').skipLeading("abc", 0)).isEqualTo(3);
+  }
+
+  @Test public void isNot_skipLeading_loneHighSurrogate_matchesCodeUnit() {
+    assertThat(isNot('\uD83D').skipLeading("ab\uD83D\uDE00", 0)).isEqualTo(2);
+  }
+
+  @Test public void isNot_skipLeading_stringBuilder_stopsAtChar() {
+    assertThat(isNot('\'').skipLeading(new StringBuilder("abc'def"), 0)).isEqualTo(3);
+  }
+
+  @Test public void isNot_skipLeading_stringBuilder_charAbsent_returnsLength() {
+    assertThat(isNot('\'').skipLeading(new StringBuilder("abcdef"), 0)).isEqualTo(6);
   }
 
   @Test public void matchesAllOf_empty_isTrue() {
