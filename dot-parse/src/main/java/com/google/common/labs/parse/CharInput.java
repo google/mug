@@ -50,18 +50,20 @@ abstract class CharInput {
    */
   abstract int indexOf(String str, int fromIndex, int toIndex);
 
-  /** Returns a {@link Matcher} for the given regex pattern starting from {@code start} index. */
-  abstract Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start);
+  /**
+   * Matches the given regex pattern starting from {@code start} index. Returns null if no match is
+   * found.
+   */
+  abstract RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start);
 
   /**
-   * Matches the given regex pattern starting from {@code start} index and returns the ending index
-   * (exclusive). Returns {@code start} if no match is found.
+   * A successful regex match. {@code endIndex} is the exclusive end index in the input, which can
+   * differ from {@code matcher.end()} for Reader-based input.
    */
-  abstract int match(Pattern pattern, RegexPattern.Metadata metadata, int start);
-
-  /** Translates the end index of the given {@code matcher} to the logical index in the input. */
-  int matchEnd(Matcher matcher) {
-    return matcher.end();
+  record RegexMatch(Matcher matcher, int endIndex) {
+    String group(int group) {
+      return matcher.group(group);
+    }
   }
 
   final boolean startsWith(CharPredicate predicate, int index) {
@@ -122,15 +124,10 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex, Math.min(toIndex, text.length()));
       }
 
-      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+      @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         Matcher matcher = pattern.matcher(text);
         matcher.region(start, text.length());
-        return matcher;
-      }
-
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
-        Matcher matcher = matcher(pattern, metadata, start);
-        return matcher.lookingAt() ? matcher.end() : start;
+        return matcher.lookingAt() ? new RegexMatch(matcher, matcher.end()) : null;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -225,7 +222,7 @@ abstract class CharInput {
         return -1;
       }
 
-      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+      @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         long requiredCharCount = (long) start + metadata.maxSize();
         if (requiredCharCount >= Integer.MAX_VALUE) {
           throw new UnsupportedOperationException(
@@ -235,16 +232,7 @@ abstract class CharInput {
         ensureCharCount((int) requiredCharCount);
         Matcher matcher = pattern.matcher(chars);
         matcher.region(toPhysicalIndex(start), chars.length());
-        return matcher;
-      }
-
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
-        Matcher matcher = matcher(pattern, metadata, start);
-        return matcher.lookingAt() ? toLogicalIndex(matcher.end()) : start;
-      }
-
-      @Override int matchEnd(Matcher matcher) {
-        return toLogicalIndex(matcher.end());
+        return matcher.lookingAt() ? new RegexMatch(matcher, toLogicalIndex(matcher.end())) : null;
       }
 
       @Override boolean startsWith(String prefix, int index) {

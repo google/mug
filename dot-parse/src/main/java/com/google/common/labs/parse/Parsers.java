@@ -27,6 +27,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.parse.CharInput.RegexMatch;
 import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -42,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -774,7 +774,7 @@ public final class Parsers {
   }
 
   private static <T> Parser<T> regex(
-      String pattern, int expectedGroups, Function<? super Matcher, ? extends T> mapper) {
+      String pattern, int expectedGroups, Function<? super RegexMatch, ? extends T> mapper) {
     Pattern jdkPattern = Pattern.compile(pattern);
     int groupCount = jdkPattern.matcher("").groupCount();
     checkArgument(
@@ -786,19 +786,18 @@ public final class Parsers {
 
   private static <T> Parser<T> regex(
       RegexPattern ast, Pattern jdkPattern, String name,
-      Function<? super Matcher, ? extends T> mapper) {
+      Function<? super RegexMatch, ? extends T> mapper) {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Parser<T>() {
       @Override MatchResult<T> skipAndMatch(
           Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
           ErrorContext context) {
         start = Parser.skipIfAny(preskipper, input, start);
-        Matcher matcher = input.matcher(jdkPattern, metadata, start);
-        if (!matcher.lookingAt()) {
+        RegexMatch match = input.match(jdkPattern, metadata, start);
+        if (match == null) {
           return context.expecting(name, start);
         }
-        int end = input.matchEnd(matcher);
-        return new MatchResult.Success<>(start, end, mapper.apply(matcher));
+        return new MatchResult.Success<>(start, match.endIndex(), mapper.apply(match));
       }
 
       @Override Set<String> computePrefixes() {
@@ -819,7 +818,8 @@ public final class Parsers {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Scanner(name) {
       @Override int scan(CharInput input, int from, ErrorContext context) {
-        return input.match(jdkPattern, metadata, from);
+        RegexMatch match = input.match(jdkPattern, metadata, from);
+        return match == null ? from : match.endIndex();
       }
 
       @Override Set<String> computePrefixes() {
