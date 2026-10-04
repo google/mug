@@ -69,6 +69,15 @@ public interface CharPredicate {
       return true;
     }
 
+    @Override public CharPredicate or(CharPredicate that) {
+      requireNonNull(that);
+      return this;
+    }
+
+    @Override public CharPredicate and(CharPredicate that) {
+      return requireNonNull(that);
+    }
+
     @Override public CharPredicate not() {
       return NONE;
     }
@@ -90,6 +99,15 @@ public interface CharPredicate {
   CharPredicate NONE = new CharPredicate() {
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public CharPredicate or(CharPredicate that) {
+      return requireNonNull(that);
+    }
+
+    @Override public CharPredicate and(CharPredicate that) {
+      requireNonNull(that);
+      return this;
     }
 
     @Override public CharPredicate not() {
@@ -159,6 +177,14 @@ public interface CharPredicate {
 
       @Override public CharPredicate not() {
         return is(ch);
+      }
+
+      @Override public int skipLeading(CharSequence s, int fromIndex) {
+        if (s instanceof String && fromIndex >= 0 && fromIndex <= s.length()) {
+          int i = ((String) s).indexOf(ch, fromIndex);
+          return i < 0 ? s.length() : i;
+        }
+        return CharPredicate.super.skipLeading(s, fromIndex);
       }
 
       @Override public CharPredicate precomputeForAscii() {

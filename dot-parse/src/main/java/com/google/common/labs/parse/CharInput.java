@@ -44,18 +44,26 @@ abstract class CharInput {
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
 
-  /** Returns a {@link Matcher} for the given regex pattern starting from {@code start} index. */
-  abstract Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start);
+  /**
+   * Returns the index of {@code str} lying entirely within {@code [fromIndex, untilIndex)}, or -1 if
+   * not found. {@code untilIndex} can be past EOF.
+   */
+  abstract int indexOf(String str, int fromIndex, int untilIndex);
 
   /**
-   * Matches the given regex pattern starting from {@code start} index and returns the ending index
-   * (exclusive). Returns {@code start} if no match is found.
+   * Matches the given regex pattern starting from {@code start} index. Returns null if no match is
+   * found.
    */
-  abstract int match(Pattern pattern, RegexPattern.Metadata metadata, int start);
+  abstract RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start);
 
-  /** Translates the end index of the given {@code matcher} to the logical index in the input. */
-  int matchEnd(Matcher matcher) {
-    return matcher.end();
+  /**
+   * A successful regex match. {@code endIndex} is the exclusive end index in the input, which can
+   * differ from {@code matcher.end()} for Reader-based input.
+   */
+  record RegexMatch(Matcher matcher, int endIndex) {
+    String group(int group) {
+      return matcher.group(group);
+    }
   }
 
   final boolean startsWith(CharPredicate predicate, int index) {
@@ -78,6 +86,12 @@ abstract class CharInput {
 
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
   abstract String snippet(int index, int maxChars);
+
+  /**
+   * Appends the characters in {@code [fromIndex, untilIndex)} to {@code builder}. It's assumed that
+   * these characters have been read.
+   */
+  abstract void appendTo(StringBuilder builder, int fromIndex, int untilIndex);
 
   /** characters before {@code checkpointIndex} are no longer needed. */
   void markCheckpoint(int checkpointIndex) {}
@@ -106,15 +120,14 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex);
       }
 
-      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
-        Matcher matcher = pattern.matcher(text);
-        matcher.region(start, text.length());
-        return matcher;
+      @Override int indexOf(String str, int fromIndex, int untilIndex) {
+        return text.indexOf(str, fromIndex, Math.min(untilIndex, text.length()));
       }
 
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
-        Matcher matcher = matcher(pattern, metadata, start);
-        return matcher.lookingAt() ? matcher.end() : start;
+      @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+        Matcher matcher = pattern.matcher(text);
+        matcher.region(start, text.length());
+        return matcher.lookingAt() ? new RegexMatch(matcher, matcher.end()) : null;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -136,6 +149,10 @@ abstract class CharInput {
 
       @Override String snippet(int index, int maxLength) {
         return text.substring(index, Math.min(text.length(), index + maxLength));
+      }
+
+      @Override void appendTo(StringBuilder builder, int fromIndex, int untilIndex) {
+        builder.append(text, fromIndex, untilIndex);
       }
 
       @Override String sourcePosition(int at) {
@@ -195,7 +212,19 @@ abstract class CharInput {
         }
       }
 
-      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+      @Override int indexOf(String str, int fromIndex, int untilIndex) {
+        ensureCharCount(untilIndex);
+        int from = toPhysicalIndex(fromIndex);
+        int to = Math.min(toPhysicalIndex(untilIndex), chars.length());
+        if (to - from < str.length()) {
+          return -1;
+        }
+        // chars.indexOf() would scan all loaded chars past untilIndex.
+        int found = chars.substring(from, to).indexOf(str);
+        return found < 0 ? -1 : toLogicalIndex(from + found);
+      }
+
+      @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         long requiredCharCount = (long) start + metadata.maxSize();
         if (requiredCharCount >= Integer.MAX_VALUE) {
           throw new UnsupportedOperationException(
@@ -205,16 +234,7 @@ abstract class CharInput {
         ensureCharCount((int) requiredCharCount);
         Matcher matcher = pattern.matcher(chars);
         matcher.region(toPhysicalIndex(start), chars.length());
-        return matcher;
-      }
-
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
-        Matcher matcher = matcher(pattern, metadata, start);
-        return matcher.lookingAt() ? toLogicalIndex(matcher.end()) : start;
-      }
-
-      @Override int matchEnd(Matcher matcher) {
-        return toLogicalIndex(matcher.end());
+        return matcher.lookingAt() ? new RegexMatch(matcher, toLogicalIndex(matcher.end())) : null;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -283,6 +303,10 @@ abstract class CharInput {
         ensureCharCount(index + maxLength);
         index = toPhysicalIndex(index);
         return chars.substring(index, Math.min(chars.length(), index + maxLength));
+      }
+
+      @Override void appendTo(StringBuilder builder, int fromIndex, int untilIndex) {
+        builder.append(chars, toPhysicalIndex(fromIndex), toPhysicalIndex(untilIndex));
       }
 
       @Override void markCheckpoint(int checkpointIndex) {

@@ -466,13 +466,34 @@ Parser<TypeDecl> typeDecl =
   use `atLeastOnce()`, `atLeastOnceDelimitedBy()`, `zeroOrMore()` and
   `zeroOrMoreDelimitedBy()` instance methods, and `consecutive()` and
   `zeroOrMore()` static factory methods.
-- **Always** verify the existence of a method in `Parser.java`,
+- **Always** verify the existence of a method in `Parser.java`, `Parsers.java`,
   `CharPredicate.java` or `CharacterSet.java`, `OperatorTable.java` before
   generating code using it.
 - **Whitelist of Common Methods** to keep you grounded:
 
   - **Use** primitives: `string(s)`, `one(char)`, `one(characterClass)`,
     `digits()`, `word()`, `consecutive(characterClass)`
+  - **Use** number constants in `Parsers`: `UNSIGNED_INTEGER` (e.g. `15`, `0`),
+    `UNSIGNED_DECIMAL` (e.g. `1.23`, `15`) and `SIGNED_DOUBLE` (e.g. `-1.23e+4`).
+    `UNSIGNED_INTEGER` and `UNSIGNED_DECIMAL` produce `String`, so map them,
+    e.g. `UNSIGNED_INTEGER.map(Long::parseLong)`. `SIGNED_DOUBLE` produces
+    `Double`; call `.source()` for the raw text, e.g.
+    `SIGNED_DOUBLE.source().map(BigDecimal::new)`.
+  - **Use** `Parsers.regex(pattern)` for leaf-level tokens that are easier to
+    express in regex than with combinators (e.g. fixed-width or intricate
+    lexical formats). Use the capture-group overloads to extract group values:
+    `regex(pattern, g1 -> ...)`, `regex(pattern, (g1, g2) -> ...)`, up to 8
+    groups. The number of capturing groups must equal the mapper arity;
+    unmatched optional groups are passed as `null`. Keep regex at the leaf
+    level; compose structure (nesting, recursion, delimiters) with combinators.
+    Pre-create and reuse the returned parser since the pattern is compiled on
+    each call.
+
+    ```java
+    Parser<PhoneNumber> phoneNumber = regex(
+        "\\((?<areaCode>\\d{3})\\) \\d{3}-\\d{4}(?: x(?<extension>\\d+))?",
+        (areaCode, extension) -> new PhoneNumber(areaCode, extension));
+    ```
   - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
@@ -480,7 +501,7 @@ Parser<TypeDecl> typeDecl =
   - **Use** boundaries: `between(...)`, `immediatelyBetween(...)`,
     `followedBy(...)`, `then(...)`
 - If you need a method not listed above, you MUST open and read `Parser.java`
-  to check if it exists.
+  or `Parsers.java` to check if it exists.
 
 ## 10. Common Pitfalls & Guardrails
 

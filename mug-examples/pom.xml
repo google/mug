@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>11.2-SNAPSHOT</version>
+      <version>11.3-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-examples</artifactId>
@@ -11,6 +11,7 @@
   <name>Examples</name>
   <properties>
     <module.name>examples</module.name>
+    <maven.compiler.release>21</maven.compiler.release>
   </properties>
 
   <build>
@@ -51,11 +52,59 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/mapflag/antlr/**</exclude>
+            <exclude>**/mapflag/jjparse/**</exclude>
+            <exclude>**/mapflag/jparsec/**</exclude>
+            <exclude>**/mapflag/parsecj/**</exclude>
+            <exclude>**/mapflag/petitparser/**</exclude>
+            <exclude>**/mapflag/taker/**</exclude>
+          </excludes>
+          <testExcludes>
+            <exclude>**/mapflag/MapFlagBenchmark.java</exclude>
+            <exclude>**/mapflag/antlr/**</exclude>
+            <exclude>**/mapflag/betterparse/**</exclude>
+            <exclude>**/mapflag/catsparse/**</exclude>
+            <exclude>**/mapflag/jjparse/**</exclude>
+            <exclude>**/mapflag/jparsec/**</exclude>
+            <exclude>**/mapflag/parsecj/**</exclude>
+            <exclude>**/mapflag/petitparser/**</exclude>
+            <exclude>**/mapflag/taker/**</exclude>
+          </testExcludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/mapflag/antlr/**</exclude>
+            <exclude>**/mapflag/betterparse/**</exclude>
+            <exclude>**/mapflag/catsparse/**</exclude>
+            <exclude>**/mapflag/jjparse/**</exclude>
+            <exclude>**/mapflag/jparsec/**</exclude>
+            <exclude>**/mapflag/parsecj/**</exclude>
+            <exclude>**/mapflag/petitparser/**</exclude>
+            <exclude>**/mapflag/taker/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>mug</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dot-parse</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -95,4 +144,152 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>showdown</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.github.petitparser</groupId>
+          <artifactId>petitparser-core</artifactId>
+          <version>2.3.1</version>
+        </dependency>
+        <dependency>
+          <groupId>io.github.parseworks</groupId>
+          <artifactId>taker</artifactId>
+          <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+          <groupId>org.jparsec</groupId>
+          <artifactId>jparsec</artifactId>
+          <version>3.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.javafp</groupId>
+          <artifactId>parsecj</artifactId>
+          <version>0.6</version>
+        </dependency>
+        <dependency>
+          <groupId>io.github.bjoernloetters</groupId>
+          <artifactId>jjparse-core</artifactId>
+          <version>1.2.5</version>
+        </dependency>
+        <dependency>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+          <version>4.13.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+          <version>2.13.12</version>
+        </dependency>
+        <dependency>
+          <groupId>org.typelevel</groupId>
+          <artifactId>cats-parse_2.13</artifactId>
+          <version>1.0.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>1.9.22</version>
+        </dependency>
+        <dependency>
+          <groupId>com.github.h0tk3y.betterParse</groupId>
+          <artifactId>better-parse-jvm</artifactId>
+          <version>0.4.4</version>
+        </dependency>
+        <dependency>
+          <groupId>org.openjdk.jmh</groupId>
+          <artifactId>jmh-core</artifactId>
+          <version>1.37</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <useIncrementalCompilation>false</useIncrementalCompilation>
+              <excludes combine.self="override" />
+              <testExcludes combine.self="override" />
+              <annotationProcessorPaths combine.children="append">
+                <path>
+                  <groupId>org.openjdk.jmh</groupId>
+                  <artifactId>jmh-generator-annprocess</artifactId>
+                  <version>1.37</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludes combine.self="override" />
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-maven-plugin</artifactId>
+            <version>4.13.1</version>
+            <executions>
+              <execution>
+                <id>antlr</id>
+                <goals>
+                  <goal>antlr4</goal>
+                </goals>
+                <configuration>
+                  <visitor>false</visitor>
+                  <listener>false</listener>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>4.8.1</version>
+            <executions>
+              <execution>
+                <id>scala-compile</id>
+                <goals>
+                  <goal>add-source</goal>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <scalaVersion>2.13.12</scalaVersion>
+              <includes>
+                <include>**/*.scala</include>
+              </includes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>1.9.22</version>
+            <executions>
+              <execution>
+                <id>kotlin-compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+            </executions>
+            <configuration>
+              <jvmTarget>21</jvmTarget>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

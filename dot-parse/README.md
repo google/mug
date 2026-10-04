@@ -5,7 +5,7 @@ Low-boilerplate, fast, idiomatic Java parser combinator, aimed to replace regex 
 ### How is dot-parse different from the other 27 parser combinators created in the past 15 years?
 
 - The first and _only_ Java combinator designed to **supersede Regex**.
-- One of the few that prioritizes **developer velocity** and learning curve over academic "monad" theory.
+- One of the few that prioritizes **developer velocity** and learning curve over academic "monad" theory ([code comparison](./demo.md)).
 - The first and _only_ Java combinator that completely eliminates nasty **infinite loops** and ***`StackOverflowError`*** from left recursion.
 - **Freakin fast**! (faster than regex, and mainstream parser generators like ANTLR and JavaCC - [benchmark](./BENCHMARK.md)).
 - Idiomatic Java API - you don't need to know Haskell, Scala or the Monad theory.
@@ -34,7 +34,7 @@ Regex Pattern      | Parser Equivalent                                          
 `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
 `0\|[1-9]\d*`       | `Parsers.UNSIGNED_INTEGER`                                 | Matches an unsigned integer without leading zeros.
 `(?:0\|[1-9]\d*)(?:\.\d+)?` | `Parsers.UNSIGNED_DECIMAL`                         | Matches an unsigned decimal point number.
-`-?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`         | Matches a JSON-compliant signed double-precision number.
+`[+-]?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`     | Matches a signed double-precision number (JSON number syntax plus an optional leading `+`).
 `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 `if\b`             | `word("if")`                                                | Matches the whole word "if".
 `(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.
@@ -619,7 +619,7 @@ For more details, check out [left-recursion.md](./left-recursion.md).
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>11.1</version>
+  <version>11.2</version>
 </dependency>
 ```
 

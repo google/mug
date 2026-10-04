@@ -326,7 +326,7 @@ public final class DateTimeFormatsTest {
     assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 pm (hh:mm a)");
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void twoDigitHourMinute_midnightAmMarker() {
     assertLocalTime("12:00 AM", "hh:mm a").isEqualTo(LocalTime.of(0, 0, 0));
   }
@@ -348,7 +348,7 @@ public final class DateTimeFormatsTest {
     assertLocalTime("09:00:30AM", "hh:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
     assertLocalTime("10:00:30 PM", "hh:mm:ss a").isEqualTo(LocalTime.of(22, 0, 30));
   }
@@ -455,7 +455,7 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123000000), ZoneOffset.UTC));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void commaSeparatedMillis_formatOf() {
     assertThat(LocalDateTime.parse("2026-09-18 10:15:30,123", formatOf("2011-12-03 10:15:30,000")))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 10, 15, 30, 123000000));
@@ -545,8 +545,7 @@ public final class DateTimeFormatsTest {
                 ZoneId.of("America/Los_Angeles")));
   }
 
-  // TODO: remove the suppression after mug-errorprone is released with this fix.
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void zoneIdInBrackets_withoutOffset() {
     assertThat(
             ZonedDateTime.parse(
@@ -564,14 +563,14 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15), ZoneId.of("Europe/Paris")));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void formatOf_quotedLiteralContainingZzz() {
     DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'it''s napping zzz...'");
     assertThat(LocalDateTime.parse("2026-09-18 11:15:00 it's napping zzz...", formatter))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 11, 15, 0));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void formatOf_escapedQuoteBeforeZoneAndQuotedLiteral() {
     overrideTimeZone("Asia/Shanghai");
     DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> ''<PST> 'zzz'");
@@ -627,7 +626,7 @@ public final class DateTimeFormatsTest {
   }
 
   /** Brackets are literal text, so a bracketed date is a date, not a zone id. */
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void bracketedDate_notTreatedAsZoneId() {
     assertThat(LocalDateTime.parse("[2011-12-03] 10:15:30", formatOf("[2011-12-03] 10:15:30")))
         .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
@@ -785,7 +784,6 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2026, 5, 4, 12, 0, 0), ZoneId.of("America/Los_Angeles")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void golangReferenceTimestamp_formatOf() {
     DateTimeFormatter formatter = formatOf("Mon Jan 2 15:04:05 MST 2006");
     assertThat(ZonedDateTime.parse("Wed Sep 16 11:32:43 PDT 2026", formatter))
@@ -794,7 +792,6 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void golangUnixDate_spacePaddedSingleDigitDay_formatOf() {
     DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 MST 2006");
     assertThat(ZonedDateTime.parse("Mon Jan  2 15:04:05 MST 2006", formatter))
@@ -802,7 +799,6 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2006, 1, 2, 15, 4, 5), ZoneId.of("America/Denver")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void golangUnixDate_spacePaddedFormat_parsesTwoDigitDay() {
     DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 MST 2006");
     assertThat(ZonedDateTime.parse("Thu Jan 12 15:04:05 MST 2006", formatter))
@@ -815,7 +811,6 @@ public final class DateTimeFormatsTest {
         .isEqualTo(OffsetDateTime.of(2006, 1, 2, 15, 4, 5, 0, ZoneOffset.ofHours(-7)));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void golangAnsic_formatOf() {
     DateTimeFormatter formatter = formatOf("Mon Jan  2 15:04:05 2006");
     assertThat(LocalDateTime.parse("Mon Jan  2 15:04:05 2006", formatter))
@@ -875,19 +870,16 @@ public final class DateTimeFormatsTest {
         .isEqualTo(tenFifteenPm);
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void usShortTime_narrowNoBreakSpaceBeforeAmPm() {
     assertLocalTime("1:15\u202fPM", "h:mm\u202fa").isEqualTo(LocalTime.of(13, 15, 0));
     assertLocalTime("1\u202fPM", "h\u202fa").isEqualTo(LocalTime.of(13, 0, 0));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void narrowNoBreakSpace_isADelimiter() {
     assertLocalDateTime("2011-12-03\u202f10:15:30", "yyyy-MM-dd\u202fHH:mm:ss")
         .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void noBreakSpace_isADelimiter() {
     assertLocalDateTime("2011-12-03\u00a010:15:30", "yyyy-MM-dd\u00a0HH:mm:ss")
         .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
@@ -1018,7 +1010,6 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2026, 7, 15, 13, 0, 0), ZoneId.of("Europe/London")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void formatOf_defaultZoneAsiaShanghai_parsesCstAsShanghai() {
     overrideTimeZone("Asia/Shanghai");
     DateTimeFormatter formatter = formatOf("Wed Sep 16 11:32:43 PDT 2026");
@@ -1027,7 +1018,6 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("Asia/Shanghai")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void formatOf_zzzOutsidePlaceholder_notModified() {
     overrideTimeZone("Asia/Shanghai");
     DateTimeFormatter formatter = formatOf("<Sat 2026/09/19 11:32:43> zzz");
@@ -1036,7 +1026,6 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2026, 7, 16, 2, 0, 0), ZoneId.of("America/Chicago")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void parenthesizedZoneNameWithNumericDateTime_pinsEnglishLocale() {
     DateTimeFormatter formatter = formatOf("2026-09-16 11:32:43 (Pacific Standard Time)");
     assertThat(ZonedDateTime.parse("2026-09-16 11:32:43 (Pacific Daylight Time)", formatter))
@@ -1045,7 +1034,6 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2026, 9, 16, 11, 32, 43), ZoneId.of("America/Los_Angeles")));
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void chineseZoneName_defaultZoneNotShanghai_resolvesToAsiaShanghai() {
     overrideTimeZone("America/Los_Angeles");
     assertThat(DateTimeFormats.parseZonedDateTime("2011年12月3日星期六 中国标准时间 10:15:30"))
@@ -1065,7 +1053,6 @@ public final class DateTimeFormatsTest {
             "invalid date time example: Wed Sep 16 2026 11:32:43 GMT-0700 (Pacific Bogus Time)");
   }
 
-  @SuppressWarnings("DateTimeExampleStringCheck") // TODO: remove after mug-errorprone release
   @Test public void bareGmtFourDigitOffset_roundTrips() {
     DateTimeFormatter formatter = formatOf("2011-12-03 10:15:30 GMT+0800");
     ZonedDateTime time =
@@ -1538,7 +1525,7 @@ public final class DateTimeFormatsTest {
         DateTimeParseException.class, () -> DateTimeFormats.parseToInstant("2000-40-01T00:00:00Z"));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void commaBeforeYear_followedByTimeAndZoneId() {
     assertThat(
             ZonedDateTime.parse(
@@ -1678,14 +1665,13 @@ public final class DateTimeFormatsTest {
         "dd-M-yyyy HH:mm:ss VV");
   }
 
-  // TODO: remove the suppressions after mug-errorprone is released with this fix.
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void mmddyyyy_precededByWeekday() {
     assertThat(LocalDate.parse("Fri 01/23/2015", formatOf("Thu 10/30/2014")))
         .isEqualTo(LocalDate.of(2015, 1, 23));
   }
 
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void ddmmyyyy_precededByWeekday() {
     assertThat(LocalDate.parse("Fri 23/01/2015", formatOf("Thu 30/10/2014")))
         .isEqualTo(LocalDate.of(2015, 1, 23));
@@ -2132,7 +2118,6 @@ public final class DateTimeFormatsTest {
   }
 
   /** The target reuses the example's digit shape: a two-digit month and a one-digit day. */
-  @SuppressWarnings("DateTimeExampleStringCheck")
   @Test public void chineseZoneName_formatOf() {
     DateTimeFormatter formatter = formatOf("2011年12月3日星期六 中国标准时间 10:15:30");
     assertThat(ZonedDateTime.parse("2025年12月3日星期三 中国标准时间 00:00:00", formatter))
@@ -2232,24 +2217,19 @@ public final class DateTimeFormatsTest {
    * specifier, so the era token pins {@link Locale#ENGLISH}. Unpinned, the example parses in only 6
    * of the 22 locales below -- the ones whose own era text happens to be "AD"/"BC".
    */
-  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin. Until
-  // then the compile-time check runs the old, unpinned inference against whatever locale the build
-  // machine defaults to, so it accepts or rejects these examples depending on the machine.
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void era_adSuffix_readInEnglish() {
     assertThat(LocalDate.parse("2011-12-03 AD", formatOf("2011-12-03 AD")))
         .isEqualTo(LocalDate.of(2011, 12, 3));
   }
 
-  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin.
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void era_adPrefix_readInEnglish() {
     assertThat(LocalDate.parse("AD 2011-12-03", formatOf("AD 2011-12-03")))
         .isEqualTo(LocalDate.of(2011, 12, 3));
   }
 
-  // TODO: drop @SuppressWarnings once a mug-errorprone release carries the era locale pin.
-  @Test @SuppressWarnings("DateTimeExampleStringCheck")
+  @Test
   public void era_bcSuffix_readInEnglish() {
     assertThat(LocalDate.parse("0500-12-03 BC", formatOf("0500-12-03 BC")))
         .isEqualTo(LocalDate.of(-499, 12, 3));

@@ -33,7 +33,13 @@ public class VulnerableRegexException extends IllegalArgumentException {
     return pattern;
   }
 
-  /** Returns an example input string that triggers worst-case backtracking on this regex. */
+  /**
+   * Returns an example input string that triggers worst-case backtracking on this regex.
+   *
+   * <p>A bounded repetition of more than 6 in the payload is written in pseudo-regex form, such as
+   * {@code a{12345}} or {@code (ab){7}}, meaning the element repeated that many times, instead of
+   * being spelled out.
+   */
   public String getAttackPayload() {
     return attackPayload;
   }

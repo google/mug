@@ -395,10 +395,27 @@ public final class CharInputTest {
     }
   }
 
+  @Test public void fromString_matchRegex_endIndex() {
+    CharInput input = CharInput.from("abcdefg");
+    var match = input.match(Pattern.compile("cde"), RegexPattern.of("cde").metadata(), 2);
+    assertThat(match.endIndex()).isEqualTo(5);
+  }
+
+  @Test public void fromString_matchRegex_group() {
+    CharInput input = CharInput.from("abcdefg");
+    var match = input.match(Pattern.compile("c(d)e"), RegexPattern.of("c(d)e").metadata(), 2);
+    assertThat(match.group(1)).isEqualTo("d");
+  }
+
+  @Test public void fromString_matchRegex_noMatchAtStart_returnsNull() {
+    CharInput input = CharInput.from("abcde");
+    assertThat(input.match(Pattern.compile("cd"), RegexPattern.of("cd").metadata(), 0)).isNull();
+  }
+
   @Test public void fromReader_matchRegex_loadsLazilyBasedOnStartAndMaxSize() {
     CharInput input = CharInput.from(new OneCharReader("abcdefg"));
-    int matchLength = input.match(Pattern.compile("cde"), RegexPattern.of("cde").metadata(), 2);
-    assertThat(matchLength).isEqualTo(5);
+    var match = input.match(Pattern.compile("cde"), RegexPattern.of("cde").metadata(), 2);
+    assertThat(match.endIndex()).isEqualTo(5);
   }
 
   @Test public void fromReader_matchRegex_afterCompaction() {
@@ -411,8 +428,21 @@ public final class CharInputTest {
 
     // Match "789" at index 7.
     // If the logical conversion is correct, it will return logical end index 10.
-    int matchLength = input.match(Pattern.compile("789"), RegexPattern.of("789").metadata(), 7);
-    assertThat(matchLength).isEqualTo(10);
+    var match = input.match(Pattern.compile("789"), RegexPattern.of("789").metadata(), 7);
+    assertThat(match.endIndex()).isEqualTo(10);
+  }
+
+  @Test public void fromReader_matchRegex_groupAfterCompaction() {
+    CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
+    input.charAtOrEof(9); // Advance read
+    input.markCheckpoint(6); // Compact "012345"
+    var match = input.match(Pattern.compile("7(89)"), RegexPattern.of("7(89)").metadata(), 7);
+    assertThat(match.group(1)).isEqualTo("89");
+  }
+
+  @Test public void fromReader_matchRegex_noMatchAtStart_returnsNull() {
+    CharInput input = CharInput.from(new StringReader("abcde"));
+    assertThat(input.match(Pattern.compile("cd"), RegexPattern.of("cd").metadata(), 0)).isNull();
   }
 
   @Test public void fromReader_matchRegex_maxSizeOverflowsSaturatedAdd() {
