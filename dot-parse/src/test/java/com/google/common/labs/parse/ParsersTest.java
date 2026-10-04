@@ -15,6 +15,8 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import java.io.StringReader;
 import java.time.Duration;
 import java.util.Arrays;
@@ -24,9 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class ParsersTest {
 
   @Test public void regex_matchesSimplePattern() {
@@ -473,7 +474,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 <EOF>
                 ^
             """);
@@ -552,7 +553,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 -1s
                 ^
             """);
@@ -564,7 +565,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 foo
                 ^
             """);
@@ -776,7 +777,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 -1
                 ^
             """);
@@ -789,7 +790,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 +1
                 ^
             """);
@@ -802,7 +803,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 .5
                 ^
             """);
@@ -815,7 +816,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <one or more [0-9]>, encountered:
+            at 1:5: expecting <digits>, encountered:
                 123.
                     ^
             """);
@@ -828,7 +829,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 .
                 ^
             """);
@@ -841,7 +842,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 05
                 ^
             """);
@@ -854,7 +855,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 00.5
                 ^
             """);
@@ -880,7 +881,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <one or more [0-9]>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 1..2
                   ^
             """);
@@ -906,7 +907,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 a
                 ^
             """);
@@ -919,8 +920,27 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <integer>, encountered:
+            at 1:1: expecting <decimal>, encountered:
                 <EOF>
+                ^
+            """);
+  }
+
+  @Test public void unsignedDecimal_getPrefixes_everyLeadingDigitEffectiveInAnyOf(
+      @TestParameter({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
+    Parser<String> parser = anyOf(Parsers.UNSIGNED_DECIMAL, string("abc"));
+    assertThat(parser.parse(input)).isEqualTo(input);
+  }
+
+  @Test public void unsignedDecimal_inAnyOf_aggregatesExpectedSymbol() {
+    Parser<String> parser = anyOf(Parsers.UNSIGNED_DECIMAL, string("abc"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [abc, decimal], encountered:
+                x
                 ^
             """);
   }
@@ -952,6 +972,11 @@ public class ParsersTest {
                 0 . 1
                   ^
             """);
+  }
+
+  @Test public void unsignedDecimal_parseSkipping_leadingWhitespace() {
+    assertThat(Parsers.UNSIGNED_DECIMAL.parseSkipping(Character::isWhitespace, " 1.5"))
+        .isEqualTo("1.5");
   }
 
   @Test public void unsignedInteger_parseZero() {
@@ -1048,6 +1073,12 @@ public class ParsersTest {
     assertThat(parser.parse("abc")).isEqualTo("abc");
   }
 
+  @Test public void unsignedInteger_getPrefixes_everyLeadingDigitEffectiveInAnyOf(
+      @TestParameter({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
+    Parser<String> parser = anyOf(UNSIGNED_INTEGER, string("abc"));
+    assertThat(parser.parse(input)).isEqualTo(input);
+  }
+
   @Test public void signedDouble_zero() {
     assertThat(SIGNED_DOUBLE.parse("0")).isEqualTo(0.0);
   }
@@ -1094,20 +1125,112 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 <EOF>
                 ^
             """);
   }
 
-  @Test public void signedDouble_leadingPlusThrows() {
-    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+123"));
+  @Test public void signedDouble_loneMinusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("-"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
-                +123
+            at 1:1: expecting <double>, encountered:
+                -
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_leadingPlus() {
+    assertThat(SIGNED_DOUBLE.parse("+123")).isEqualTo(123.0);
+  }
+
+  @Test public void signedDouble_leadingPlusFloatWithExponent() {
+    assertThat(SIGNED_DOUBLE.parse("+1.5e+2")).isEqualTo(150.0);
+  }
+
+  @Test public void signedDouble_strictJsonRecipe_acceptsNegative() {
+    Parser<Double> jsonNumber = SIGNED_DOUBLE
+        .source()
+        .suchThat(s -> !s.startsWith("+"), "json number")
+        .map(Double::parseDouble);
+    assertThat(jsonNumber.parse("-1.5")).isEqualTo(-1.5);
+  }
+
+  @Test public void signedDouble_strictJsonRecipe_rejectsLeadingPlus() {
+    Parser<Double> jsonNumber = SIGNED_DOUBLE
+        .source()
+        .suchThat(s -> !s.startsWith("+"), "json number")
+        .map(Double::parseDouble);
+    ParseException thrown = assertThrows(ParseException.class, () -> jsonNumber.parse("+1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <json number>, encountered:
+                +1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_lonePlusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusThenMinusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+-1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +-1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_doublePlusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("++1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                ++1
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusMissingIntegerThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+.5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +.5
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_plusLeadingZeroThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+05"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <double>, encountered:
+                +05
                 ^
             """);
   }
@@ -1118,7 +1241,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 05
                 ^
             """);
@@ -1130,7 +1253,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 00.5
                 ^
             """);
@@ -1142,7 +1265,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 .5
                 ^
             """);
@@ -1154,7 +1277,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <one or more [0-9]>, encountered:
+            at 1:3: expecting <digits>, encountered:
                 5.
                   ^
             """);
@@ -1166,7 +1289,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <digits>, encountered:
+            at 1:3: expecting <exponent>, encountered:
                 1e
                   ^
             """);
@@ -1178,10 +1301,28 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <digits>, encountered:
+            at 1:4: expecting <exponent>, encountered:
                 1e+
                    ^
             """);
+  }
+
+  @Test public void signedDouble_dotWithoutFractionNotConsumed() {
+    Parser<Range<Double>> range =
+        sequence(SIGNED_DOUBLE.followedBy(".."), SIGNED_DOUBLE, Range::closed);
+    assertThat(range.parse("1..2")).isEqualTo(Range.closed(1.0, 2.0));
+  }
+
+  @Test public void signedDouble_eWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("em").parse("10em")).isEqualTo(10.0);
+  }
+
+  @Test public void signedDouble_eSignWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("e+").parse("1e+")).isEqualTo(1.0);
+  }
+
+  @Test public void signedDouble_fractionThenEWithoutExponentNotConsumed() {
+    assertThat(SIGNED_DOUBLE.followedBy("em").parse("1.5em")).isEqualTo(1.5);
   }
 
   @Test public void signedDouble_fractionalExponentThrows() {
@@ -1214,7 +1355,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 NaN
                 ^
             """);
@@ -1227,7 +1368,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting one of [integer, -], encountered:
+            at 1:1: expecting <double>, encountered:
                 Infinity
                 ^
             """);
@@ -1245,8 +1386,31 @@ public class ParsersTest {
     assertThat(SIGNED_DOUBLE.parse("1e-999")).isEqualTo(0.0);
   }
 
+  @Test public void signedDouble_parseSkipping_leadingWhitespace() {
+    assertThat(SIGNED_DOUBLE.parseSkipping(Character::isWhitespace, " -1.5")).isEqualTo(-1.5);
+  }
+
   @Test public void signedDouble_sourceMatchesOverflow() {
     assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
+  }
+
+  @Test public void signedDouble_getPrefixes_everyLeadingCharEffectiveInAnyOf(
+      @TestParameter({"-1", "+1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}) String input) {
+    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
+    assertThat(parser.parse(input)).isEqualTo(Double.parseDouble(input));
+  }
+
+  @Test public void signedDouble_inAnyOf_aggregatesExpectedSymbol() {
+    Parser<Double> parser = anyOf(SIGNED_DOUBLE, string("abc").thenReturn(0.0));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [abc, double], encountered:
+                x
+                ^
+            """);
   }
 
   @Test public void codePoint_zero() {

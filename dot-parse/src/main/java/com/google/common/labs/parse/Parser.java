@@ -15,7 +15,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -191,7 +191,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     return new Scanner(name) {
-      @Override int scan(CharInput input, int index) {
+      @Override int scan(CharInput input, int index, ErrorContext context) {
         return input.skipWhile(matcher, index);
       }
 
@@ -247,7 +247,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static Parser<Void> chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     return new Scanner(name) {
-      @Override int scan(CharInput input, int from) {
+      @Override int scan(CharInput input, int from, ErrorContext context) {
         return input.isInRange(from + n - 1) ? from + n : from;
       }
 
@@ -261,7 +261,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
+  private static Parser<String> chars(int n, CharacterRangeSet characterSet, String name) {
     return chars(n, characterSet.getAsciiPrefixes(), name)
         .source()
         .suchThat(characterSet::matchesAllOf, name);
@@ -300,7 +300,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> digits(int n) {
-    return chars(n, CharacterSet.DECIMAL, n + " digits");
+    return chars(n, CharacterRangeSet.DECIMAL, n + " digits");
   }
 
   /**
@@ -309,7 +309,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> hexDigits(int n) {
-    return chars(n, CharacterSet.HEX, n + " hex digits");
+    return chars(n, CharacterRangeSet.HEX, n + " hex digits");
   }
 
   /**
@@ -546,30 +546,32 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<String> nestedBy(String before, String after) {
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
-    return string(before)
-        .then(new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Skipper preskipper, Skipper innerSkipper, CharInput input, final int start,
-              ErrorContext context) {
-            for (int index = start, depth = 1; ; ) {
-              if (input.isEof(index)) {
-                return context.expecting(after, index); // Unclosed block
-              }
-              if (input.startsWith(after, index)) {
-                if (--depth == 0) {
-                  return new MatchResult.Success<>(
-                      start, index + after.length(), input.snippet(start, index - start));
-                }
-                index += after.length();
-              } else if (input.startsWith(before, index)) {
-                depth++;
-                index += before.length();
-              } else {
-                index++;
-              }
+    return string(before).then(new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper preskipper, Skipper innerSkipper, CharInput input, final int start,
+          ErrorContext context) {
+        for (int index = start, depth = 1, closing = -1; ; ) {
+          if (closing < index) {
+            closing = input.indexOf(after, index);
+            if (closing < 0) {
+              int eof = input.skipWhile(CharPredicate.ANY, index);
+              return context.expecting(after, eof); // Unclosed block
             }
           }
-        });
+          // `before` starting ahead of `closing` nests, even if overlapping it ("(*" in "(*)").
+          int opening = input.indexOf(before, index, closing + before.length() - 1);
+          if (opening >= 0) {
+            depth++;
+            index = opening + before.length();
+          } else if (--depth == 0) {
+            return new MatchResult.Success<>(
+                start, closing + after.length(), input.snippet(start, closing - start));
+          } else {
+            index = closing + after.length();
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -600,41 +602,52 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String suffix = Character.toString(after);
-    return one(before)
-        .then(new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Skipper preskipper, Skipper innerSkipper, CharInput input, final int start,
-              ErrorContext context) {
-            StringBuilder builder = new StringBuilder();
-            for (int index = start, depth = 1; ; ) {
-              int read = input.charAtOrEof(index);
-              if (read < 0) {
-                return context.expecting(suffix, index); // Unclosed block
+    CharPredicate plain = isNot(before).and(isNot(after)).and(isNot('\\')).precomputeForAscii();
+    return one(before).then(new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper preskipper, Skipper innerSkipper, CharInput input, final int start,
+          ErrorContext context) {
+        StringBuilder unescaped = null;
+        for (int index = start, pendingFrom = start, depth = 1; ; ) {
+          index = input.skipWhile(plain, index);
+          int read = input.charAtOrEof(index);
+          if (read < 0) {
+            return context.expecting(suffix, index); // Unclosed block
+          }
+          if (read == after) {
+            if (--depth == 0) {
+              String content;
+              if (unescaped == null) {
+                content = input.snippet(start, index - start);
+              } else {
+                input.appendTo(unescaped, pendingFrom, index);
+                content = unescaped.toString();
               }
-              char c = (char) read;
-              index++;
-              if (c == after) {
-                if (--depth == 0) {
-                  return new MatchResult.Success<>(start, index, builder.toString());
-                }
-              } else if (c == before) {
-                depth++;
-              } else if (c == '\\') {
-                switch (followingEscape.skipAndMatch(null, null, input, index, context)) {
-                  case MatchResult.Success(int head, int tail, CharSequence value) -> {
-                    builder.append(value);
-                    index = tail;
-                    continue;
-                  }
-                  case MatchResult.Failure<?> failure -> {
-                    return failure.safeCast();
-                  }
-                }
+              return new MatchResult.Success<>(start, index + 1, content);
+            }
+            index++;
+          } else if (read == before) {
+            depth++;
+            index++;
+          } else { // backslash
+            if (unescaped == null) {
+              unescaped = new StringBuilder();
+            }
+            input.appendTo(unescaped, pendingFrom, index);
+            switch (followingEscape.skipAndMatch(null, null, input, index + 1, context)) {
+              case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                unescaped.append(value);
+                index = tail;
+                pendingFrom = tail;
               }
-              builder.append(c);
+              case MatchResult.Failure<?> failure -> {
+                return failure.safeCast();
+              }
             }
           }
-        });
+        }
+      }
+    });
   }
 
   /**
@@ -1775,10 +1788,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <pre>{@code
    * jsonRecord.skipping(whitespace()).parseToStream(input);
    * }</pre>
+   *
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} on {@code
+   * charsToSkip} and storing it in a {@code static final} constant to speed up character matching.
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    CharPredicate precomputed = charsToSkip.precomputeForAscii();
-    return new Lexical((input, start) -> input.skipWhile(precomputed, start));
+    requireNonNull(charsToSkip);
+    return new Lexical((input, start) -> input.skipWhile(charsToSkip, start));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
@@ -1806,6 +1822,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Parses {@code input} while {@code charsToSkip} around atomic matches.
    *
    * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
+   *
+   * <p>For longer inputs, consider calling {@link CharPredicate#precomputeForAscii} on {@code
+   * charsToSkip} and storing it in a {@code static final} constant to speed up character matching.
    */
   @Override public final T parseSkipping(CharPredicate charsToSkip, String input) {
     return skipping(charsToSkip).parse(input);
@@ -2705,7 +2724,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
+    return predicate instanceof CharacterRangeSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   private static BitSet blockedCommonAsciiChars(CharPredicate predicate) {

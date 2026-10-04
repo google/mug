@@ -1,24 +1,19 @@
 package com.google.mu.errorprone.regex;
 
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.RegexPatternUtils.Flags;
-import com.google.mu.util.graph.ShortestPath;
 import com.google.mu.util.graph.Walker;
-import com.google.mu.util.stream.BiStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -30,7 +25,6 @@ final class Nfa {
   final List<State> states = new ArrayList<>();
   final List<CharTransition> charTransitions = new ArrayList<>();
   final Set<Integer> anchorStates = new HashSet<>();
-  private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   private final Deque<RegexPattern.Quantified> quantifierStack = new ArrayDeque<>();
   private final Map<Integer, List<CharTransition>> reachableCache = new HashMap<>();
   private final Map<Integer, Boolean> canReachAcceptCache = new HashMap<>();
@@ -132,13 +126,8 @@ final class Nfa {
     return nfa;
   }
 
-  OptionalInt startStateOf(RegexPattern node) {
-    Integer s = nodeToStartState.get(node);
-    return s == null ? OptionalInt.empty() : OptionalInt.of(s);
-  }
-
   private Fragment compile(RegexPattern pattern) {
-    Fragment f = switch (pattern) {
+    return switch (pattern) {
       case RegexPattern.Literal lit -> compileLiteral(lit);
       case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs, flags), cs);
       case RegexPattern.PredefinedCharClass pcc ->
@@ -155,8 +144,6 @@ final class Nfa {
       case RegexPattern.Anchor anchor -> compileAnchor();
       default -> compileEmpty();
     };
-    nodeToStartState.put(pattern, f.start);
-    return f;
   }
 
   /** Compiles {@code (?flags:...)}, whose flags apply to its content only. */
@@ -416,37 +403,5 @@ final class Nfa {
     }
     return canReachAcceptCache.computeIfAbsent(
         state, s -> epsilonClosure(s).contains(acceptState));
-  }
-
-  String shortestPathToString(int from, int to) {
-    if (from == to) {
-      return "";
-    }
-    /** {@code codePoint} is -1 for an epsilon step, which consumes nothing. */
-    record Step(int state, int codePoint) {}
-
-    return ShortestPath.shortestPathsFrom(
-            new Step(from, -1),
-            (Step step) -> {
-              BiStream.Builder<Step, Double> builder = BiStream.builder();
-              for (int next : states.get(step.state()).epsilonTransitions) {
-                builder.add(new Step(next, -1), 0.0);
-              }
-              for (CharTransition t : charTransitions) {
-                if (t.source() == step.state()) {
-                  builder.add(new Step(t.target(), CharRanges.sampleChar(t.chars())), 1.0);
-                }
-              }
-              return builder.build();
-            })
-        .filter(path -> path.to().state() == to)
-        .findFirst()
-        .map(path -> path.stream()
-            .keys()
-            .mapToInt(Step::codePoint)
-            .filter(codePoint -> codePoint >= 0)
-            .mapToObj(Character::toString)
-            .collect(joining()))
-        .orElse("");
   }
 }

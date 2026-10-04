@@ -56,24 +56,24 @@ import java.util.stream.IntStream;
  *
  * @since 9.4
  */
-final class CharacterSet implements CharPredicate {
+final class CharacterRangeSet implements CharPredicate {
   private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
   private static final Parser<Set<Character>> ASCII_SET_PARSER = makeAsciiSetParser();
 
-  static final CharacterSet DECIMAL = charsIn("[0-9]");
-  static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
+  static final CharacterRangeSet DECIMAL = charsIn("[0-9]");
+  static final CharacterRangeSet HEX = charsIn("[0-9a-fA-F]");
 
   private final String string;
   private final CharPredicate predicate;
   @LazyInit private volatile Set<String> asciiPrefixes;
 
-  private CharacterSet(String string, CharPredicate predicate) {
+  private CharacterRangeSet(String string, CharPredicate predicate) {
     this.string = string;
     this.predicate = predicate;
   }
 
   /**
-   * Returns a {@link CharacterSet} instance compiled from the given {@code characterSet} specifier.
+   * Returns a {@link CharacterRangeSet} instance compiled from the given {@code characterSet} specifier.
    *
    * <p>Only Basic Multilingual Plane (BMP) characters are supported; surrogate characters are
    * rejected.
@@ -81,8 +81,8 @@ final class CharacterSet implements CharPredicate {
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    * @throws IllegalArgumentException if {@code characterSet} is malformed or contains surrogates
    */
-  static CharacterSet charsIn(String characterSet) {
-    return new CharacterSet(characterSet, compileCharacterSet(characterSet));
+  static CharacterRangeSet charsIn(String characterSet) {
+    return new CharacterRangeSet(characterSet, compileCharacterSet(characterSet));
   }
 
   /** Returns true if this set contains the character {@code ch}. */
@@ -104,12 +104,12 @@ final class CharacterSet implements CharPredicate {
    *
    * @since 9.9.4
    */
-  @Override public CharacterSet precomputeForAscii() {
+  @Override public CharacterRangeSet precomputeForAscii() {
     return this;
   }
 
   @Override public boolean equals(Object obj) {
-    return (obj instanceof CharacterSet that) && string.equals(that.string);
+    return (obj instanceof CharacterRangeSet that) && string.equals(that.string);
   }
 
   @Override public int hashCode() {
@@ -186,7 +186,7 @@ final class CharacterSet implements CharPredicate {
   private static Parser<Set<Character>> makeAsciiSetParser() {
     Parser<Character> asciiChar = one(ASCII, "ascii char").notFollowedByEof();
     Parser<Set<Character>> range =
-        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+        sequence(asciiChar.followedBy("-"), asciiChar, CharacterRangeSet::charsInRange);
     return anyOf(range, asciiChar.map(Set::of))
         .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
         .between("[", "]");

@@ -15,12 +15,10 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterRangeSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
@@ -29,6 +27,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.parse.CharInput.RegexMatch;
 import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -44,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -53,7 +51,7 @@ import java.util.regex.Pattern;
  * @since 10.8
  */
 public final class Parsers {
-  static final Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
+  static final Parser<String> DIGITS = consecutive(CharacterRangeSet.DECIMAL, "digits");
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
@@ -67,26 +65,29 @@ public final class Parsers {
    *     (sign, num) -> sign * num);
    * }</pre>
    */
-  public static final Parser<String> UNSIGNED_INTEGER =
-      new Scanner("integer") {
-        @Override int scan(CharInput input, final int from) {
-          int read = input.charAtOrEof(from);
-          if (read < 0) return from;
-          char c = (char) read;
-          int index = from + 1;
-          if (c >= '1' && c <= '9') {
-            return input.skipWhile(CharacterSet.DECIMAL, index);
-          }
-          if (c == '0') {
-            return input.startsWith(CharacterSet.DECIMAL, index) ? from : index;
-          }
-          return from;
-        }
+  public static final Parser<String> UNSIGNED_INTEGER = new Scanner("integer") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      return scanUnsignedInt(input, from);
+    }
 
-        @Override Set<String> computePrefixes() {
-          return DIGITS.getPrefixes();
-        }
-      }.source();
+    @Override Set<String> computePrefixes() {
+      return DIGITS.getPrefixes();
+    }
+  }.source();
+
+  private static int scanUnsignedInt(CharInput input, int from) {
+    int read = input.charAtOrEof(from);
+    if (read < 0) return from;
+    char c = (char) read;
+    int index = from + 1;
+    if (c >= '1' && c <= '9') {
+      return input.skipWhile(CharacterRangeSet.DECIMAL, index);
+    }
+    if (c == '0') {
+      return input.startsWith(CharacterRangeSet.DECIMAL, index) ? from : index;
+    }
+    return from;
+  }
 
   /**
    * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15}, {@code 0}.
@@ -99,14 +100,34 @@ public final class Parsers {
    *     (sign, num) -> sign * num);
    * }</pre>
    */
-  public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
+  public static final Parser<String> UNSIGNED_DECIMAL = new Scanner("decimal") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      return scanUnsignedDecimal(input, from, context);
+    }
+
+    @Override Set<String> computePrefixes() {
+      return DIGITS.getPrefixes();
+    }
+  }.source();
+
+  private static int scanUnsignedDecimal(CharInput input, int from, ErrorContext context) {
+    int end = scanUnsignedInt(input, from);
+    if (end == from) return from;
+    if (input.charAtOrEof(end) == '.') {
+      int fracStart = end + 1;
+      int fracEnd = input.skipWhile(CharacterRangeSet.DECIMAL, fracStart);
+      if (fracEnd > fracStart) {
+        end = fracEnd;
+      } else {
+        context.missed("digits", fracStart);
+      }
+    }
+    return end;
+  }
 
   /**
-   * Parses double-precision numbers that support scientific notation, conforming to <a
-   * href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec).
-   *
-   * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
+   * Parses double-precision numbers that support scientific notation, e.g., {@code 123}, {@code
+   * +1}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
    *
    * <p>The input string is parsed into a {@link Double}. You can also call {@code .source()} if you
    * prefer to obtain the raw matched string or parse into a different type such as {@code
@@ -116,19 +137,50 @@ public final class Parsers {
    * Parser<BigDecimal> bigDecimal = Parsers.SIGNED_DOUBLE.source().map(BigDecimal::new);
    * }</pre>
    *
-   * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
-   * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
-   * as per the JSON standard.
+   * <p>A single leading sign ({@code +} or {@code -}) is allowed. Leading zeros on integers (e.g.,
+   * {@code 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not.
+   *
+   * <p>Other than the leading {@code +}, the syntax conforms to <a
+   * href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec). To also reject the leading
+   * {@code +} for strict JSON:
+   *
+   * <pre>{@code
+   * Parser<Double> jsonNumber = Parsers.SIGNED_DOUBLE.source()
+   *     .suchThat(s -> !s.startsWith("+"), "json number")
+   *     .map(Double::parseDouble);
+   * }</pre>
    *
    * <p>Per {@link Double#parseDouble(String)}, values that overflow the range of {@code double}
    * evaluate to {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY}, and values
    * that underflow evaluate to {@code 0.0}.
    */
-  public static final Parser<Double> SIGNED_DOUBLE = literally(
-          one('-').optional(), UNSIGNED_DECIMAL,
-          sequence(caseInsensitive("e"), one("[+-]").optional(), DIGITS).optional())
-      .source()
-      .elidableMap(Double::parseDouble);
+  public static final Parser<Double> SIGNED_DOUBLE = new Scanner("double") {
+    @Override int scan(CharInput input, int from, ErrorContext context) {
+      int sign = input.charAtOrEof(from);
+      int intStart = (sign == '-' || sign == '+') ? from + 1 : from;
+      int end = scanUnsignedDecimal(input, intStart, context);
+      if (end == intStart) return from;
+      int exp = input.charAtOrEof(end);
+      if (exp == 'e' || exp == 'E') {
+        int expStart = end + 1;
+        int expSign = input.charAtOrEof(expStart);
+        if (expSign == '-' || expSign == '+') {
+          expStart++;
+        }
+        int expEnd = input.skipWhile(CharacterRangeSet.DECIMAL, expStart);
+        if (expEnd > expStart) {
+          end = expEnd;
+        } else {
+          context.missed("exponent", expStart);
+        }
+      }
+      return end;
+    }
+
+    @Override Set<String> computePrefixes() {
+      return Set.of("+", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+    }
+  }.source().elidableMap(Double::parseDouble);
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
@@ -166,53 +218,54 @@ public final class Parsers {
    *   <li>Negative values (e.g., {@code "-2s"}) are not supported.
    * </ul>
    */
-  public static final Parser<Duration> DURATION = literally(
-          sequence(
-                  UNSIGNED_DECIMAL,
-                  anyOf(DurationUnit.values())
-                      .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
-                  (num, unit) -> {
+  public static final Parser<Duration> DURATION =
+      literally(DurationSegment.PARSER.atLeastOnce())
+          .map(durations -> {
+            adjacentPairsFrom(durations)
+                .forEach((prev, next) -> {
+                  if (prev instanceof DurationSegment.Fractional) {
+                    throw Parser.fail(
+                        "Only the last duration segment is allowed to be fractional: " + prev);
+                  }
+                  if (prev.unit().compareTo(next.unit()) <= 0) {
+                    throw Parser.fail("Duration units must be specified in order: " + prev + next);
+                  }
+                });
+            try {
+              return durations.stream()
+                  .map(seg -> {
                     try {
-                      return num.contains(".")
-                          ? new TimeSpan.Fractional(Double.parseDouble(num), unit)
-                          : new TimeSpan.Integral(Long.parseLong(num), unit);
-                    } catch (NumberFormatException e) {
-                      throw Parser.fail(e.getMessage());
+                      return seg.toDuration();
+                    } catch (ArithmeticException e) {
+                      throw Parser.fail("duration out of range: " + seg);
                     }
                   })
-              .atLeastOnce())
-      .map(durations -> {
-        adjacentPairsFrom(durations)
-            .forEach((prev, next) -> {
-              if (prev instanceof TimeSpan.Fractional) {
-                throw Parser.fail(
-                    "Only the last duration segment is allowed to be fractional: " + prev);
-              }
-              if (prev.unit().compareTo(next.unit()) <= 0) {
-                throw Parser.fail("Duration units must be specified in order: " + prev + next);
-              }
-            });
-        try {
-          return durations.stream()
-              .map(seg -> {
-                try {
-                  return seg.toDuration();
-                } catch (ArithmeticException e) {
-                  throw Parser.fail("duration out of range: " + seg);
-                }
-              })
-              .reduce(Duration::plus)
-              .get();
-        } catch (ArithmeticException e) {
-          throw Parser.fail("duration out of range");
-        }
-      });
+                  .reduce(Duration::plus)
+                  .get();
+            } catch (ArithmeticException e) {
+              throw Parser.fail("duration out of range");
+            }
+          });
 
-  private sealed interface TimeSpan {
+  private sealed interface DurationSegment {
+    static Parser<DurationSegment> PARSER = sequence(
+        UNSIGNED_DECIMAL,
+        anyOf(DurationUnit.values())
+            .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
+        (num, unit) -> {
+          try {
+            return num.contains(".")
+                ? new Fractional(Double.parseDouble(num), unit)
+                : new Integral(Long.parseLong(num), unit);
+          } catch (NumberFormatException e) {
+            throw Parser.fail(e.getMessage());
+          }
+        });
+
     DurationUnit unit();
     Duration toDuration();
 
-    record Integral(long n, DurationUnit unit) implements TimeSpan {
+    record Integral(long n, DurationUnit unit) implements DurationSegment {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
@@ -222,7 +275,7 @@ public final class Parsers {
       }
     }
 
-    record Fractional(double n, DurationUnit unit) implements TimeSpan {
+    record Fractional(double n, DurationUnit unit) implements DurationSegment {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
@@ -404,10 +457,10 @@ public final class Parsers {
    * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
    * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
    * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
-   * UnsupportedOperationException} when calling {@link Parser#parseToStream(Reader)} or {@link
-   * Parser#probe(Reader)}, because Java regex requires the input to be fully loaded into memory,
-   * defeating the purpose of lazy loading from {@code Reader} - you might as well just explicitly
-   * load into a {@code String} before parsing.
+   * UnsupportedOperationException} when calling {@link Parser#parseToStream(java.io.Reader)} or
+   * {@link Parser#probe(java.io.Reader)}, because Java regex requires the input to be fully loaded
+   * into memory, defeating the purpose of lazy loading from {@code Reader} - you might as well just
+   * explicitly load into a {@code String} before parsing.
    *
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
    * (v10.9+) compiler plugin.
@@ -721,7 +774,7 @@ public final class Parsers {
   }
 
   private static <T> Parser<T> regex(
-      String pattern, int expectedGroups, Function<? super Matcher, ? extends T> mapper) {
+      String pattern, int expectedGroups, Function<? super RegexMatch, ? extends T> mapper) {
     Pattern jdkPattern = Pattern.compile(pattern);
     int groupCount = jdkPattern.matcher("").groupCount();
     checkArgument(
@@ -733,19 +786,18 @@ public final class Parsers {
 
   private static <T> Parser<T> regex(
       RegexPattern ast, Pattern jdkPattern, String name,
-      Function<? super Matcher, ? extends T> mapper) {
+      Function<? super RegexMatch, ? extends T> mapper) {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Parser<T>() {
       @Override MatchResult<T> skipAndMatch(
           Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
           ErrorContext context) {
         start = Parser.skipIfAny(preskipper, input, start);
-        Matcher matcher = input.matcher(jdkPattern, metadata, start);
-        if (!matcher.lookingAt()) {
+        RegexMatch match = input.match(jdkPattern, metadata, start);
+        if (match == null) {
           return context.expecting(name, start);
         }
-        int end = input.matchEnd(matcher);
-        return new MatchResult.Success<>(start, end, mapper.apply(matcher));
+        return new MatchResult.Success<>(start, match.endIndex(), mapper.apply(match));
       }
 
       @Override Set<String> computePrefixes() {
@@ -765,8 +817,9 @@ public final class Parsers {
   private static Parser<Void> regex(RegexPattern ast, Pattern jdkPattern, String name) {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Scanner(name) {
-      @Override int scan(CharInput input, int from) {
-        return input.match(jdkPattern, metadata, from);
+      @Override int scan(CharInput input, int from, ErrorContext context) {
+        RegexMatch match = input.match(jdkPattern, metadata, from);
+        return match == null ? from : match.endIndex();
       }
 
       @Override Set<String> computePrefixes() {
