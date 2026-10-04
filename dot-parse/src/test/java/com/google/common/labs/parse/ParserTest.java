@@ -932,8 +932,17 @@ public class ParserTest {
         .containsExactly("x");
   }
 
+  @Test public void nestedBy_withReader_beforeLongerThanAfter_closedAtEndOfInput() {
+    assertThat(nestedBy("<<<", ">").parseToStream(new StringReader("<<<a>"))).containsExactly("a");
+  }
+
   @Test public void nestedBy_withReader_immediatelyNested() {
     assertThat(nestedBy("(", ")").parseToStream(new StringReader("(())"))).containsExactly("()");
+  }
+
+  @Test public void nestedBy_withReader_multipleOpeningsBeforeFirstClosing() {
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader("(((a)))")))
+        .containsExactly("((a))");
   }
 
   @Test public void nestedBy_withReader_nestingAfterBufferCompaction() {

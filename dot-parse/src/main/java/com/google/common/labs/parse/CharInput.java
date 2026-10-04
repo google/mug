@@ -45,10 +45,10 @@ abstract class CharInput {
   abstract int indexOf(String str, int fromIndex);
 
   /**
-   * Returns the index of {@code str} lying entirely within {@code [fromIndex, toIndex)}, or -1 if
-   * not found. {@code toIndex} can be past EOF.
+   * Returns the index of {@code str} lying entirely within {@code [fromIndex, untilIndex)}, or -1 if
+   * not found. {@code untilIndex} can be past EOF.
    */
-  abstract int indexOf(String str, int fromIndex, int toIndex);
+  abstract int indexOf(String str, int fromIndex, int untilIndex);
 
   /**
    * Matches the given regex pattern starting from {@code start} index. Returns null if no match is
@@ -88,10 +88,10 @@ abstract class CharInput {
   abstract String snippet(int index, int maxChars);
 
   /**
-   * Appends the characters in {@code [fromIndex, toIndex)} to {@code builder}. It's assumed that
+   * Appends the characters in {@code [fromIndex, untilIndex)} to {@code builder}. It's assumed that
    * these characters have been read.
    */
-  abstract void appendTo(StringBuilder builder, int fromIndex, int toIndex);
+  abstract void appendTo(StringBuilder builder, int fromIndex, int untilIndex);
 
   /** characters before {@code checkpointIndex} are no longer needed. */
   void markCheckpoint(int checkpointIndex) {}
@@ -120,8 +120,8 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex);
       }
 
-      @Override int indexOf(String str, int fromIndex, int toIndex) {
-        return text.indexOf(str, fromIndex, Math.min(toIndex, text.length()));
+      @Override int indexOf(String str, int fromIndex, int untilIndex) {
+        return text.indexOf(str, fromIndex, Math.min(untilIndex, text.length()));
       }
 
       @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
@@ -151,8 +151,8 @@ abstract class CharInput {
         return text.substring(index, Math.min(text.length(), index + maxLength));
       }
 
-      @Override void appendTo(StringBuilder builder, int fromIndex, int toIndex) {
-        builder.append(text, fromIndex, toIndex);
+      @Override void appendTo(StringBuilder builder, int fromIndex, int untilIndex) {
+        builder.append(text, fromIndex, untilIndex);
       }
 
       @Override String sourcePosition(int at) {
@@ -212,14 +212,14 @@ abstract class CharInput {
         }
       }
 
-      @Override int indexOf(String str, int fromIndex, int toIndex) {
-        ensureCharCount(toIndex);
+      @Override int indexOf(String str, int fromIndex, int untilIndex) {
+        ensureCharCount(untilIndex);
         int from = toPhysicalIndex(fromIndex);
-        int to = Math.min(toPhysicalIndex(toIndex), chars.length());
+        int to = Math.min(toPhysicalIndex(untilIndex), chars.length());
         if (to - from < str.length()) {
           return -1;
         }
-        // chars.indexOf() would scan all loaded chars past toIndex.
+        // chars.indexOf() would scan all loaded chars past untilIndex.
         int found = chars.substring(from, to).indexOf(str);
         return found < 0 ? -1 : toLogicalIndex(from + found);
       }
@@ -305,8 +305,8 @@ abstract class CharInput {
         return chars.substring(index, Math.min(chars.length(), index + maxLength));
       }
 
-      @Override void appendTo(StringBuilder builder, int fromIndex, int toIndex) {
-        builder.append(chars, toPhysicalIndex(fromIndex), toPhysicalIndex(toIndex));
+      @Override void appendTo(StringBuilder builder, int fromIndex, int untilIndex) {
+        builder.append(chars, toPhysicalIndex(fromIndex), toPhysicalIndex(untilIndex));
       }
 
       @Override void markCheckpoint(int checkpointIndex) {
