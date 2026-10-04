@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>11.1-SNAPSHOT</version>
+      <version>11.2</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-examples</artifactId>
@@ -212,8 +212,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <useIncrementalCompilation>false</useIncrementalCompilation>
-              <excludes combine.self="override"/>
-              <testExcludes combine.self="override"/>
+              <excludes combine.self="override" />
+              <testExcludes combine.self="override" />
               <annotationProcessorPaths combine.children="append">
                 <path>
                   <groupId>org.openjdk.jmh</groupId>
@@ -227,7 +227,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <excludes combine.self="override"/>
+              <excludes combine.self="override" />
             </configuration>
           </plugin>
           <plugin>
