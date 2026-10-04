@@ -213,13 +213,15 @@ abstract class CharInput {
       }
 
       @Override int indexOf(String str, int fromIndex, int toIndex) {
-        // chars.indexOf() would scan all loaded chars past toIndex.
-        for (int i = fromIndex; i <= toIndex - str.length(); i++) {
-          if (startsWith(str, i)) {
-            return i;
-          }
+        ensureCharCount(toIndex);
+        int from = toPhysicalIndex(fromIndex);
+        int to = Math.min(toPhysicalIndex(toIndex), chars.length());
+        if (to - from < str.length()) {
+          return -1;
         }
-        return -1;
+        // chars.indexOf() would scan all loaded chars past toIndex.
+        int found = chars.substring(from, to).indexOf(str);
+        return found < 0 ? -1 : toLogicalIndex(from + found);
       }
 
       @Override RegexMatch match(Pattern pattern, RegexPattern.Metadata metadata, int start) {

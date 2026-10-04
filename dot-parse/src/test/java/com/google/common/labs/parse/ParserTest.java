@@ -932,6 +932,24 @@ public class ParserTest {
         .containsExactly("x");
   }
 
+  @Test public void nestedBy_withReader_immediatelyNested() {
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader("(())"))).containsExactly("()");
+  }
+
+  @Test public void nestedBy_withReader_nestingAfterBufferCompaction() {
+    // The 200K chars consumed by the first match exceed the 128K buffer compaction threshold.
+    String input = "(" + "-".repeat(200_000) + ")" + "(a(b)c)";
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader(input)).skip(1))
+        .containsExactly("a(b)c");
+  }
+
+  @Test public void nestedBy_withReader_siblingsAfterBufferCompaction() {
+    // The 200K chars consumed by the first match exceed the 128K buffer compaction threshold.
+    String input = "(" + "-".repeat(200_000) + ")" + "(a)(b)";
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader(input)).skip(1))
+        .containsExactly("a", "b");
+  }
+
   @Test public void nestedBy_withReader_unclosed_reportsMissingAfterAtEof() {
     ParseException thrown = assertThrows(
         ParseException.class,
