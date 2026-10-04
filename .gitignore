@@ -24,3 +24,6 @@ build/
 
 # Local scripts
 /rewind-version
+
+# macOS Finder metadata
+.DS_Store
