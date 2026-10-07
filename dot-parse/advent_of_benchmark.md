@@ -1,12 +1,13 @@
 # Advent of Code 2024 Day 3: Regex vs. dot-parse
 
-[Advent of Code 2024 Day 3](https://adventofcode.com/2024/day/3) is about extracting instructions
-from noisy text. The article
-[Parser Combinators Beat Regexes](https://entropicthoughts.com/parser-combinators-beat-regexes)
-uses it to compare regexes with parser combinators. This document walks through JDK regex and
-dot-parse solutions and compares their performance. The code is in
-[AdventOfCodeDay3Benchmark.java](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/AdventOfCodeDay3Benchmark.java),
-and both parts are benchmarked on the same input (see [Benchmark setup](#benchmark-setup)).
+I recently stumbled across the article
+[Parser Combinators Beat Regexes](https://entropicthoughts.com/parser-combinators-beat-regexes), discussing merits of parser combinators vs, regexes using the [Advent of Code 2024 Day 3](https://adventofcode.com/2024/day/3) as an example.
+
+That article is about Haskell's attoparsec, but I find it interesting to play a similar thought experiment in Java.
+
+As it turns out, the parser combinator out-performs regex in every case.
+
+As for readability, it's subjective. regex has brevity going for it; whereas combinators are declarative and more type safe.
 
 ## Part 1
 
@@ -29,10 +30,13 @@ This is the article's regex:
 ```java
 private static final Pattern MUL_REGEX = Pattern.compile("mul\\((\\d+),(\\d+)\\)");
 
-int sum = 0;
-Matcher matcher = MUL_REGEX.matcher(input);
-while (matcher.find()) {
-  sum += parseInt(matcher.group(1)) * parseInt(matcher.group(2));
+
+int allMulsExcludingNoise(String input) {
+  int sum = 0;
+  Matcher matcher = MUL_REGEX.matcher(input);
+  while (matcher.find()) {
+    sum += parseInt(matcher.group(1)) * parseInt(matcher.group(2));
+  }
 }
 ```
 
@@ -42,16 +46,24 @@ while (matcher.find()) {
 
 ### dot-parse
 
-```java
-private static final Parser<Integer> MUL = first("mul(")
-    .then(
-        sequence(
-                digits().followedBy(","),
-                digits().followedBy(")"),
-                (a, b) -> parseInt(a) * parseInt(b))
-            .orElse(null));
+We `probe()` the input for each occurrence of `"mul(`".
 
-MUL.probe(input).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
+If it's malformed like `"mul(1,23]`", we skip it; otherwise, evaluate the multiplication:
+
+```java
+private static final Parser<Integer> MUL = first("mul(").then(
+    sequence(
+            digits().followedBy(","),
+            digits().followedBy(")"),
+            (a, b) -> parseInt(a) * parseInt(b))
+        .orElse(null));  // malformed "mul(" will be skipped
+
+int allMulsExcludingNoise(String input) {
+  return MUL.probe(input)       // parse and enumerate all "mul("
+      .filter(Objects::nonNull) // skip malformed "mul("
+      .mapToInt(Integer::intValue)
+      .sum();
+}
 ```
 
 - `first("mul(")` jumps to the next `mul(` with `String.indexOf()`, so the noise needs no grammar.
@@ -92,39 +104,49 @@ track the state.
 
 ### Split with regex
 
+The idea is to find the runs of `"don't()...do()"`, or the last run starting with `"don't()"` all the way to the end of input. These ranges will be used as delimiters to split the input. Every split region is then an indepedent part-1 input.
+
 ```java
 private static final Pattern DISABLED_REGEX =
     Pattern.compile("(?s)don't\\(\\).*?(?:do\\(\\)|\\z)");
 
-DISABLED_REGEX.splitAsStream(input).mapToInt(segment -> regexSum(segment)).sum();
+DISABLED_REGEX.splitAsStream(input)
+    .mapToInt(segment -> allMulsExcludingNoise(segment))
+    .sum();
 ```
 
-`regexSum()` is the part 1 regex loop.
+`allMulsExcludingNoise()` is from the part 1 regex loop.
 
-- The lazy `.*?` ends a region at the first `do()`. `\z` ends the last region at the end of the
+- The lazy `.*?` ends a region at the first `"do()"`. `\z` ends the last region at the end of the
   input.
 - `(?s)` lets `.` match line breaks. Without it, regions that span lines are not removed.
 
 ### Split with dot-parse
 
-```java
-private static final Substring.RepeatingPattern DISABLED = Substring.between(
-        Substring.first("don't()"), INCLUSIVE, Substring.first("do()").or(END), INCLUSIVE)
-    .repeatedly();
+Mug provides the declarative [`Substring`](../mug/src/main/java/com/google/mu/util/Substring.java) API that supports flexible splitting, if you find the above regex pattern cryptic. It's also faster than regex.
 
-DISABLED.split(input).mapToInt(segment -> dotParseSum(segment.toString())).sum();
+```java
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
+import com.google.mu.util.Substring;
+
+Substring.between(
+        Substring.first("don't()"), INCLUSIVE,
+        Substring.first("do()").or(END), INCLUSIVE)
+    .repeatedly()
+    .split(input)
+    .mapToInt(segment -> allMulsExcludingNoise(segment.toString()))
+    .sum();
 ```
 
-`dotParseSum()` is the part 1 dot-parse pipeline, and
-[`Substring`](../mug/src/main/java/com/google/mu/util/Substring.java) is from Mug.
-
 - A disabled region runs from `don't()` to the next `do()`, or to the end of the input (`END`).
-  `repeatedly().split()` returns the enabled text between the regions.
-- `first()` uses `String.indexOf()`, so line breaks need no special handling.
-- The part 1 parser runs unchanged on each enabled segment. A single pass such as
-  `anyOf(disabledRegion, MUL)` would not work, because `first("mul(")` can jump past a `don't()`.
+  - `INCLUSIVE` specifies that the region spans both the `"don't()"` and the `"do()"`.
+  - `repeatedly().split()` takes the entire disabled region as a delimiter, returning the enabled text in between the regions. In particular, if there are no `don't()` in the input, the inut is returned as is.
+- `first()` uses `String.indexOf()` under the hood to locate the `don't()` and `do()`. Line breaks need no special handling.
+- The part 1 parser runs unchanged on each enabled segment.
 
 ### Regex + state transition
+
+Alternatively, a one-pass regex can also be used to solve part 2. It requires a bit of mutable state transition, but not as bad as the author of "Parser Combinators Beat Regexes" feared:
 
 ```java
 private static final Pattern INSTRUCTION_REGEX =
@@ -157,7 +179,7 @@ while (matcher.find()) {
 | split with regex | 111.6 | 8,961.9 ± 146.6 |
 | regex + state transition | 149.6 | 6,686.3 ± 245.8 |
 
-Split with dot-parse is 2.53x as fast as split with regex and 3.39x as fast as regex + state
+Splitting with `Substring` and dot-parse is 2.53x as fast as splitting with regex and 3.39x as fast as regex + state
 transition.
 
 ### Performance analysis
