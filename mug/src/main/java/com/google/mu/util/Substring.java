@@ -18,6 +18,7 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.util.Arrays.stream;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -25,8 +26,6 @@ import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Stream.concat;
 
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
@@ -40,6 +39,9 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -729,6 +731,20 @@ public final class Substring {
    */
   public static RepeatingPattern all(java.util.regex.Pattern pattern) {
     return first(pattern).repeatedly();
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code substrings}
+   * in the input string.
+   *
+   * <p>Note that overlapping occurrences are not matched. For example, if you have {@code "aab"},
+   * {@code allOf("aa", "ab").from("aab")} will return only the first {@code "aa"}.
+   *
+   * @since 11.3
+   */
+  public static RepeatingPattern allOf(String... substrings) {
+    if (substrings.length == 1) return all(substrings[0]);
+    return stream(substrings).map(Substring::first).collect(firstOccurrence()).repeatedly();
   }
 
   /**
