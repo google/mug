@@ -18,7 +18,7 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.util.Arrays.stream;
+import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -26,6 +26,7 @@ import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Stream.concat;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
@@ -743,8 +744,21 @@ public final class Substring {
    * @since 11.3
    */
   public static RepeatingPattern allOf(String... substrings) {
-    if (substrings.length == 1) return all(substrings[0]);
-    return stream(substrings).map(Substring::first).collect(firstOccurrence()).repeatedly();
+    return allOf(asList(substrings));
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code substrings}
+   * in the input string.
+   *
+   * <p>Note that overlapping occurrences are not matched. For example, if you have {@code "aab"},
+   * {@code allOf(asList("aa", "ab")).from("aab")} will return only the first {@code "aa"}.
+   *
+   * @since 11.3
+   */
+  public static RepeatingPattern allOf(Collection<String> substrings) {
+    if (substrings.size() == 1) return all(substrings.iterator().next());
+    return substrings.stream().map(Substring::first).collect(firstOccurrence()).repeatedly();
   }
 
   /**
