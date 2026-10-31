@@ -757,7 +757,10 @@ public final class Substring {
    * @since 11.3
    */
   public static RepeatingPattern allOf(Collection<String> substrings) {
-    if (substrings.size() == 1) return all(substrings.iterator().next());
+    switch (substrings.size()) {
+      case 0: return NONE.repeatedly();
+      case 1: return all(substrings.iterator().next());
+    }
     return substrings.stream().map(Substring::first).collect(firstOccurrence()).repeatedly();
   }
 

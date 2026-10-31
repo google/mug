@@ -4,8 +4,6 @@ import static com.google.common.collect.ImmutableListMultimap.toImmutableListMul
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
-import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -21,8 +19,22 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
@@ -39,16 +51,6 @@ import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 import com.google.mu.util.stream.MoreCollectors;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -1316,7 +1318,7 @@ public class SubstringTest {
   }
 
   @Test public void allOf_emptyArray_toString() {
-    assertThat(allOf(new String[0]).toString()).isEqualTo("firstOccurrenceOf([]).repeatedly()");
+    assertThat(allOf(new String[0]).toString()).isEqualTo("NONE.repeatedly()");
   }
 
   @Test public void allOf_multipleEmptyStrings() {
