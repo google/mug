@@ -553,9 +553,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         for (int index = start, depth = 1, closing = -1; ; ) {
           if (closing < index) {
             closing = input.indexOf(after, index);
-            if (closing < 0) {
-              int eof = input.skipWhile(CharPredicate.ANY, index);
-              return context.expecting(after, eof); // Unclosed block
+            if (closing < 0) {  // Unclosed block
+              return context.expecting(after, input.skipWhile(CharPredicate.ANY, index));
             }
           }
           // `before` starting ahead of `closing` nests, even if overlapping it ("(*" in "(*)").

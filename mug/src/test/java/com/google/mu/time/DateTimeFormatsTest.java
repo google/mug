@@ -326,8 +326,7 @@ public final class DateTimeFormatsTest {
     assertThat(thrown).hasMessageThat().contains("invalid date time example: 12:00 pm (hh:mm a)");
   }
 
-  @Test
-  public void twoDigitHourMinute_midnightAmMarker() {
+  @Test public void twoDigitHourMinute_midnightAmMarker() {
     assertLocalTime("12:00 AM", "hh:mm a").isEqualTo(LocalTime.of(0, 0, 0));
   }
 
@@ -348,8 +347,7 @@ public final class DateTimeFormatsTest {
     assertLocalTime("09:00:30AM", "hh:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
   }
 
-  @Test
-  public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
+  @Test public void twoDigitHourMinuteSecond_upperCasePmMarkerAfterSpace() {
     assertLocalTime("10:00:30 PM", "hh:mm:ss a").isEqualTo(LocalTime.of(22, 0, 30));
   }
 
@@ -455,8 +453,7 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15, 30, 123000000), ZoneOffset.UTC));
   }
 
-  @Test
-  public void commaSeparatedMillis_formatOf() {
+  @Test public void commaSeparatedMillis_formatOf() {
     assertThat(LocalDateTime.parse("2026-09-18 10:15:30,123", formatOf("2011-12-03 10:15:30,000")))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 10, 15, 30, 123000000));
   }
@@ -545,8 +542,7 @@ public final class DateTimeFormatsTest {
                 ZoneId.of("America/Los_Angeles")));
   }
 
-  @Test
-  public void zoneIdInBrackets_withoutOffset() {
+  @Test public void zoneIdInBrackets_withoutOffset() {
     assertThat(
             ZonedDateTime.parse(
                 "2022-10-05T00:10:00.12345[America/Los_Angeles]",
@@ -563,15 +559,13 @@ public final class DateTimeFormatsTest {
             ZonedDateTime.of(LocalDateTime.of(2011, 12, 3, 10, 15), ZoneId.of("Europe/Paris")));
   }
 
-  @Test
-  public void formatOf_quotedLiteralContainingZzz() {
+  @Test public void formatOf_quotedLiteralContainingZzz() {
     DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> 'it''s napping zzz...'");
     assertThat(LocalDateTime.parse("2026-09-18 11:15:00 it's napping zzz...", formatter))
         .isEqualTo(LocalDateTime.of(2026, 9, 18, 11, 15, 0));
   }
 
-  @Test
-  public void formatOf_escapedQuoteBeforeZoneAndQuotedLiteral() {
+  @Test public void formatOf_escapedQuoteBeforeZoneAndQuotedLiteral() {
     overrideTimeZone("Asia/Shanghai");
     DateTimeFormatter formatter = formatOf("<2023-12-09 10:00:00> ''<PST> 'zzz'");
     assertThat(ZonedDateTime.parse("2026-07-16 02:00:00 'CST zzz", formatter))
@@ -626,8 +620,7 @@ public final class DateTimeFormatsTest {
   }
 
   /** Brackets are literal text, so a bracketed date is a date, not a zone id. */
-  @Test
-  public void bracketedDate_notTreatedAsZoneId() {
+  @Test public void bracketedDate_notTreatedAsZoneId() {
     assertThat(LocalDateTime.parse("[2011-12-03] 10:15:30", formatOf("[2011-12-03] 10:15:30")))
         .isEqualTo(LocalDateTime.of(2011, 12, 3, 10, 15, 30));
   }
@@ -1329,6 +1322,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void zoneAbbreviation_cst() {
+    overrideTimeZone("America/Chicago");
     assertThat(DateTimeFormats.parseZonedDateTime("2011-12-03 10:15:30 CST").getZone())
         .isEqualTo(ZoneId.of("America/Chicago"));
   }
@@ -1525,8 +1519,7 @@ public final class DateTimeFormatsTest {
         DateTimeParseException.class, () -> DateTimeFormats.parseToInstant("2000-40-01T00:00:00Z"));
   }
 
-  @Test
-  public void commaBeforeYear_followedByTimeAndZoneId() {
+  @Test public void commaBeforeYear_followedByTimeAndZoneId() {
     assertThat(
             ZonedDateTime.parse(
                 "Dec 31, 2023 12:00:00 America/New_York",
@@ -1665,14 +1658,12 @@ public final class DateTimeFormatsTest {
         "dd-M-yyyy HH:mm:ss VV");
   }
 
-  @Test
-  public void mmddyyyy_precededByWeekday() {
+  @Test public void mmddyyyy_precededByWeekday() {
     assertThat(LocalDate.parse("Fri 01/23/2015", formatOf("Thu 10/30/2014")))
         .isEqualTo(LocalDate.of(2015, 1, 23));
   }
 
-  @Test
-  public void ddmmyyyy_precededByWeekday() {
+  @Test public void ddmmyyyy_precededByWeekday() {
     assertThat(LocalDate.parse("Fri 23/01/2015", formatOf("Thu 30/10/2014")))
         .isEqualTo(LocalDate.of(2015, 1, 23));
   }
@@ -2217,20 +2208,17 @@ public final class DateTimeFormatsTest {
    * specifier, so the era token pins {@link Locale#ENGLISH}. Unpinned, the example parses in only 6
    * of the 22 locales below -- the ones whose own era text happens to be "AD"/"BC".
    */
-  @Test
-  public void era_adSuffix_readInEnglish() {
+  @Test public void era_adSuffix_readInEnglish() {
     assertThat(LocalDate.parse("2011-12-03 AD", formatOf("2011-12-03 AD")))
         .isEqualTo(LocalDate.of(2011, 12, 3));
   }
 
-  @Test
-  public void era_adPrefix_readInEnglish() {
+  @Test public void era_adPrefix_readInEnglish() {
     assertThat(LocalDate.parse("AD 2011-12-03", formatOf("AD 2011-12-03")))
         .isEqualTo(LocalDate.of(2011, 12, 3));
   }
 
-  @Test
-  public void era_bcSuffix_readInEnglish() {
+  @Test public void era_bcSuffix_readInEnglish() {
     assertThat(LocalDate.parse("0500-12-03 BC", formatOf("0500-12-03 BC")))
         .isEqualTo(LocalDate.of(-499, 12, 3));
   }

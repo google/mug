@@ -4,11 +4,10 @@ import static com.google.common.collect.ImmutableListMultimap.toImmutableListMul
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
-import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
+import static com.google.mu.util.Substring.allOf;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
@@ -20,8 +19,22 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
@@ -38,16 +51,6 @@ import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 import com.google.mu.util.stream.MoreCollectors;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -1157,6 +1160,185 @@ public class SubstringTest {
     assertThat(all(Pattern.compile("(\\w+)")).from("<foo.bar/baz>"))
         .containsExactly("foo", "bar", "baz")
         .inOrder();
+  }
+
+  @Test public void allOf_singleString_multipleMatches() {
+    assertThat(allOf("foo").from("foo and foo")).containsExactly("foo", "foo").inOrder();
+  }
+
+  @Test public void allOf_singleString_singleMatch() {
+    assertThat(allOf("foo").from("hello foo world")).containsExactly("foo");
+  }
+
+  @Test public void allOf_singleString_noMatch() {
+    assertThat(allOf("foo").from("hello bar world")).isEmpty();
+  }
+
+  @Test public void allOf_singleString_emptyInput() {
+    assertThat(allOf("foo").from("")).isEmpty();
+  }
+
+  @Test public void allOf_multipleStrings_multipleMatches() {
+    assertThat(allOf("foo", "bar").from("foo bar foo bar"))
+        .containsExactly("foo", "bar", "foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void allOf_multipleStrings_singleMatch() {
+    assertThat(allOf("foo", "bar").from("hello foo world")).containsExactly("foo");
+  }
+
+  @Test public void allOf_multipleStrings_interleavedOccurrences() {
+    assertThat(allOf("foo", "bar", "baz").from("baz bar foo bar foo baz"))
+        .containsExactly("baz", "bar", "foo", "bar", "foo", "baz")
+        .inOrder();
+  }
+
+  @Test public void allOf_multipleStrings_consecutiveOccurrences() {
+    assertThat(allOf("foo", "bar").from("foofoobarbar"))
+        .containsExactly("foo", "foo", "bar", "bar")
+        .inOrder();
+  }
+
+  @Test public void allOf_multipleStrings_noMatch() {
+    assertThat(allOf("foo", "bar").from("baz qux")).isEmpty();
+  }
+
+  @Test public void allOf_multipleStrings_emptyInput() {
+    assertThat(allOf("foo", "bar").from("")).isEmpty();
+  }
+
+  @Test public void allOf_mixedLengths_singleAndMultiChar() {
+    assertThat(allOf("a", "bc", "d").from("a bc d bc a"))
+        .containsExactly("a", "bc", "d", "bc", "a")
+        .inOrder();
+  }
+
+  @Test public void allOf_overlappingOccurrences_earlierMatchWins() {
+    assertThat(allOf("aa", "ab").from("aab")).containsExactly("aa");
+  }
+
+  @Test public void allOf_overlappingOccurrences_earlierMatchWins_regardlessOfArgumentOrder() {
+    assertThat(allOf("ab", "aa").from("aab")).containsExactly("aa");
+  }
+
+  @Test public void allOf_sameStartIndex_firstCandidateWins() {
+    assertThat(allOf("foo", "foobar").from("foobar")).containsExactly("foo");
+  }
+
+  @Test public void allOf_sameStartIndex_longerFirstCandidateWins() {
+    assertThat(allOf("foobar", "foo").from("foobar")).containsExactly("foobar");
+  }
+
+  @Test public void allOf_duplicateCandidates() {
+    assertThat(allOf("foo", "foo").from("foo")).containsExactly("foo");
+  }
+
+  @Test public void allOf_emptyString_nonEmptyInput() {
+    assertThat(allOf("").from("ab")).containsExactly("", "", "");
+  }
+
+  @Test public void allOf_emptyString_emptyInput() {
+    assertThat(allOf("").from("")).containsExactly("");
+  }
+
+  @Test public void allOf_match_returnsMatchesWithAccurateIndices() {
+    assertThat(allOf("foo", "bar").match("a foo b bar c").map(Match::index))
+        .containsExactly(2, 8)
+        .inOrder();
+  }
+
+  @Test public void allOf_match_withFromIndex() {
+    assertThat(allOf("foo", "bar").match("foo bar foo bar", 4).map(Match::toString))
+        .containsExactly("bar", "foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void allOf_match_negativeFromIndex() {
+    assertThrows(IndexOutOfBoundsException.class, () -> allOf("foo").match("foo", -1));
+  }
+
+  @Test public void allOf_match_fromIndexGreaterThanLength() {
+    assertThrows(IndexOutOfBoundsException.class, () -> allOf("foo").match("foo", 4));
+  }
+
+  @Test public void allOf_removeAllFrom() {
+    assertThat(allOf("foo", "bar").removeAllFrom("foo and bar and baz")).isEqualTo(" and  and baz");
+  }
+
+  @Test public void allOf_replaceAllFrom() {
+    assertThat(
+            allOf("foo", "bar").replaceAllFrom("foo and bar", m -> Ascii.toUpperCase(m.toString())))
+        .isEqualTo("FOO and BAR");
+  }
+
+  @Test public void allOf_split() {
+    assertThat(allOf(",", ";").split("a,b;c").map(Match::toString))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void allOf_cut() {
+    assertThat(allOf(",", ";").cut("a,b;c").map(Match::toString))
+        .containsExactly("a", ",", "b", ";", "c")
+        .inOrder();
+  }
+
+  @Test public void allOf_toString() {
+    assertThat(allOf("foo", "bar").toString())
+        .isEqualTo("firstOccurrenceOf([first('foo'), first('bar')]).repeatedly()");
+  }
+
+  @Test public void allOf_noArgs() {
+    assertThat(allOf().from("foo")).isEmpty();
+  }
+
+  @Test public void allOf_emptyArray_from() {
+    assertThat(allOf(new String[0]).from("foo")).isEmpty();
+  }
+
+  @Test public void allOf_emptyArray_from_emptyInput() {
+    assertThat(allOf(new String[0]).from("")).isEmpty();
+  }
+
+  @Test public void allOf_emptyArray_match() {
+    assertThat(allOf(new String[0]).match("foo")).isEmpty();
+  }
+
+  @Test public void allOf_emptyArray_removeAllFrom() {
+    assertThat(allOf(new String[0]).removeAllFrom("foo")).isEqualTo("foo");
+  }
+
+  @Test public void allOf_emptyArray_split() {
+    assertThat(allOf(new String[0]).split("foo").map(Match::toString)).containsExactly("foo");
+  }
+
+  @Test public void allOf_emptyArray_cut() {
+    assertThat(allOf(new String[0]).cut("foo").map(Match::toString)).containsExactly("foo");
+  }
+
+  @Test public void allOf_emptyArray_toString() {
+    assertThat(allOf(new String[0]).toString()).isEqualTo("NONE.repeatedly()");
+  }
+
+  @Test public void allOf_multipleEmptyStrings() {
+    assertThat(allOf("", "").from("ab")).containsExactly("", "", "", "", "", "");
+  }
+
+  @Test public void allOf_nonEmptyAndEmptyString() {
+    assertThat(allOf("a", "").from("ab")).containsExactly("a", "", "");
+  }
+
+  @Test public void allOf_nullArray() {
+    assertThrows(NullPointerException.class, () -> allOf((String[]) null));
+  }
+
+  @Test public void allOf_nullElement() {
+    assertThrows(NullPointerException.class, () -> allOf((String) null));
+  }
+
+  @Test public void allOf_nullSecondElement() {
+    assertThrows(NullPointerException.class, () -> allOf("foo", null));
   }
 
   @Test public void lastSnippet_toString() {

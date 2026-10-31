@@ -899,6 +899,10 @@ public class ParserTest {
     assertThat(nestedBy("aa", "b").parse("aaaaabb")).isEqualTo("aaab");
   }
 
+  @Test public void nestedBy_beforeOverlappingConsumedBefore_doesNotSwallowAfter() {
+    assertThat(nestedBy("aa", "ab").parse("aaaaabab")).isEqualTo("aaab");
+  }
+
   @Test public void nestedBy_beforeLongerThanAfter_closedAtEndOfInput() {
     assertThat(nestedBy("<<<", ">").parse("<<<a>")).isEqualTo("a");
   }
@@ -932,6 +936,21 @@ public class ParserTest {
         .containsExactly("x");
   }
 
+  @Test public void nestedBy_withReader_beforeOverlappingAfter_countsBefore() {
+    assertThat(nestedBy("(*", "*)").parseToStream(new StringReader("(*a(*)b*)*)")))
+        .containsExactly("a(*)b*)");
+  }
+
+  @Test public void nestedBy_withReader_overlappingBeforeOccurrences_consumedLeftToRight() {
+    assertThat(nestedBy("aa", "b").parseToStream(new StringReader("aaaaabb")))
+        .containsExactly("aaab");
+  }
+
+  @Test public void nestedBy_withReader_beforeOverlappingConsumedBefore_doesNotSwallowAfter() {
+    assertThat(nestedBy("aa", "ab").parseToStream(new StringReader("aaaaabab")))
+        .containsExactly("aaab");
+  }
+
   @Test public void nestedBy_withReader_beforeLongerThanAfter_closedAtEndOfInput() {
     assertThat(nestedBy("<<<", ">").parseToStream(new StringReader("<<<a>"))).containsExactly("a");
   }
@@ -943,6 +962,13 @@ public class ParserTest {
   @Test public void nestedBy_withReader_multipleOpeningsBeforeFirstClosing() {
     assertThat(nestedBy("(", ")").parseToStream(new StringReader("(((a)))")))
         .containsExactly("((a))");
+  }
+
+  @Test public void nestedBy_withReader_deepNesting() {
+    int depth = 10000;
+    String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
+    assertThat(nestedBy("(", ")").parseToStream(new StringReader(input)))
+        .containsExactly("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
   @Test public void nestedBy_withReader_nestingAfterBufferCompaction() {
