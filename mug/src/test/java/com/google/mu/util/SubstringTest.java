@@ -4,6 +4,8 @@ import static com.google.common.collect.ImmutableListMultimap.toImmutableListMul
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
+import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -19,27 +21,16 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
-import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
+import static java.util.Arrays.asList;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.testing.ClassSanityTester;
@@ -51,6 +42,19 @@ import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 import com.google.mu.util.stream.MoreCollectors;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -1234,6 +1238,34 @@ public class SubstringTest {
     assertThat(allOf("foo", "foo").from("foo")).containsExactly("foo");
   }
 
+  @Test public void allOf_duplicateCandidates_multipleMatches() {
+    assertThat(allOf("foo", "foo").from("foo and foo")).containsExactly("foo", "foo").inOrder();
+  }
+
+  @Test public void allOf_duplicateCandidates_mixedWithOtherCandidates() {
+    assertThat(allOf("foo", "bar", "foo").from("bar foo bar foo"))
+        .containsExactly("bar", "foo", "bar", "foo")
+        .inOrder();
+  }
+
+  @Test public void allOf_duplicateCandidates_preservesEncounterOrder() {
+    assertThat(allOf("foo", "foobar", "foo").from("foobar")).containsExactly("foo");
+  }
+
+  @Test public void allOf_duplicateCandidates_longerFirstPreservesEncounterOrder() {
+    assertThat(allOf("foobar", "foo", "foobar").from("foobar")).containsExactly("foobar");
+  }
+
+  @Test public void allOf_duplicateCandidates_toString() {
+    assertThat(allOf("foo", "bar", "foo").toString())
+        .isEqualTo("firstOccurrenceOf([first('foo'), first('bar')]).repeatedly()");
+  }
+
+  @Test public void allOf_onlyDuplicateCandidates_toString() {
+    assertThat(allOf("foo", "foo").toString())
+        .isEqualTo("firstOccurrenceOf([first('foo')]).repeatedly()");
+  }
+
   @Test public void allOf_emptyString_nonEmptyInput() {
     assertThat(allOf("").from("ab")).containsExactly("", "", "");
   }
@@ -1321,8 +1353,76 @@ public class SubstringTest {
     assertThat(allOf(new String[0]).toString()).isEqualTo("NONE.repeatedly()");
   }
 
+  @Test public void allOf_collection_empty() {
+    assertThat(allOf(ImmutableList.of()).from("foo")).isEmpty();
+  }
+
+  @Test public void allOf_collection_singleElement() {
+    assertThat(allOf(ImmutableList.of("foo")).from("foo and foo"))
+        .containsExactly("foo", "foo")
+        .inOrder();
+  }
+
+  @Test public void allOf_collection_duplicateCandidates() {
+    assertThat(allOf(ImmutableList.of("foo", "bar", "foo")).from("bar foo bar"))
+        .containsExactly("bar", "foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void allOf_collection_toString_deduplicates() {
+    assertThat(allOf(ImmutableList.of("foo", "bar", "foo")).toString())
+        .isEqualTo("firstOccurrenceOf([first('foo'), first('bar')]).repeatedly()");
+  }
+
+  @Test public void allOf_nonSetCollection_duplicateCandidates() {
+    assertThat(allOf(new ArrayDeque<>(asList("foo", "bar", "foo"))).from("bar foo bar"))
+        .containsExactly("bar", "foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void allOf_nonSetCollection_duplicateEmptyStrings() {
+    assertThat(allOf(new ArrayDeque<>(asList("", ""))).from("ab")).containsExactly("", "", "");
+  }
+
+  @Test public void allOf_set_empty() {
+    assertThat(allOf(ImmutableSet.of()).from("foo")).isEmpty();
+  }
+
+  @Test public void allOf_set_singleElement() {
+    assertThat(allOf(ImmutableSet.of("foo")).from("foo and foo"))
+        .containsExactly("foo", "foo")
+        .inOrder();
+  }
+
+  @Test public void allOf_set_multipleElements() {
+    assertThat(allOf(ImmutableSet.of("foo", "bar")).from("bar foo bar foo"))
+        .containsExactly("bar", "foo", "bar", "foo")
+        .inOrder();
+  }
+
+  @Test public void allOf_set_preservesIterationOrder() {
+    assertThat(allOf(ImmutableSet.of("foo", "foobar")).from("foobar")).containsExactly("foo");
+  }
+
+  @Test public void allOf_set_longerFirstPreservesIterationOrder() {
+    assertThat(allOf(ImmutableSet.of("foobar", "foo")).from("foobar")).containsExactly("foobar");
+  }
+
+  @Test public void allOf_set_toString() {
+    assertThat(allOf(ImmutableSet.of("foo", "bar")).toString())
+        .isEqualTo("firstOccurrenceOf([first('foo'), first('bar')]).repeatedly()");
+  }
+
+  @Test public void allOf_set_withEmptyString() {
+    assertThat(allOf(ImmutableSet.of("a", "")).from("ab")).containsExactly("a", "", "");
+  }
+
+  @Test public void allOf_set_nullElement() {
+    assertThrows(NullPointerException.class, () -> allOf(new LinkedHashSet<>(asList("foo", null))));
+  }
+
   @Test public void allOf_multipleEmptyStrings() {
-    assertThat(allOf("", "").from("ab")).containsExactly("", "", "", "", "", "");
+    assertThat(allOf("", "").from("ab")).containsExactly("", "", "");
   }
 
   @Test public void allOf_nonEmptyAndEmptyString() {
@@ -1333,12 +1433,20 @@ public class SubstringTest {
     assertThrows(NullPointerException.class, () -> allOf((String[]) null));
   }
 
+  @Test public void allOf_nullCollection() {
+    assertThrows(NullPointerException.class, () -> allOf((Collection<String>) null));
+  }
+
   @Test public void allOf_nullElement() {
     assertThrows(NullPointerException.class, () -> allOf((String) null));
   }
 
   @Test public void allOf_nullSecondElement() {
     assertThrows(NullPointerException.class, () -> allOf("foo", null));
+  }
+
+  @Test public void allOf_duplicateNullElements() {
+    assertThrows(NullPointerException.class, () -> allOf((String) null, null));
   }
 
   @Test public void lastSnippet_toString() {
