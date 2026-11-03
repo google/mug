@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -761,7 +762,10 @@ public final class Substring {
       case 0: return NONE.repeatedly();
       case 1: return all(substrings.iterator().next());
     }
-    return substrings.stream().map(Substring::first).collect(firstOccurrence()).repeatedly();
+    return (substrings instanceof Set ? substrings.stream() : substrings.stream().distinct())
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .repeatedly();
   }
 
   /**
@@ -926,6 +930,19 @@ public final class Substring {
    *     Stream.of("if", "else", "for", "public")
    *         .map(Substring::word)
    *         .collect(firstOccurrence());
+   * }</pre>
+   *
+   * <p>A common idiom is to find a set of candidate substrings in their encounter order,
+   * to {@link RepeatingPattern#replaceAllFrom replace}, {@link RepeatingPattern#split split},
+   * {@link RepeatingPattern#cut cut} or {@link RepeatingPattern#match extract}.
+   *
+   * <p>For example {@code allOf(":", "?").cut("cond ? good : bad")} will return {@code
+   * ["cond ", "?", " good ", ":", " bad"]"}. It's a short-hand of the following longer form: <pre>{@code
+   * Stream.of(".", ":")
+   *     .map(Substring::first)
+   *     .collect(firstOccurrence())
+   *     .repeatedly()
+   *     .cut("cond ? good : bad");
    * }</pre>
    *
    * @since 6.1
