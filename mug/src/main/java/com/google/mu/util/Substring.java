@@ -939,7 +939,7 @@ public final class Substring {
    *
    * <p>For example {@code allOf(":", "?").cut("cond ? good : bad")} will return {@code
    * ["cond ", "?", " good ", ":", " bad"]}. It's a short-hand of the following longer form: <pre>{@code
-   * Stream.of(".", ":")
+   * Stream.of(":", "?")
    *     .map(Substring::first)
    *     .collect(firstOccurrence())
    *     .repeatedly()
