@@ -761,11 +761,12 @@ public final class Substring {
     switch (substrings.size()) {
       case 0: return NONE.repeatedly();
       case 1: return all(substrings.iterator().next());
+      default:
+        return (substrings instanceof Set ? substrings.stream() : substrings.stream().distinct())
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .repeatedly();
     }
-    return (substrings instanceof Set ? substrings.stream() : substrings.stream().distinct())
-        .map(Substring::first)
-        .collect(firstOccurrence())
-        .repeatedly();
   }
 
   /**
