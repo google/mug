@@ -938,7 +938,7 @@ public final class Substring {
    * {@link RepeatingPattern#cut cut} or {@link RepeatingPattern#match extract}.
    *
    * <p>For example {@code allOf(":", "?").cut("cond ? good : bad")} will return {@code
-   * ["cond ", "?", " good ", ":", " bad"]"}. It's a short-hand of the following longer form: <pre>{@code
+   * ["cond ", "?", " good ", ":", " bad"]}. It's a short-hand of the following longer form: <pre>{@code
    * Stream.of(".", ":")
    *     .map(Substring::first)
    *     .collect(firstOccurrence())
