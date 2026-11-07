@@ -761,11 +761,12 @@ public final class Substring {
     switch (substrings.size()) {
       case 0: return NONE.repeatedly();
       case 1: return all(substrings.iterator().next());
+      default:
+        return (substrings instanceof Set ? substrings.stream() : substrings.stream().distinct())
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .repeatedly();
     }
-    return (substrings instanceof Set ? substrings.stream() : substrings.stream().distinct())
-        .map(Substring::first)
-        .collect(firstOccurrence())
-        .repeatedly();
   }
 
   /**
@@ -937,13 +938,29 @@ public final class Substring {
    * {@link RepeatingPattern#cut cut} or {@link RepeatingPattern#match extract}.
    *
    * <p>For example {@code allOf(":", "?").cut("cond ? good : bad")} will return {@code
-   * ["cond ", "?", " good ", ":", " bad"]"}. It's a short-hand of the following longer form: <pre>{@code
-   * Stream.of(".", ":")
+   * ["cond ", "?", " good ", ":", " bad"]}. It's a short-hand of the following longer form: <pre>{@code
+   * Stream.of(":", "?")
    *     .map(Substring::first)
    *     .collect(firstOccurrence())
    *     .repeatedly()
    *     .cut("cond ? good : bad");
    * }</pre>
+   *
+   * <p><b>Performance NOTE:</b> when the result {@link Pattern} is matched {@link
+   * Pattern#repeatedly repeatedly} against an input string, at each iteration the candidate pattern
+   * with the earliest match will be returned, Yet the other match results after the current match
+   * aren't thrown away. At any index, no pattern is ever applied twice.
+   *
+   * <p>This is more efficient than naively trying all candidate patterns at every step. However if
+   * the pattern matches heavily overlap with each other (in the worst case, {@code nCopies(100,
+   * word()).stream().collect(firstOccurrence())} results in complete overlapping), all the
+   * overlapping patterns will be re-matched at every step, resulting in wasted computation.
+   *
+   * <p>As such, it's recommended to avoid overlapping in your candidate patterns (one pattern's
+   * suffix is another pattern's prefix), and especially to avoid duplicate patterns. Since {@link
+   * Pattern} doesn't implement {@link Object#equals}, de-duplication after the fact isn't easy.
+   * It's better to avoid creating duplicate Pattern objects in the first place. For example: {@code
+   * reservedWordList.stream().distinct().map(Substring::word).collect(firstOccurrence())}.
    *
    * @since 6.1
    */
