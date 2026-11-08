@@ -3088,6 +3088,55 @@ public class ParserTest {
     assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
+  @Test public void anyOf_nothingPrunable_firstCandidateMatches() {
+    Parser<String> parser = anyOf(consecutive("[^0-9]"), consecutive("[^a-z]"));
+    assertThat(parser).parses("foo").isEqualTo("foo");
+  }
+
+  @Test public void anyOf_nothingPrunable_laterCandidateMatches() {
+    Parser<String> parser = anyOf(consecutive("[^0-9]"), consecutive("[^a-z]"));
+    assertThat(parser).parses("123").isEqualTo("123");
+  }
+
+  @Test public void anyOf_nothingPrunable_allCandidatesFailAtStart() {
+    Parser<String> parser = anyOf(consecutive("[^0-9]"), consecutive("[^a-z]"));
+    assertThat(parser)
+        .failsToParse("")
+        .hasMessageThat()
+        .contains("at 1:1: expecting one of [one or more [^0-9], one or more [^a-z]]");
+  }
+
+  @Test public void anyOf_nothingPrunable_reportsFarthestFailure() {
+    Parser<String> parser = anyOf(sequence(chars(1), string("x"), String::concat), chars(3));
+    assertThat(parser).parses("ax").isEqualTo("ax");
+    assertThat(parser).parses("abc").isEqualTo("abc");
+    assertThat(parser).failsToParse("ab").hasMessageThat().contains("at 1:2: expecting <x>");
+  }
+
+  @Test public void anyOf_withDigits_firstCharNotDigit_reportsAllAlternatives() {
+    Parser<String> parser = anyOf(string("foo"), digits(3));
+    assertThat(parser)
+        .failsToParse("xyz")
+        .hasMessageThat()
+        .contains("at 1:1: expecting one of [foo, 3 digits]");
+  }
+
+  @Test public void anyOf_withHexDigits_firstCharNotHexDigit_reportsAllAlternatives() {
+    Parser<String> parser = anyOf(string("foo"), hexDigits(2));
+    assertThat(parser)
+        .failsToParse("xy")
+        .hasMessageThat()
+        .contains("at 1:1: expecting one of [foo, 2 hex digits]");
+  }
+
+  @Test public void anyOf_withDigits_partialMatch_reportsAllAlternatives() {
+    Parser<String> parser = anyOf(string("foo"), digits(3));
+    assertThat(parser)
+        .failsToParse("12x")
+        .hasMessageThat()
+        .contains("at 1:1: expecting one of [foo, 3 digits]");
+  }
+
   @Test public void anyOf_expectedSymbolsAggregation() {
     Parser<?> parser = anyOf(
         one(DIGIT, "digit"), consecutive(DIGIT, "digits"), chars(3),
@@ -5467,6 +5516,14 @@ public class ParserTest {
     assertThat(digits(3).optional().parse("", i -> {})).isEmpty();
     assertThat(e).hasMessageThat().contains("1:1");
     assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test public void digits_failure_firstCharNotDigit() {
+    assertThat(digits(3))
+        .failsToParse("abc")
+        .hasMessageThat()
+        .contains("at 1:1: expecting <3 digits>");
+    assertThat(digits(3).optional().parse("abc", i -> {})).isEmpty();
   }
 
   @Test public void digits_zero_throws() {

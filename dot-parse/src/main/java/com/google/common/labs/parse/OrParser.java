@@ -121,7 +121,7 @@ final class OrParser<T> extends Parser<T> {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
-    if (builder.numSurvivors() > 0 && builder.numSurvivors() < parsers.size()) {
+    if (builder.numSurvivors() > 0 && builder.numSurvivors() != parsers.size()) {
       for (Parser<T> parser : parsers) {
         if (parser.getPrefixes().contains("")) {
           builder.addBlocklist(parser.getBlocklist(), parser);
