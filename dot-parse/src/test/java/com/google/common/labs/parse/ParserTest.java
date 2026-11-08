@@ -19,6 +19,7 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
+import static com.google.common.labs.parse.ParserSubject.assertThat;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
@@ -2057,10 +2058,10 @@ public class ParserTest {
     // (see OrParser.makePruneTreeIfUseful).
     Parser<String> dispatch = anyOf(arm1, arm2, arm3, arm4);
 
-    assertThat(dispatch.parseSkipping(whitespace(), "a B")).isEqualTo("a B");
+    assertThat(dispatch).parsesSkipping(whitespace(), "a B").isEqualTo("a B");
     // Returns "a B" — `arm4` succeeds with the optional consumed.
 
-    assertThat(dispatch.parseSkipping(whitespace(), "B")).isEqualTo("B");
+    assertThat(dispatch).parsesSkipping(whitespace(), "B").isEqualTo("B");
   }
 
   @Test public void optionalPrefixPruning_sequenceWithLiteralDoesNotHonorSkipping() {
@@ -2069,8 +2070,8 @@ public class ParserTest {
     Parser<String> arm3 = string("zoo");
     Parser<String> seq = sequence(string("baz").orElse(""), literally(string(" ")), String::concat);
     Parser<String> parser = anyOf(arm1, arm2, arm3, seq);
-    assertThat(parser.parseSkipping(whitespace(), " foo")).isEqualTo("foo");
-    assertThat(parser.parseSkipping(whitespace(), "bar ")).isEqualTo("bar");
+    assertThat(parser).parsesSkipping(whitespace(), " foo").isEqualTo("foo");
+    assertThat(parser).parsesSkipping(whitespace(), "bar ").isEqualTo("bar");
     assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " baz "));
     assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
   }
@@ -2946,26 +2947,25 @@ public class ParserTest {
         string("a1"), string("a2"), string("a3"), string("a4"), string("a5"), string("a6"),
         string("a7"), string("a8"), string("a9"), digits(), chars(2));
 
-    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser).parses("a1").isEqualTo("a1");
     assertThat(parser.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(parser.parse("a9")).isEqualTo("a9");
+    assertThat(parser).parses("a9").isEqualTo("a9");
     assertThat(parser.optional().parse("a9", i -> {})).hasValue("a9");
-    assertThat(parser.parse("xy")).isEqualTo("xy"); // chars(2)
+    assertThat(parser).parses("xy").isEqualTo("xy"); // chars(2)
     assertThat(parser.optional().parse("xy", i -> {})).hasValue("xy");
-    assertThat(parser.parse("123")).isEqualTo("123"); // digits()
+    assertThat(parser).parses("123").isEqualTo("123"); // digits()
 
     // Failure with pruning.
-    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(parser.optional().parse("a", i -> {})).isEmpty();
-    assertThat(e1)
+    assertThat(parser)
+        .failsToParse("a")
         .hasMessageThat()
         .contains("expecting one of [a1, a2, a3, a4, a5, a6, a7, a8, a9, digits, 2 char(s)]");
+    assertThat(parser.optional().parse("a", i -> {})).isEmpty();
 
     // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
     // error.
-    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(parser).failsToParse("bar").hasMessageThat().contains("expecting <EOF>");
     assertThat(parser.optional().parse("bar", i -> {})).isEmpty();
-    assertThat(e2).hasMessageThat().contains("expecting <EOF>");
   }
 
   @Test public void anyOf_pruningEnabled_withManyNonPrunableCandidates() {
@@ -2975,20 +2975,20 @@ public class ParserTest {
         string("a1"), string("a2"), string("a3"), chars(8), chars(7), chars(6), chars(5), chars(4),
         chars(3), chars(2), chars(1));
 
-    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser).parses("a1").isEqualTo("a1");
     assertThat(parser.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(parser.parse("a")).isEqualTo("a"); // chars(1)
+    assertThat(parser).parses("a").isEqualTo("a"); // chars(1)
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
-    assertThat(parser.parse("abcdefgh")).isEqualTo("abcdefgh"); // chars(8)
+    assertThat(parser).parses("abcdefgh").isEqualTo("abcdefgh"); // chars(8)
 
     // Failure with pruning. Reporting the expected prefixes.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
-    assertThat(parser.optional().parse("", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("")
         .hasMessageThat()
         .contains(
             "expecting one of [a1, a2, a3, 1 char(s), 2 char(s), 3 char(s), 4 char(s), 5 char(s),"
                 + " 6 char(s), 7 char(s), 8 char(s)]");
+    assertThat(parser.optional().parse("", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_pruningSuppressed_withMixedSkippingBehavior() {
@@ -2998,24 +2998,23 @@ public class ParserTest {
         string("a1"), string("a2"), string("a3"), string("a4"), string("a5"), string("a6"),
         string("a7"), string("a8"), string("a9"), string("a10"), literally(string("b")));
 
-    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser).parses("a1").isEqualTo("a1");
     assertThat(parser.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(parser.parse("b")).isEqualTo("b");
+    assertThat(parser).parses("b").isEqualTo("b");
     assertThat(parser.optional().parse("b", i -> {})).hasValue("b");
 
     // Failure with mixed skipping. Reporting the expected prefixes.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("c"));
-    assertThat(parser.optional().parse("c", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("c")
         .hasMessageThat()
         .contains("expecting one of [a1, a10, a2, a3, a4, a5, a6, a7, a8, a9, b]");
+    assertThat(parser.optional().parse("c", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_pruning_allCandidatesPruned_hasExpectedName() {
     Parser<String> parser = anyOf(string("abc"), string("def"), string("ghi"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
-    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("xyz")
         .hasMessageThat()
         .isEqualTo(
             """
@@ -3023,6 +3022,7 @@ public class ParserTest {
                 xyz
                 ^
             """);
+    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_pruning_allCandidatesPruned_emptyExpectedName() {
@@ -3030,9 +3030,8 @@ public class ParserTest {
     Parser<String> p2 = string("def").suchThat(s -> true, "");
     Parser<String> p3 = string("ghi").suchThat(s -> true, "");
     Parser<String> parser = anyOf(p1, p2, p3);
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
-    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("xyz")
         .hasMessageThat()
         .isEqualTo(
             """
@@ -3040,13 +3039,13 @@ public class ParserTest {
                 xyz
                 ^
             """);
+    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_noPruning_overshadowsFailedCandidate() {
     Parser<String> parser = anyOf(string("abc"), string("def"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
-    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("xyz")
         .hasMessageThat()
         .isEqualTo(
             """
@@ -3054,15 +3053,15 @@ public class ParserTest {
                 xyz
                 ^
             """);
+    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_noPruning_noOvershadowDueToSingleCandidateExpectedSymbols() {
     Parser<String> p1 = string("abc");
     Parser<String> p2 = string("def").suchThat(s -> true, "");
     Parser<String> parser = anyOf(p1, p2);
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
-    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("xyz")
         .hasMessageThat()
         .isEqualTo(
             """
@@ -3070,15 +3069,15 @@ public class ParserTest {
                 xyz
                 ^
             """);
+    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_noPruning_noOvershadowDueToSingleExpectedSymbol() {
     Parser<String> p1 = string("abc");
     Parser<String> p2 = string("abc").map(x -> x);
     Parser<String> parser = anyOf(p1, p2);
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
-    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("xyz")
         .hasMessageThat()
         .isEqualTo(
             """
@@ -3086,6 +3085,7 @@ public class ParserTest {
                 xyz
                 ^
             """);
+    assertThat(parser.optional().parse("xyz", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_expectedSymbolsAggregation() {
@@ -3159,28 +3159,28 @@ public class ParserTest {
         string("prefix05"), string("prefix06"), string("prefix07"), string("prefix08"),
         string("prefix09"), string("prefix10"), string("prefix11"));
 
-    assertThat(parser.parse("prefix01")).isEqualTo("prefix01");
+    assertThat(parser).parses("prefix01").isEqualTo("prefix01");
     assertThat(parser.optional().parse("prefix01", i -> {})).hasValue("prefix01");
-    assertThat(parser.parse("prefix11")).isEqualTo("prefix11");
+    assertThat(parser).parses("prefix11").isEqualTo("prefix11");
     assertThat(parser.optional().parse("prefix11", i -> {})).hasValue("prefix11");
 
     // Failure with common prefix.
-    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("prefix"));
-    assertThat(parser.optional().parse("prefix", i -> {})).isEmpty();
-    assertThat(e1)
+    assertThat(parser)
+        .failsToParse("prefix")
         .hasMessageThat()
         .contains(
             "expecting one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
                 + " prefix07, prefix08, prefix09, prefix10, prefix11]");
+    assertThat(parser.optional().parse("prefix", i -> {})).isEmpty();
 
     // Failure with completely different input.
-    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("other"));
-    assertThat(parser.optional().parse("other", i -> {})).isEmpty();
-    assertThat(e2)
+    assertThat(parser)
+        .failsToParse("other")
         .hasMessageThat()
         .contains(
             "expecting one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
                 + " prefix07, prefix08, prefix09, prefix10, prefix11]");
+    assertThat(parser.optional().parse("other", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_orderSensitivityWithPruning() {
@@ -3190,20 +3190,20 @@ public class ParserTest {
         string("a"), string("x1"), string("x2"), string("x3"), string("x4"), string("x5"),
         string("x6"), string("x7"), string("x8"));
 
-    assertThat(parser.parse("abcd")).isEqualTo("abc");
+    assertThat(parser).parses("abcd").isEqualTo("abc");
     assertThat(parser.optional().parse("abcd", i -> {})).hasValue("abc");
 
     // "ab" followed by "cd" would match "abcd" too, but "abc" is earlier.
     // If input is "ax", "a" matches but followed by leftover "x", so it fails.
-    assertThrows(ParseException.class, () -> parser.parse("ax"));
+    assertThat(parser).failsToParse("ax");
     assertThat(parser.optional().parse("ax", i -> {})).isEmpty();
 
     // Test that "ab_cd" can be matched if the first one fails.
     assertThat(
             anyOf(
-                    string("abc").followedBy("e"),
-                    string("ab").followedBy("cd").thenReturn("ab_cd"), string("a"))
-                .parse("abcd"))
+                string("abc").followedBy("e"), string("ab").followedBy("cd").thenReturn("ab_cd"),
+                string("a")))
+        .parses("abcd")
         .isEqualTo("ab_cd");
   }
 
@@ -3214,20 +3214,20 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer).parses("a1").isEqualTo("a1");
     assertThat(outer.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(outer.parse("a9")).isEqualTo("a9");
+    assertThat(outer).parses("a9").isEqualTo("a9");
     assertThat(outer.optional().parse("a9", i -> {})).hasValue("a9");
-    assertThat(outer.parse("bc")).isEqualTo("bc");
+    assertThat(outer).parses("bc").isEqualTo("bc");
     assertThat(outer.optional().parse("bc", i -> {})).hasValue("bc");
-    assertThat(outer.parse("FOO")).isEqualTo("foo");
+    assertThat(outer).parses("FOO").isEqualTo("foo");
     assertThat(outer.optional().parse("FOO", i -> {})).hasValue("foo");
 
-    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
-    assertThat(outer.optional().parse("x", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(outer)
+        .failsToParse("x")
         .hasMessageThat()
         .contains("expecting one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, bar, foo, 2 char(s)]");
+    assertThat(outer.optional().parse("x", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_nestedAnyOf_oneNotPrunable() {
@@ -3236,18 +3236,18 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer).parses("a1").isEqualTo("a1");
     assertThat(outer.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(outer.parse("b ")).isEqualTo("b ");
+    assertThat(outer).parses("b ").isEqualTo("b ");
     assertThat(outer.optional().parse("b ", i -> {})).hasValue("b ");
-    assertThat(outer.parse("bc")).isEqualTo("bc");
+    assertThat(outer).parses("bc").isEqualTo("bc");
     assertThat(outer.optional().parse("bc", i -> {})).hasValue("bc");
 
-    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
-    assertThat(outer.optional().parse("x", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(outer)
+        .failsToParse("x")
         .hasMessageThat()
         .contains("expecting one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b, 2 char(s)]");
+    assertThat(outer.optional().parse("x", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_nestedAnyOf_allPrunable() {
@@ -3258,18 +3258,18 @@ public class ParserTest {
             .toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer).parses("a1").isEqualTo("a1");
     assertThat(outer.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer).parses("b1").isEqualTo("b1");
     assertThat(outer.optional().parse("b1", i -> {})).hasValue("b1");
-    assertThat(outer.parse("b2")).isEqualTo("b2");
+    assertThat(outer).parses("b2").isEqualTo("b2");
     assertThat(outer.optional().parse("b2", i -> {})).hasValue("b2");
 
-    ParseException e = assertThrows(ParseException.class, () -> outer.parse("b3"));
-    assertThat(outer.optional().parse("b3", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(outer)
+        .failsToParse("b3")
         .hasMessageThat()
         .contains("expecting one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b1, b2]");
+    assertThat(outer.optional().parse("b3", i -> {})).isEmpty();
   }
 
   @Test public void anyOf_nestedAnyOf_allHonorSkipping() {
@@ -3278,8 +3278,8 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
-    assertThat(outer.parseSkipping(whitespace(), "  a1")).isEqualTo("a1");
+    assertThat(outer).parsesSkipping(whitespace(), "  b1").isEqualTo("b1");
+    assertThat(outer).parsesSkipping(whitespace(), "  a1").isEqualTo("a1");
   }
 
   @Test public void anyOf_nestedAnyOf_mixedSkippingSuppressesPruning() {
@@ -3288,9 +3288,9 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parseSkipping(whitespace(), "  b2")).isEqualTo("b2");
-    assertThat(outer.parseSkipping(whitespace(), "b1")).isEqualTo("b1");
-    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
+    assertThat(outer).parsesSkipping(whitespace(), "  b2").isEqualTo("b2");
+    assertThat(outer).parsesSkipping(whitespace(), "b1").isEqualTo("b1");
+    assertThat(outer).parsesSkipping(whitespace(), "  b1").isEqualTo("b1");
   }
 
   @Test public void anyOf_nestedAnyOf_allLiterallyPrunable() {
@@ -3303,12 +3303,12 @@ public class ParserTest {
             .toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer).parses("b1").isEqualTo("b1");
     assertThat(outer.optional().parse("b1", i -> {})).hasValue("b1");
-    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer).parses("a1").isEqualTo("a1");
     assertThat(outer.optional().parse("a1", i -> {})).hasValue("a1");
-    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
-    assertThat(outer.parseSkipping(whitespace(), " a1")).isEqualTo("a1");
+    assertThat(outer).parsesSkipping(whitespace(), "  b1").isEqualTo("b1");
+    assertThat(outer).parsesSkipping(whitespace(), " a1").isEqualTo("a1");
   }
 
   @Test public void anyOf_pruning_propagatesThroughSequence() {
@@ -3317,11 +3317,11 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("ab")).isEqualTo("ab");
+    assertThat(outer).parses("ab").isEqualTo("ab");
     assertThat(outer.optional().parse("ab", i -> {})).hasValue("ab");
-    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThat(outer).parses("x1").isEqualTo("x1");
     assertThat(outer.optional().parse("x1", i -> {})).hasValue("x1");
-    assertThrows(ParseException.class, () -> outer.parse("ac"));
+    assertThat(outer).failsToParse("ac");
     assertThat(outer.optional().parse("ac", i -> {})).isEmpty();
   }
 
@@ -3331,9 +3331,9 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("aaa")).isEqualTo("a");
+    assertThat(outer).parses("aaa").isEqualTo("a");
     assertThat(outer.optional().parse("aaa", i -> {})).hasValue("a");
-    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThat(outer).parses("x1").isEqualTo("x1");
     assertThat(outer.optional().parse("x1", i -> {})).hasValue("x1");
   }
 
@@ -3344,13 +3344,13 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer).parses("a").isEqualTo("a");
     assertThat(outer.optional().parse("a", i -> {})).hasValue("a");
-    assertThat(outer.parse("b")).isEqualTo("b");
+    assertThat(outer).parses("b").isEqualTo("b");
     assertThat(outer.optional().parse("b", i -> {})).hasValue("b");
-    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThat(outer).parses("x1").isEqualTo("x1");
     assertThat(outer.optional().parse("x1", i -> {})).hasValue("x1");
-    assertThrows(ParseException.class, () -> outer.parse("c"));
+    assertThat(outer).failsToParse("c");
     assertThat(outer.optional().parse("c", i -> {})).isEmpty();
   }
 
@@ -3363,11 +3363,11 @@ public class ParserTest {
         concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
 
-    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer).parses("a").isEqualTo("a");
     assertThat(outer.optional().parse("a", i -> {})).hasValue("a");
-    assertThat(outer.parse("123")).isEqualTo("123");
+    assertThat(outer).parses("123").isEqualTo("123");
     assertThat(outer.optional().parse("123", i -> {})).hasValue("123");
-    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThat(outer).parses("x1").isEqualTo("x1");
     assertThat(outer.optional().parse("x1", i -> {})).hasValue("x1");
   }
 
@@ -3376,12 +3376,12 @@ public class ParserTest {
         range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
     Parser<String> parser = parsers.stream().collect(or());
 
-    assertThat(parser.parse("A5")).isEqualTo("a5");
+    assertThat(parser).parses("A5").isEqualTo("a5");
     assertThat(parser.optional().parse("A5", i -> {})).hasValue("a5");
-    assertThat(parser.parse("a5")).isEqualTo("a5");
+    assertThat(parser).parses("a5").isEqualTo("a5");
     assertThat(parser.optional().parse("a5", i -> {})).hasValue("a5");
     // verify pruning by providing an input that doesn't start with any 'a' or 'A'
-    assertThrows(ParseException.class, () -> parser.parse("B1"));
+    assertThat(parser).failsToParse("B1");
     assertThat(parser.optional().parse("B1", i -> {})).isEmpty();
   }
 
@@ -3390,12 +3390,12 @@ public class ParserTest {
         range(0, 10).mapToObj(i -> caseInsensitiveWord("word" + i).map(Object::toString)).toList();
     Parser<String> parser = parsers.stream().collect(or());
 
-    assertThat(parser.parse("WORD5")).isEqualTo("word5");
+    assertThat(parser).parses("WORD5").isEqualTo("word5");
     assertThat(parser.optional().parse("WORD5", i -> {})).hasValue("word5");
-    assertThat(parser.parse("word5")).isEqualTo("word5");
+    assertThat(parser).parses("word5").isEqualTo("word5");
     assertThat(parser.optional().parse("word5", i -> {})).hasValue("word5");
     // verify pruning
-    assertThrows(ParseException.class, () -> parser.parse("A1"));
+    assertThat(parser).failsToParse("A1");
     assertThat(parser.optional().parse("A1", i -> {})).isEmpty();
   }
 
@@ -3406,7 +3406,7 @@ public class ParserTest {
     // Very long trailing data should not affect prefix pruning efficiency.
     String longInput = "a1" + "z".repeat(10000);
     Parser<String> p = parser.followedBy(zeroOrMore(is('z'), "z"));
-    assertThat(p.parse(longInput)).isEqualTo("a1");
+    assertThat(p).parses(longInput).isEqualTo("a1");
     assertThat(p.optional().parse(longInput, i -> {})).hasValue("a1");
   }
 
@@ -3414,13 +3414,13 @@ public class ParserTest {
     List<Parser<String>> parsers = range(0, 10).mapToObj(i -> word("word" + i)).toList();
     Parser<String> parser = parsers.stream().collect(or());
 
-    assertThat(parser.parse("word5")).isEqualTo("word5");
+    assertThat(parser).parses("word5").isEqualTo("word5");
     assertThat(parser.optional().parse("word5", i -> {})).hasValue("word5");
     // verify that word("word5") doesn't match "word5x"
-    assertThrows(ParseException.class, () -> parser.parse("word5x"));
+    assertThat(parser).failsToParse("word5x");
     assertThat(parser.optional().parse("word5x", i -> {})).isEmpty();
     // verify that word("word5") works as a prefix for "word5 "
-    assertThat(parser.parseSkipping(whitespace(), "word5 ")).isEqualTo("word5");
+    assertThat(parser).parsesSkipping(whitespace(), "word5 ").isEqualTo("word5");
   }
 
   @Test public void anyOf_derivedBlocklistFromPrefixes_blocklist() {
@@ -3433,13 +3433,13 @@ public class ParserTest {
 
   @Test public void anyOf_derivedBlocklistFromPrefixes_parsing() {
     Parser<Character> parser = anyOf(one(','), one('.'), one(isNot('<'), "not <"));
-    assertThat(parser.parse(",")).isEqualTo(',');
+    assertThat(parser).parses(",").isEqualTo(',');
     assertThat(parser.optional().parse(",", i -> {})).hasValue(',');
-    assertThat(parser.parse(".")).isEqualTo('.');
+    assertThat(parser).parses(".").isEqualTo('.');
     assertThat(parser.optional().parse(".", i -> {})).hasValue('.');
-    assertThat(parser.parse("a")).isEqualTo('a');
+    assertThat(parser).parses("a").isEqualTo('a');
     assertThat(parser.optional().parse("a", i -> {})).hasValue('a');
-    assertThrows(ParseException.class, () -> parser.parse("<"));
+    assertThat(parser).failsToParse("<");
     assertThat(parser.optional().parse("<", i -> {})).isEmpty();
   }
 
@@ -3447,13 +3447,13 @@ public class ParserTest {
     List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
     Parser<Character> parser = parsers.stream().collect(or());
 
-    assertThat(parser.parse("f")).isEqualTo('f');
+    assertThat(parser).parses("f").isEqualTo('f');
     assertThat(parser.optional().parse("f", i -> {})).hasValue('f');
-    assertThat(parser.parse("s")).isEqualTo('s');
+    assertThat(parser).parses("s").isEqualTo('s');
     assertThat(parser.optional().parse("s", i -> {})).hasValue('s');
-    assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(parser).failsToParse("z");
     assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(parser).failsToParse("!");
     assertThat(parser.optional().parse("!", i -> {})).isEmpty();
   }
 
@@ -7629,12 +7629,12 @@ public class ParserTest {
         chars(4));
 
     // Input "z" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("z")
         .hasMessageThat()
         .contains("expecting one of [one or more [abc], x1, x2, x3, x4, x5, 4 char(s)]");
-    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
+    assertThat(parser).parses("a").isEqualTo("a");
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
   }
 
@@ -7647,12 +7647,12 @@ public class ParserTest {
         zeroOrMore("[abc]").notEmpty(), chars(4));
 
     // Input "z" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("z")
         .hasMessageThat()
         .contains("expecting one of [x1, x2, x3, x4, x5, zero or more [abc], 4 char(s)]");
-    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
+    assertThat(parser).parses("a").isEqualTo("a");
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
   }
 
@@ -7668,12 +7668,12 @@ public class ParserTest {
         string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), word(), chars(4));
 
     // Input "!" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
-    assertThat(parser.optional().parse("!", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("!")
         .hasMessageThat()
         .contains("expecting one of [word, x1, x2, x3, x4, x5, 4 char(s)]");
-    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.optional().parse("!", i -> {})).isEmpty();
+    assertThat(parser).parses("a").isEqualTo("a");
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
   }
 
@@ -7685,12 +7685,12 @@ public class ParserTest {
         string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), digits(), chars(4));
 
     // Input "a" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(parser.optional().parse("a", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("a")
         .hasMessageThat()
         .contains("expecting one of [digits, x1, x2, x3, x4, x5, 4 char(s)]");
-    assertThat(parser.parse("1")).isEqualTo("1");
+    assertThat(parser.optional().parse("a", i -> {})).isEmpty();
+    assertThat(parser).parses("1").isEqualTo("1");
     assertThat(parser.optional().parse("1", i -> {})).hasValue("1");
   }
 
@@ -7720,20 +7720,20 @@ public class ParserTest {
         string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), string("abc"),
         consecutive("[^abc]"));
 
-    assertThat(parser.parse("d")).isEqualTo("d");
+    assertThat(parser).parses("d").isEqualTo("d");
     assertThat(parser.optional().parse("d", i -> {})).hasValue("d");
-    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser).parses("abc").isEqualTo("abc");
     assertThat(parser.optional().parse("abc", i -> {})).hasValue("abc");
 
     // Input "abz" prunes x1-x5. abc and [^abc] are tried.
     // abc matches "ab", fails at index 2 (expects 'c', got 'z').
     // [^abc] fails at index 0 (expects [^abc], got 'a').
     // abc matches farther, thus its error is reported.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
-    assertThat(parser.optional().parse("abz", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("abz")
         .hasMessageThat()
         .contains("expecting one of [abc, one or more [^abc], x1, x2, x3, x4, x5]");
+    assertThat(parser.optional().parse("abz", i -> {})).isEmpty();
   }
 
   @Test public void consecutive_with_caret_pruning() {
@@ -7744,12 +7744,12 @@ public class ParserTest {
         chars(4));
 
     // Input "z" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("z")
         .hasMessageThat()
         .contains("expecting one of [one or more [ab^c], x1, x2, x3, x4, x5, 4 char(s)]");
-    assertThat(parser.parse("^")).isEqualTo("^");
+    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
+    assertThat(parser).parses("^").isEqualTo("^");
     assertThat(parser.optional().parse("^", i -> {})).hasValue("^");
   }
 
@@ -7761,12 +7761,12 @@ public class ParserTest {
         chars(4));
 
     // Input "z" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("z")
         .hasMessageThat()
         .contains("expecting one of [one or more [a-a], x1, x2, x3, x4, x5, 4 char(s)]");
-    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
+    assertThat(parser).parses("a").isEqualTo("a");
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
   }
 
@@ -7779,12 +7779,12 @@ public class ParserTest {
         chars(4));
 
     // Input "z" should prune all except chars(4).
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e)
+    assertThat(parser)
+        .failsToParse("z")
         .hasMessageThat()
         .contains("expecting one of [x1, x2, x3, x4, x5, 4 char(s), [abc]]");
-    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.optional().parse("z", i -> {})).isEmpty();
+    assertThat(parser).parses("a").isEqualTo("a");
     assertThat(parser.optional().parse("a", i -> {})).hasValue("a");
   }
 
@@ -7796,18 +7796,20 @@ public class ParserTest {
         string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), string("abc"),
         one("[^abc]"));
 
-    assertThat(parser.parse("d")).isEqualTo('d');
+    assertThat(parser).parses("d").isEqualTo('d');
     assertThat(parser.optional().parse("d", i -> {})).hasValue('d');
-    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser).parses("abc").isEqualTo("abc");
     assertThat(parser.optional().parse("abc", i -> {})).hasValue("abc");
 
     // Input "abz" prunes x1-x5. abc and [^abc] are tried.
     // abc matches "ab", fails at index 2 (expects 'c', got 'z').
     // [^abc] fails at index 0 (expects [^abc], got 'a').
     // abc matches farther, thus its error is reported.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
+    assertThat(parser)
+        .failsToParse("abz")
+        .hasMessageThat()
+        .contains("expecting one of [abc, x1, x2, x3, x4, x5, [^abc]]");
     assertThat(parser.optional().parse("abz", i -> {})).isEmpty();
-    assertThat(e).hasMessageThat().contains("expecting one of [abc, x1, x2, x3, x4, x5, [^abc]]");
   }
 
   @Test public void anyOfEnum_success() {
@@ -7835,12 +7837,14 @@ public class ParserTest {
     Parser<Object> anyOfParser = anyOf(string("x1"), parser, chars(4));
 
     // Input "+" should match Operator.PLUS.
-    assertThat(anyOfParser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThat(anyOfParser).parses("+").isEqualTo(IntOperator.PLUS);
 
     // Input "z" should prune x1 and parser. Only chars(4) tried.
-    ParseException e = assertThrows(ParseException.class, () -> anyOfParser.parse("z"));
+    assertThat(anyOfParser)
+        .failsToParse("z")
+        .hasMessageThat()
+        .contains("expecting one of [x1, 4 char(s), *, +, ++, -, --, /]");
     assertThat(anyOfParser.optional().parse("z", i -> {})).isEmpty();
-    assertThat(e).hasMessageThat().contains("expecting one of [x1, 4 char(s), *, +, ++, -, --, /]");
   }
 
   @Test public void anyOfEnum_shuffled_success() {

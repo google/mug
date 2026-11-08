@@ -5,7 +5,10 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
+import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.mu.util.CharPredicate;
 import java.io.StringReader;
 import java.util.stream.Stream;
 
@@ -20,6 +23,42 @@ final class ParserSubject extends Subject {
   private ParserSubject(FailureMetadata metadata, Parser<?> parser) {
     super(metadata, parser);
     this.parser = parser;
+  }
+
+  /**
+   * Parses {@code input} twice with the same parser instance: the 1st invocation takes the linear
+   * scan, the 2nd builds and uses the prefix trie. Both results must be equal to the expected.
+   */
+  Subject parses(String input) {
+    Object first = parser.parse(input);
+    check("parse(%s) on 2nd invocation", input).that(parser.parse(input)).isEqualTo(first);
+    return check("parse(%s)", input).that(first);
+  }
+
+  /** Same as {@link #parses}, with {@code charsToSkip} skipped. */
+  Subject parsesSkipping(CharPredicate charsToSkip, String input) {
+    Object first = parser.parseSkipping(charsToSkip, input);
+    check("parseSkipping(%s) on 2nd invocation", input)
+        .that(parser.parseSkipping(charsToSkip, input))
+        .isEqualTo(first);
+    return check("parseSkipping(%s)", input).that(first);
+  }
+
+  /** Same as {@link #parses}, except both invocations must fail at the same index and message. */
+  @CanIgnoreReturnValue
+  ThrowableSubject failsToParse(String input) {
+    Parser.ParseException first =
+        assertThrows(Parser.ParseException.class, () -> parser.parse(input));
+    Parser.ParseException second =
+        assertThrows(Parser.ParseException.class, () -> parser.parse(input));
+    check("parse(%s) failure index on 2nd invocation", input)
+        .that(second.getSourceIndex())
+        .isEqualTo(first.getSourceIndex());
+    check("parse(%s) failure message on 2nd invocation", input)
+        .that(second)
+        .hasMessageThat()
+        .isEqualTo(first.getMessage());
+    return check("parse(%s)", input).that(first);
   }
 
   ParserInputSubject fromStringOrReader(String input) {
