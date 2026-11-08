@@ -262,7 +262,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Matches exactly {@code n} consecutive chars that all satisfy {@code matcher}. */
-  private static Parser<Void> chars(int n, CharPredicate matcher, String name) {
+  private static Scanner chars(int n, CharPredicate matcher, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     return new Scanner(name) {
       @Override int scan(CharInput input, int from, ErrorContext context) {
