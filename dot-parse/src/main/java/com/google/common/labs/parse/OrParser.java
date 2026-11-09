@@ -37,7 +37,7 @@ final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   // Built on the 2nd invocation, so allocate-run-discard parsers never pay for it.
   @LazyInit private volatile PrefixPruneTree<Parser<T>> prefixPruneTree;
-  private boolean used;
+  @LazyInit private boolean used;
   @LazyInit private volatile Set<String> expectedSymbols;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
