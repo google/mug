@@ -37,7 +37,7 @@ final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   // Built on the 2nd invocation, so allocate-run-discard parsers never pay for it.
   @LazyInit private volatile PrefixPruneTree<Parser<T>> prefixPruneTree;
-  private boolean fresh = true;
+  private boolean used;
   @LazyInit private volatile Set<String> expectedSymbols;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
@@ -105,11 +105,11 @@ final class OrParser<T> extends Parser<T> {
     if (result == null) {
       // Benign race: threads racing on the 1st invocation each take the linear scan once more;
       // threads racing on the 2nd build the same tree twice.
-      if (fresh) {
-        fresh = false;
-        return null;
+      if (used) {
+        this.prefixPruneTree = result = makePruneTree(parsers);
+      } else {
+        used = true;
       }
-      this.prefixPruneTree = result = makePruneTree(parsers);
     }
     return result;
   }
