@@ -199,9 +199,8 @@ final class Regexes {
       }
 
       @Override Set<String> prefixesOf(char c) {
-        return Set.of(
-            Character.toString(Character.toLowerCase(c)),
-            Character.toString(Character.toUpperCase(c)));
+        // Caseless chars like '0' have the same lower and upper case. Set.of() would reject them.
+        return Utils.caseInsensitivePrefixes(Character.toString(c), 1);
       }
     };
 
