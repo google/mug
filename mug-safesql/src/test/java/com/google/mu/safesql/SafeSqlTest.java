@@ -1472,10 +1472,84 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("(b = 2 AND c = 3) OR (d = 4)"));
   }
 
-  @Test
-  public void namesInAnonymousSubqueriesAreIndependent() {
-    SafeSql sql =
-        Stream.of(1, 2, 3).map(id -> SafeSql.of("id = {id}", id)).collect(SafeSql.or());
+  @Test public void and_empty() {
+    assertThat(SafeSql.and(ImmutableList.of())).isEqualTo(SafeSql.of("(1 = 1)"));
+  }
+
+  @Test public void and_singleCondition() {
+    assertThat(SafeSql.and(ImmutableList.of(SafeSql.of("a = 1")))).isEqualTo(SafeSql.of("(a = 1)"));
+  }
+
+  @Test public void and_twoConditions() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.of("a = 1"), SafeSql.of("b = 2 OR c = 3"));
+    assertThat(SafeSql.and(queries)).isEqualTo(SafeSql.of("(a = 1) AND (b = 2 OR c = 3)"));
+  }
+
+  @Test public void and_threeConditions() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.of("a = 1"), SafeSql.of("b = 2 OR c = 3"), SafeSql.of("d = 4"));
+    assertThat(SafeSql.and(queries))
+        .isEqualTo(SafeSql.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test public void and_threeConditionsWithParameters() {
+    ImmutableList<SafeSql> queries = ImmutableList.of(
+        SafeSql.of("a = {v1}", 1),
+        SafeSql.of("b = {v2} OR c = {v3}", 2, 3),
+        SafeSql.of("d = {v4}", 4));
+    SafeSql sql = SafeSql.and(queries);
+    assertThat(sql.toString()).isEqualTo("(a = ?) AND (b = ? OR c = ?) AND (d = ?)");
+    assertThat(sql.debugString())
+        .isEqualTo("(a = ? /* 1 */) AND (b = ? /* 2 */ OR c = ? /* 3 */) AND (d = ? /* 4 */)");
+  }
+
+  @Test public void and_ignoresEmpty() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.EMPTY, SafeSql.of("b = 2 OR c = 3"), SafeSql.of("d = 4"));
+    assertThat(SafeSql.and(queries)).isEqualTo(SafeSql.of("(b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test public void or_empty() {
+    assertThat(SafeSql.or(ImmutableList.of())).isEqualTo(SafeSql.of("(1 = 0)"));
+  }
+
+  @Test public void or_singleCondition() {
+    assertThat(SafeSql.or(ImmutableList.of(SafeSql.of("a = 1")))).isEqualTo(SafeSql.of("(a = 1)"));
+  }
+
+  @Test public void or_twoConditions() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.of("a = 1"), SafeSql.of("b = 2 AND c = 3"));
+    assertThat(SafeSql.or(queries)).isEqualTo(SafeSql.of("(a = 1) OR (b = 2 AND c = 3)"));
+  }
+
+  @Test public void or_threeConditions() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.of("a = 1"), SafeSql.of("b = 2 AND c = 3"), SafeSql.of("d = 4"));
+    assertThat(SafeSql.or(queries))
+        .isEqualTo(SafeSql.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test public void or_threeConditionsWithParameters() {
+    ImmutableList<SafeSql> queries = ImmutableList.of(
+        SafeSql.of("a = {v1}", 1),
+        SafeSql.of("b = {v2} AND c = {v3}", 2, 3),
+        SafeSql.of("d = {v4}", 4));
+    SafeSql sql = SafeSql.or(queries);
+    assertThat(sql.toString()).isEqualTo("(a = ?) OR (b = ? AND c = ?) OR (d = ?)");
+    assertThat(sql.debugString())
+        .isEqualTo("(a = ? /* 1 */) OR (b = ? /* 2 */ AND c = ? /* 3 */) OR (d = ? /* 4 */)");
+  }
+
+  @Test public void or_ignoresEmpty() {
+    ImmutableList<SafeSql> queries =
+        ImmutableList.of(SafeSql.EMPTY, SafeSql.of("b = 2 AND c = 3"), SafeSql.of("d = 4"));
+    assertThat(SafeSql.or(queries)).isEqualTo(SafeSql.of("(b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test public void namesInAnonymousSubqueriesAreIndependent() {
+    SafeSql sql = Stream.of(1, 2, 3).map(id -> SafeSql.of("id = {id}", id)).collect(SafeSql.or());
     assertThat(sql.toString()).isEqualTo("(id = ?) OR (id = ?) OR (id = ?)");
     assertThat(sql.debugString()).isEqualTo("(id = ? /* 1 */) OR (id = ? /* 2 */) OR (id = ? /* 3 */)");
   }

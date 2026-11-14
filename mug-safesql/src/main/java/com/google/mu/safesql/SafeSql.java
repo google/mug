@@ -621,6 +621,19 @@ public final class SafeSql {
   }
 
   /**
+   * Joins boolean {@code conditions} using {@code AND} operator. The AND'ed sub-queries will be
+   * enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result will be
+   * "(1 = 1)".
+   *
+   * <p>Empty SafeSql elements are ignored and not joined.
+   *
+   * @since 11.3
+   */
+  public static SafeSql and(Collection<SafeSql> conditions) {
+    return conditions.stream().collect(and());
+  }
+
+  /**
    * A collector that joins boolean query snippet using {@code OR} operator. The OR'ed sub-queries
    * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
    * will be "(1 = 0)".
@@ -631,6 +644,19 @@ public final class SafeSql {
     return collectingAndThen(
         skippingEmpty(mapping(SafeSql::parenthesized, joining(" OR "))),
         query -> query.sql.isEmpty() ? FALSE : query);
+  }
+
+  /**
+   * Joins boolean {@code conditions} using {@code OR} operator. The OR'ed sub-queries will be
+   * enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result will be
+   * "(1 = 0)".
+   *
+   * <p>Empty SafeSql elements are ignored and not joined.
+   *
+   * @since 11.3
+   */
+  public static SafeSql or(Collection<SafeSql> conditions) {
+    return conditions.stream().collect(or());
   }
 
   /**
