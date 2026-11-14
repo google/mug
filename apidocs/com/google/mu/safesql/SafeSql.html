@@ -78,7 +78,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#when(boolean)" tabindex="0">when(boolean)</a></li>
 <li><a href="#template(java.lang.String)" tabindex="0">template(String)</a></li>
 <li><a href="#and()" tabindex="0">and()</a></li>
+<li><a href="#and(java.util.Collection)" tabindex="0">and(Collection)</a></li>
 <li><a href="#or()" tabindex="0">or()</a></li>
+<li><a href="#or(java.util.Collection)" tabindex="0">or(Collection)</a></li>
 <li><a href="#joining(java.lang.String)" tabindex="0">joining(String)</a></li>
 <li><a href="#orElse(java.lang.String,java.lang.Object...)" tabindex="0">orElse(String, Object...)</a></li>
 <li><a href="#orElse(com.google.mu.safesql.SafeSql)" tabindex="0">orElse(SafeSql)</a></li>
@@ -540,55 +542,65 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">A collector that joins boolean query snippet using <code>AND</code> operator.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#args()" class="member-name-link">args</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#and(java.util.Collection)" class="member-name-link">and</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;&nbsp;conditions)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Joins boolean <code>conditions</code> using <code>AND</code> operator.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#args()" class="member-name-link">args</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a copy of the JDBC arguments.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#debugString()" class="member-name-link">debugString</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#debugString()" class="member-name-link">debugString</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a query string with the parameter values embedded for easier debugging (logging,
  testing, golden file etc.).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;obj)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;obj)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>,<wbr>?,<wbr><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#joining(java.lang.String)" class="member-name-link">joining</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>,<wbr>?,<wbr><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#joining(java.lang.String)" class="member-name-link">joining</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a collector that joins SafeSql elements using <code>delimiter</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#nonNegativeLiteral(int)" class="member-name-link">nonNegativeLiteral</a><wbr>(int&nbsp;number)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#nonNegativeLiteral(int)" class="member-name-link">nonNegativeLiteral</a><wbr>(int&nbsp;number)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
 <div class="deprecation-comment">Prefer <code>OFFSET-FETCH</code> clause, which is parameterizable</div>
 </div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String,java.lang.Object...)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;template,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String,java.lang.Object...)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;template,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>...&nbsp;params)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns <a href="SafeSql.html" title="class in com.google.mu.safesql"><code>SafeSql</code></a> using <code>template</code> and <code>params</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#optionally(java.lang.String,java.util.Optional)" class="member-name-link">optionally</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#optionally(java.lang.String,java.util.Optional)" class="member-name-link">optionally</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;?&gt;&nbsp;param)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
 <div class="deprecation-comment">Use <code>SafeSql.of("{foo? -&gt; OR foo?}", optionalFoo)</code> instead of <code>
      optionally("or {foo}", optionalFoo)</code> because the former allows you to reference <code>
      foo?</code> multiple times in the right hand side snippet.</div>
 </div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>,<wbr>?,<wbr><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#or()" class="member-name-link">or</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>,<wbr>?,<wbr><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#or()" class="member-name-link">or</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">A collector that joins boolean query snippet using <code>OR</code> operator.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#or(java.util.Collection)" class="member-name-link">or</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;&nbsp;conditions)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Joins boolean <code>conditions</code> using <code>OR</code> operator.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#orElse(com.google.mu.safesql.SafeSql)" class="member-name-link">orElse</a><wbr>(<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&nbsp;fallback)</code></div>
@@ -1048,6 +1060,23 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
+<section class="detail" id="and(java.util.Collection)">
+<h3>and</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></span>&nbsp;<span class="element-name">and</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;&nbsp;conditions)</span></div>
+<div class="block">Joins boolean <code>conditions</code> using <code>AND</code> operator. The AND'ed sub-queries will be
+ enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result will be
+ "(1 = 1)".
+
+ <p>Empty SafeSql elements are ignored and not joined.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>11.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="or()">
 <h3>or</h3>
 <div class="horizontal-scroll">
@@ -1057,6 +1086,23 @@ loadScripts(document, 'script');</script>
  will be "(1 = 0)".
 
  <p>Empty SafeSql elements are ignored and not joined.</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="or(java.util.Collection)">
+<h3>or</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></span>&nbsp;<span class="element-name">or</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a>&gt;&nbsp;conditions)</span></div>
+<div class="block">Joins boolean <code>conditions</code> using <code>OR</code> operator. The OR'ed sub-queries will be
+ enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result will be
+ "(1 = 0)".
+
+ <p>Empty SafeSql elements are ignored and not joined.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>11.3</dd>
+</dl>
 </div>
 </section>
 </li>
