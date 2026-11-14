@@ -189,13 +189,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return skipConsecutive(matcher.precomputeForAscii(), name).source();
   }
 
-  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
+  private static Scanner skipConsecutive(CharPredicate matcher, String name) {
     return new Scanner(name) {
       @Override int scan(CharInput input, int index, ErrorContext context) {
         return input.skipWhile(matcher, index);
       }
 
-      @Override public Parser<Void> as(String logicalName) {
+      @Override public Scanner as(String logicalName) {
         return skipConsecutive(matcher, logicalName);
       }
 
@@ -244,14 +244,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return chars(n, EMPTY_PREFIX, n + " char(s)").source();
   }
 
-  private static Parser<Void> chars(int n, Set<String> prefixes, String name) {
+  private static Scanner chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     return new Scanner(name) {
       @Override int scan(CharInput input, int from, ErrorContext context) {
         return input.isInRange(from + n - 1) ? from + n : from;
       }
 
-      @Override public Parser<Void> as(String logicalName) {
+      @Override public Scanner as(String logicalName) {
         return Parser.chars(n, prefixes, logicalName);
       }
 
@@ -261,10 +261,30 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private static Parser<String> chars(int n, CharacterRangeSet characterSet, String name) {
-    return chars(n, characterSet.getAsciiPrefixes(), name)
-        .source()
-        .suchThat(characterSet::matchesAllOf, name);
+  /** Matches exactly {@code n} consecutive chars that all satisfy {@code matcher}. */
+  private static Scanner chars(int n, CharPredicate matcher, String name) {
+    checkArgument(n > 0, "chars count (%s) must be positive", n);
+    return new Scanner(name) {
+      @Override int scan(CharInput input, int from, ErrorContext context) {
+        if (!input.isInRange(from + n - 1)) return from;
+        for (int i = from; i < from + n; i++) {
+          if (!matcher.test((char) input.charAtOrEof(i))) return from;
+        }
+        return from + n;
+      }
+
+      @Override public Scanner as(String logicalName) {
+        return Parser.chars(n, matcher, logicalName);
+      }
+
+      @Override Set<String> computePrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+
+      @Override BitSet computeBlocklist() {
+        return blockedCommonAsciiChars(matcher);
+      }
+    };
   }
 
   /**
@@ -300,7 +320,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> digits(int n) {
-    return chars(n, CharacterRangeSet.DECIMAL, n + " digits");
+    return chars(n, CharacterRangeSet.DECIMAL, n + " digits").source();
   }
 
   /**
@@ -309,7 +329,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> hexDigits(int n) {
-    return chars(n, CharacterRangeSet.HEX, n + " hex digits");
+    return chars(n, CharacterRangeSet.HEX, n + " hex digits").source();
   }
 
   /**

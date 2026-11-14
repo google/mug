@@ -34,12 +34,12 @@ import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
-  private static final PrefixPruneTree<?> UNKNOWN = new PrefixPruneTree<>(List.of(), null);
   private final List<Parser<T>> parsers;
+  // Built on the 2nd invocation, so allocate-run-discard parsers never pay for it.
   @LazyInit private volatile PrefixPruneTree<Parser<T>> prefixPruneTree;
+  @LazyInit private boolean used;
   @LazyInit private volatile Set<String> expectedSymbols;
 
-  @SuppressWarnings("unchecked") // sentinel
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
     this.parsers = candidates.stream()
@@ -50,8 +50,6 @@ final class OrParser<T> extends Parser<T> {
                 : Stream.of(requireNonNull(p)))
         .map(Parser::<T>covariant)
         .toList();
-    this.prefixPruneTree =
-        parsers.size() < 2 ? null : (PrefixPruneTree<Parser<T>>) (PrefixPruneTree<?>) UNKNOWN;
   }
 
   @Override MatchResult<T> skipAndMatch(
@@ -60,6 +58,8 @@ final class OrParser<T> extends Parser<T> {
     start = Parser.skipIfAny(preskipper, input, start);
     List<Parser<T>> candidates = parsers;
     var prefixTree = getPrefixTree();
+    // Pruning is transparent: a pruned candidate would have failed at `start`, so the linear
+    // scan (1st invocation) and the pruned scan yield the same result and report the same error.
     if (prefixTree != null) {
       candidates = prefixTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
@@ -100,32 +100,35 @@ final class OrParser<T> extends Parser<T> {
     return result;
   }
 
-  @SuppressWarnings("ReferenceEquality")
   private PrefixPruneTree<Parser<T>> getPrefixTree() {
     PrefixPruneTree<Parser<T>> result = this.prefixPruneTree;
-    if (result == UNKNOWN) {
-      this.prefixPruneTree = result = makePruneTreeIfUseful(parsers);
+    if (result == null) {
+      // Benign race: threads racing on the 1st invocation each take the linear scan once more;
+      // threads racing on the 2nd build the same tree twice.
+      if (used) {
+        this.prefixPruneTree = result = makePruneTree(parsers);
+      } else {
+        used = true;
+      }
     }
     return result;
   }
 
-  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
+  private static <T> PrefixPruneTree<Parser<T>> makePruneTree(List<Parser<T>> parsers) {
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
-    if (builder.numSurvivors() == parsers.size()) {
-      return null;
-    }
-    if (builder.numSurvivors() > 0) {
+    if (builder.numSurvivors() > 0 && builder.numSurvivors() != parsers.size()) {
       for (Parser<T> parser : parsers) {
         if (parser.getPrefixes().contains("")) {
           builder.addBlocklist(parser.getBlocklist(), parser);
         }
       }
     }
+    // If no candidate is prunable, this is a leaf that returns all of them.
     return builder.build();
   }
 
