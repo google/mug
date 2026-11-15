@@ -35,6 +35,9 @@ This report presents a comprehensive JMH performance benchmark and architectural
 11. **`autumn`** (Java):
     A highly flexible PEG parser combinator library with left-recursion support.
 
+12. **`jjparse`** (Java):
+    A lightweight parser combinator library inspired by Scala Parser Combinators.
+
 All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
 
 > [!NOTE]
@@ -51,9 +54,9 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 
 ---
 
-## JSON Parser Shootout (12-Way Showdown)
+## JSON Parser Shootout (13-Way Showdown)
 
-To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 12 shootout engines.
+To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 13 shootout engines.
 
 Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
 
@@ -64,14 +67,14 @@ Throughput was measured in **operations per millisecond** (higher is better):
 > *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
 > *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
 
-| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | 0.143 | 0.166 | **0.755** 🚀 ☕ | 0.123 | 0.095 | 0.515 | 0.234 | 0.015 | 0.096 | 0.082 | 0.066 | 0.077 | **`dot`** 🚀 ☕ |
-| **Complex JSON with Comments** | 0.098 | 0.067 | **0.392** 🚀 ☕ | 0.091 | 0.050 | 0.342 | 0.079 | 0.001 | 0.030 | 0.031 | 0.022 | 0.036 | **`dot`** 🚀 ☕ |
-| **`qux2.json` (Medium JSON)** | — | — | **0.262** 🚀 ☕ | — | — | 0.256 | 0.138 | — | — | — | — | — | **`dot`** 🚀 ☕ |
-| **`bla25.json` (Large JSON)** | — | — | **0.108** ☕ | — | — | **0.124** 🚀 | 0.050 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`countries.geo.json` (Geographic JSON)** | — | — | **0.384** 🚀 ☕ | — | — | 0.353 | 0.160 | — | — | — | — | — | **`dot`** 🚀 ☕ |
-| **`ugh10k.json` (Very Large JSON)** | — | — | **0.035** ☕ | — | — | **0.037** 🚀 | 0.019 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | [`jjparse`](https://github.com/BjoernLoetters/Jar-Jar-Parse/tree/main/examples/json) | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Complex JSON Payload** | 0.143 | 0.166 | **0.755** 🚀 ☕ | 0.123 | 0.095 | 0.515 | 0.234 | 0.015 | 0.096 | 0.082 | 0.066 | 0.077 | 0.055 | **`dot`** 🚀 ☕ |
+| **Complex JSON with Comments** | 0.098 | 0.067 | **0.392** 🚀 ☕ | 0.091 | 0.050 | 0.342 | 0.079 | 0.001 | 0.030 | 0.031 | 0.022 | 0.036 | 0.026 | **`dot`** 🚀 ☕ |
+| **`qux2.json` (Medium JSON)** | — | — | **0.262** 🚀 ☕ | — | — | 0.256 | 0.138 | — | — | — | — | — | — | **`dot`** 🚀 ☕ |
+| **`bla25.json` (Large JSON)** | — | — | **0.108** ☕ | — | — | **0.124** 🚀 | 0.050 | — | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`countries.geo.json` (Geographic JSON)** | — | — | **0.384** 🚀 ☕ | — | — | 0.353 | 0.160 | — | — | — | — | — | — | **`dot`** 🚀 ☕ |
+| **`ugh10k.json` (Very Large JSON)** | — | — | **0.035** ☕ | — | — | **0.037** 🚀 | 0.019 | — | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
 Snapshot: 2026-09-24, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 1 fork, 3 warmup and 5 measurement
 iterations. The `dot-parse` and `fastparse` results for `qux2.json` are within each other's error
