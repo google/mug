@@ -76,15 +76,6 @@ Throughput was measured in **megabytes per second (MB/s)** (higher is better):
 | **`countries.geo.json` (Geographic JSON, 257 KB)** | — | — | **98.7** 🚀 ☕ | — | — | 90.7 | 41.1 | — | — | — | — | — | — | **`dot`** 🚀 ☕ |
 | **`ugh10k.json` (Very Large JSON, 3.38 MB)** | — | — | **118.3** ☕ | — | — | **125.0** 🚀 | 64.2 | — | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
-Snapshot: 2026-09-24, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 1 fork, 3 warmup and 5 measurement
-iterations. The `dot-parse` and `fastparse` results for `qux2.json` are within each other's error
-margins.
-
-The *Complex JSON with Comments* numbers, here and in the reference table below, were re-measured on
-2026-10-02 after commit `51f77dc937` in the same environment. Each is the mean of 7 single-fork JMH
-passes (3 warmup and 5 measurement iterations each); the 95% confidence intervals are ± 14.3 MB/s for
-`dot-parse` and ± 10.0 MB/s for `fastparse`.
-
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
 
@@ -143,11 +134,6 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | **Nested Comments** | **24,205** 🚀 ☕ | 2,344 | 4,737 | 2,131 | 696 | 642 | 389 | 1,104 | 251 | 1,018 | 1,339 | **`dot`** 🚀 ☕ |
 | **US Phone (Single)** | **15,005** 🚀 ☕ | 7,107 | 8,446 | 11,439 | 13,992 | 8,501 | 4,226 | 5,851 | 3,183 | 6,666 | 9,607 | **`dot`** 🚀 ☕ |
 | **US Phone (1,000-List)** | **11.67** 🚀 ☕ | 9.31 | 8.97 | 11.20 | 8.53 | 1.83 | 3.68 | 7.50 | 2.81 | 5.32 | 5.28 | **`dot`** 🚀 ☕ |
-
-The *Nested Comments* row was re-measured on 2026-10-03 (JDK 24.0.1, Apple M3 Pro, macOS 15.7.9)
-after `nestedBy()` switched to `indexOf()`-based delimiter search. Each number is the mean of 7
-single-fork JMH passes (3 warmup and 5 measurement iterations each); the 95% confidence intervals
-are ± 265 for `dot-parse` and ± 151 for `fastparse`.
 
 ---
 
@@ -213,9 +199,6 @@ to the regex grammar can be trended over time.
 
 Throughput was measured in **operations per second** (higher is better). Ratio is
 `RegexPattern.of / Pattern.compile`.
-
-Snapshot: 2026-09-12, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 5×1s warmup, 10×1s measurement,
-1 fork, 2 rounds averaged; per-round ratios agreed within 2%.
 
 | Pattern | `RegexPattern.of` (ops/s) | `Pattern.compile` (ops/s) | Ratio |
 | :--- | ---: | ---: | :---: |
