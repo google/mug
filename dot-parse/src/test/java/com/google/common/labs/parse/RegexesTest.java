@@ -108,6 +108,11 @@ public class RegexesTest {
     assertThat(prefixes("(?i:\uD83D\uDE00\uD83D\uDE01b)")).containsExactly("\uD83D\uDE00\uD83D");
   }
 
+  @Test public void prefixesOf_caseInsensitive_caselessCharRange() {
+    assertThat(prefixes("(?i:[0-2])")).containsExactly("0", "1", "2");
+    assertThat(prefixes("(?i:[0-1a-b])")).containsExactly("0", "1", "a", "A", "b", "B");
+  }
+
   @Test public void prefixesOf_disabledCaseInsensitive() {
     assertThat(prefixes("(?i:a?(?-i:b))")).containsExactly("a", "A", "b");
   }

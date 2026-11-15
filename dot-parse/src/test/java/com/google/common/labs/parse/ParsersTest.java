@@ -204,6 +204,12 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("B").parsesTo("B");
   }
 
+  @Test public void regex_choicePruning_caseInsensitiveFlag_caselessCharRange() {
+    Parser<String> parser = anyOf(regex("(?i:[0-9a-f]+)"), regex("x"), regex("y"));
+    assertThat(parser).parses("5").isEqualTo("5");
+    assertThat(parser).parses("Ff").isEqualTo("Ff");
+  }
+
   @Test public void regex_choicePruning_unicodeCharacterClassFlag() {
     Parser<String> parser = anyOf(regex("(?U:\\d)"), regex("x"), regex("y"));
     assertThat(parser).fromStringOrReader("\u0661").parsesTo("\u0661");
