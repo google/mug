@@ -155,7 +155,7 @@ final class Regexes {
         case RegexPattern.CharRange range ->
             range.end() < 128 && range.end() - range.start() < 30
                 ? IntStream.rangeClosed(range.start(), range.end())
-                    .mapToObj(i -> forLiteral.prefixesOf((char) i))
+                    .mapToObj(i -> forLiteral.prefixesOf(Character.toString(i)))
                     .flatMap(Set::stream)
                     .collect(toUnmodifiableSet())
                 : EMPTY_PREFIX;
@@ -188,24 +188,14 @@ final class Regexes {
       @Override Set<String> prefixesOf(String s) {
         return Set.of(s);
       }
-
-      @Override Set<String> prefixesOf(char c) {
-        return Set.of(Character.toString(c));
-      }
     },
     CASE_INSENSITIVE {
       @Override Set<String> prefixesOf(String s) {
         return Utils.caseInsensitivePrefixes(s, 3);
       }
-
-      @Override Set<String> prefixesOf(char c) {
-        // Caseless chars like '0' have the same lower and upper case. Set.of() would reject them.
-        return Utils.caseInsensitivePrefixes(Character.toString(c), 1);
-      }
     };
 
     abstract Set<String> prefixesOf(String s);
-    abstract Set<String> prefixesOf(char c);
   }
 
   private static Collector<String, ?, Set<String>> toPrefixSet() {
