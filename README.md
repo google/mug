@@ -17,7 +17,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
         .parseSkipping(Character::isWhitespace, input);
     ``` 
 - [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by _examples_  
-  → `DateTimeFormatter format = formatOf("2024-03-14 11.00:00.123 America/New_York")`
+  → `DateTimeFormatter format = formatOf("2024-03-14 11:00:00.123 America/New_York")`
 
 ## Streams
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
