@@ -11,13 +11,12 @@ abstract class Scanner extends Parser<Void> {
     this.name = requireNonNull(name);
   }
 
-  @Override final MatchResult<Void> skipAndMatch(
-      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context) {
-    start = Parser.skipIfAny(preskipper, input, start);
+  @Override final boolean skipAndMatch(
+      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context,
+      MatchResult result) {
+    start = Parser.skipIfAny(preskipper, input, start, result);
     int end = scan(input, start, context);
-    return end > start
-        ? new MatchResult.Success<>(start, end, null)
-        : context.expecting(name, start);
+    return end > start ? result.succeed(start, end, null) : context.expecting(name, start, result);
   }
 
   /** Matches one or more chars starting from {@code index} and returns the ending index. */

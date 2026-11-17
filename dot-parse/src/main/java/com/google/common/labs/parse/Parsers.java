@@ -789,15 +789,15 @@ public final class Parsers {
       Function<? super RegexMatch, ? extends T> mapper) {
     RegexPattern.Metadata metadata = ast.metadata();
     return new Parser<T>() {
-      @Override MatchResult<T> skipAndMatch(
+      @Override boolean skipAndMatch(
           Skipper preskipper, Skipper innerSkipper, CharInput input, int start,
-          ErrorContext context) {
-        start = Parser.skipIfAny(preskipper, input, start);
+          ErrorContext context, MatchResult result) {
+        start = Parser.skipIfAny(preskipper, input, start, result);
         RegexMatch match = input.match(jdkPattern, metadata, start);
         if (match == null) {
-          return context.expecting(name, start);
+          return context.expecting(name, start, result);
         }
-        return new MatchResult.Success<>(start, match.endIndex(), mapper.apply(match));
+        return result.succeed(start, match.endIndex(), mapper.apply(match));
       }
 
       @Override Set<String> computePrefixes() {

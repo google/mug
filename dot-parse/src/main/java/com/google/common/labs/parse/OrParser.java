@@ -52,10 +52,11 @@ final class OrParser<T> extends Parser<T> {
         .toList();
   }
 
-  @Override MatchResult<T> skipAndMatch(
-      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context) {
+  @Override boolean skipAndMatch(
+      Skipper preskipper, Skipper innerSkipper, CharInput input, int start, ErrorContext context,
+      MatchResult result) {
     // All top-level parsers allow input to apply pre-skipping.
-    start = Parser.skipIfAny(preskipper, input, start);
+    start = Parser.skipIfAny(preskipper, input, start, result);
     List<Parser<T>> candidates = parsers;
     var prefixTree = getPrefixTree();
     // Pruning is transparent: a pruned candidate would have failed at `start`, so the linear
@@ -63,24 +64,29 @@ final class OrParser<T> extends Parser<T> {
     if (prefixTree != null) {
       candidates = prefixTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        return context.expectingInternal(this, start);
+        return context.expectingInternal(this, start, result);
       }
     }
-    MatchResult.Failure<T> farthestFailure = null;
+    // `result` is overwritten by each candidate, so the farthest failure is kept in locals.
+    int farthestAt = 0;
+    long farthestFrontier = -1;
+    String farthestTemplate = null;
+    Object farthestSymbol = null;
     for (int i = 0, n = candidates.size(); i < n; i++) {
       Parser<T> parser = candidates.get(i);
-      MatchResult<T> result = parser.skipAndMatch(null, innerSkipper, input, start, context);
-      if (result instanceof MatchResult.Failure<T> failure) {
-        if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
-          farthestFailure = failure;
-        }
-      } else {
-        return result;
+      if (parser.skipAndMatch(null, innerSkipper, input, start, context, result)) {
+        return true;
+      }
+      if (farthestFrontier < result.frontier()) {
+        farthestAt = result.at();
+        farthestFrontier = result.frontier();
+        farthestTemplate = result.messageTemplate();
+        farthestSymbol = result.symbolName();
       }
     }
-    return farthestFailure.frontier() == start
-        ? context.expectingInternal(this, start)
-        : farthestFailure;
+    return farthestFrontier == start
+        ? context.expectingInternal(this, start, result)
+        : result.fail(farthestAt, farthestFrontier, farthestTemplate, farthestSymbol);
   }
 
   @Override Set<String> computePrefixes() {

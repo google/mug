@@ -1,75 +1,88 @@
 package com.google.common.labs.parse;
 
+/**
+ * Writes failures to the {@link MatchResult}. The failure methods always return false, so that a
+ * parser can {@code return context.expecting(...)}.
+ */
 class ErrorContext {
   static final ErrorContext MINIMAL = new ErrorContext();
 
   /** Note down that {@code symbol} was missing at the specified index. */
   void missed(String symbolName, int at) {}
 
-  final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
-    return expecting(symbolName, at, at);
+  final boolean expecting(String symbolName, int at, MatchResult result) {
+    return expecting(symbolName, at, at, result);
   }
 
-  final <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at) {
-    return expectingInternal(symbol, at, at);
+  final boolean expectingInternal(Object symbol, int at, MatchResult result) {
+    return expectingInternal(symbol, at, at, result);
   }
 
-  <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
-    return failAt(at, frontier, "expecting <{name}>.", symbolName);
+  boolean expecting(String symbolName, int at, long frontier, MatchResult result) {
+    return failAt(at, frontier, "expecting <{name}>.", symbolName, result);
   }
 
-  <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
-    return failAt(at, frontier, "expecting {name}.", symbol);
+  boolean expectingInternal(Object symbol, int at, long frontier, MatchResult result) {
+    return failAt(at, frontier, "expecting {name}.", symbol, result);
   }
 
-  final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, Object symbol) {
-    return failAt(at, at, messageTemplate, symbol);
+  final boolean failAt(int at, String messageTemplate, Object symbol, MatchResult result) {
+    return failAt(at, at, messageTemplate, symbol, result);
   }
 
-  <V> MatchResult.Failure<V> failAt(int at, long frontier, String messageTemplate, Object symbol) {
-    return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
+  boolean failAt(int at, long frontier, String messageTemplate, Object symbol, MatchResult result) {
+    return result.fail(at, frontier, messageTemplate, symbol);
   }
 
-  final <V> MatchResult.Failure<V> errorAt(int at, long frontier, ParseError error) {
-    return failAt(at, frontier | (1L << 32), "{name}\n{snippet}", error.getMessage());
+  final boolean errorAt(int at, long frontier, ParseError error, MatchResult result) {
+    return failAt(at, frontier | (1L << 32), "{name}\n{snippet}", error.getMessage(), result);
   }
 
   static final class ErrorTracker extends ErrorContext {
     private static final String EXPECTING = "expecting <{name}>, encountered:{snippet}";
-    private MatchResult.Failure<?> farthestFailure = null;
+    private int farthestAt;
+    private long farthestFrontier = -1;
+    private String farthestTemplate;
+    private Object farthestSymbol;
 
     @Override void missed(String symbolName, int at) {
       if (isFarthest(at)) {
-        farthestFailure = new MatchResult.Failure<>(at, at, EXPECTING, symbolName);
+        trackFarthest(at, at, EXPECTING, symbolName);
       }
     }
 
-    @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
-      return failAt(at, frontier, EXPECTING, symbolName);
+    @Override boolean expecting(String symbolName, int at, long frontier, MatchResult result) {
+      return failAt(at, frontier, EXPECTING, symbolName, result);
     }
 
-    @Override <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
-      return failAt(at, frontier, "expecting {name}, encountered:{snippet}", symbol);
+    @Override boolean expectingInternal(Object symbol, int at, long frontier, MatchResult result) {
+      return failAt(at, frontier, "expecting {name}, encountered:{snippet}", symbol, result);
     }
 
-    @Override <V> MatchResult.Failure<V> failAt(
-        int at, long frontier, String messageTemplate, Object symbol) {
-      var failure = new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
+    @Override boolean failAt(
+        int at, long frontier, String messageTemplate, Object symbol, MatchResult result) {
       // prefer the farthest then the most recent failure
       if (isFarthest(frontier)) {
-        farthestFailure = failure;
+        trackFarthest(at, frontier, messageTemplate, symbol);
       }
-      return failure;
+      return result.fail(at, frontier, messageTemplate, symbol);
     }
 
-    Parser.ParseException report(MatchResult.Failure<?> failure, CharInput input) {
+    Parser.ParseException report(MatchResult failure, CharInput input) {
       return isFarthest(failure.frontier())
           ? failure.toException(input)
-          : farthestFailure.toException(input);
+          : MatchResult.toException(input, farthestAt, farthestTemplate, farthestSymbol);
     }
 
     private boolean isFarthest(long index) {
-      return farthestFailure == null || index >= farthestFailure.frontier();
+      return index >= farthestFrontier;
+    }
+
+    private void trackFarthest(int at, long frontier, String messageTemplate, Object symbol) {
+      farthestAt = at;
+      farthestFrontier = frontier;
+      farthestTemplate = messageTemplate;
+      farthestSymbol = symbol;
     }
   }
 }
