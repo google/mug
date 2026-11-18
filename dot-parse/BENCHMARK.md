@@ -35,6 +35,9 @@ This report presents a comprehensive JMH performance benchmark and architectural
 11. **`autumn`** (Java):
     A highly flexible PEG parser combinator library with left-recursion support.
 
+12. **`jjparse`** (Java):
+    A lightweight parser combinator library inspired by Scala Parser Combinators.
+
 All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
 
 > [!NOTE]
@@ -51,56 +54,47 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 
 ---
 
-## JSON Parser Shootout (12-Way Showdown)
+## JSON Parser Shootout (13-Way Showdown)
 
-To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 12 shootout engines.
+To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 13 shootout engines.
 
 Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
 
-Throughput was measured in **operations per millisecond** (higher is better):
+Throughput was measured in **megabytes per second (MB/s)** (higher is better):
 
 > [!NOTE]
 > **Emoji Legend**:
 > *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
 > *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
 
-| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | 0.143 | 0.166 | **0.755** 🚀 ☕ | 0.123 | 0.095 | 0.515 | 0.234 | 0.015 | 0.096 | 0.082 | 0.066 | 0.077 | **`dot`** 🚀 ☕ |
-| **Complex JSON with Comments** | 0.098 | 0.067 | **0.392** 🚀 ☕ | 0.091 | 0.050 | 0.342 | 0.079 | 0.001 | 0.030 | 0.031 | 0.022 | 0.036 | **`dot`** 🚀 ☕ |
-| **`qux2.json` (Medium JSON)** | — | — | **0.262** 🚀 ☕ | — | — | 0.256 | 0.138 | — | — | — | — | — | **`dot`** 🚀 ☕ |
-| **`bla25.json` (Large JSON)** | — | — | **0.108** ☕ | — | — | **0.124** 🚀 | 0.050 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`countries.geo.json` (Geographic JSON)** | — | — | **0.384** 🚀 ☕ | — | — | 0.353 | 0.160 | — | — | — | — | — | **`dot`** 🚀 ☕ |
-| **`ugh10k.json` (Very Large JSON)** | — | — | **0.035** ☕ | — | — | **0.037** 🚀 | 0.019 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-
-Snapshot: 2026-09-24, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 1 fork, 3 warmup and 5 measurement
-iterations. The `dot-parse` and `fastparse` results for `qux2.json` are within each other's error
-margins.
-
-The *Complex JSON with Comments* numbers, here and in the reference table below, were re-measured on
-2026-10-02 after commit `51f77dc937` in the same environment. Each is the mean of 7 single-fork JMH
-passes (3 warmup and 5 measurement iterations each); the 95% confidence intervals are ± 0.010 for
-`dot-parse` and ± 0.007 for `fastparse`.
+| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | [`jjparse`](https://github.com/BjoernLoetters/Jar-Jar-Parse/tree/main/examples/json) | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Complex JSON Payload (537 KB)** | 76.8 | 89.1 | **405.5** 🚀 ☕ | 66.1 | 51.0 | 276.6 | 125.7 | 8.1 | 51.6 | 44.0 | 35.4 | 41.4 | 29.5 | **`dot`** 🚀 ☕ |
+| **Complex JSON with Comments (1.43 MB)** | 140.2 | 95.9 | **560.9** 🚀 ☕ | 130.2 | 71.5 | 489.3 | 113.0 | 1.4 | 42.9 | 44.4 | 31.5 | 51.5 | 37.2 | **`dot`** 🚀 ☕ |
+| **`qux2.json` (Medium JSON, 661 KB)** | — | — | **173.1** 🚀 ☕ | — | — | 169.1 | 91.2 | — | — | — | — | — | — | **`dot`** 🚀 ☕ |
+| **`bla25.json` (Large JSON, 1.88 MB)** | — | — | **202.6** ☕ | — | — | **232.6** 🚀 | 93.8 | — | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`countries.geo.json` (Geographic JSON, 257 KB)** | — | — | **98.7** 🚀 ☕ | — | — | 90.7 | 41.1 | — | — | — | — | — | — | **`dot`** 🚀 ☕ |
+| **`ugh10k.json` (Very Large JSON, 3.38 MB)** | — | — | **118.3** ☕ | — | — | **125.0** 🚀 | 64.2 | — | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
 
-| Parser Engine | Complex JSON (ops/ms) | Complex JSON with Comments (ops/ms) |
+| Parser Engine | Complex JSON (MB/s) | Complex JSON with Comments (MB/s) |
 | :--- | :---: | :---: |
-| **Jackson Databind** (Lenient) | 1.058 | 0.315 |
-| **Gson** (Lenient) | 0.803 | 0.304 |
-| **`dot-parse`** (Our leading Java combinator) | **0.755** | **0.392** 🚀 ☕ |
-| **JavaCC** | 0.166 | 0.067 |
+| **Jackson Databind** (Lenient) | 568.2 | 450.7 |
+| **Gson** (Lenient) | 431.2 | 434.9 |
+| **`dot-parse`** (Our leading Java combinator) | **405.5** | **560.9** 🚀 ☕ |
+| **JavaCC** | 89.1 | 95.9 |
 
-#### Reference Streaming Baselines (8,000 Rows, ~8MB JSONL)
-To evaluate continuous data ingestion performance, we benchmarked incremental record streaming from a `Reader` on an 8,000-row (~8.1 MB total) JSONL file:
+#### Reference Streaming Baselines (8,000 Rows, ~8.5 MB JSONL)
+To evaluate continuous data ingestion performance, we benchmarked incremental record streaming from a `Reader` on an 8,000-row (~8.47 MB total) JSONL file:
 
-| Streaming Parser Engine | Clean JSONL (ops/ms) |
+| Streaming Parser Engine | Clean JSONL (MB/s) |
 | :--- | :---: |
-| **Gson** (Streaming) | 0.030 |
-| **Jackson Databind** (Streaming) | 0.029 |
-| **`dot-parse`** (`parseToStream`) | **0.016** |
-| **JavaCC** (Parser Generator) | 0.011 |
+| **Gson** (Streaming) | 254.0 |
+| **Jackson Databind** (Streaming) | 245.5 |
+| **`dot-parse`** (`parseToStream`) | **135.5** |
+| **JavaCC** (Parser Generator) | 93.1 |
 
 ---
 
@@ -140,11 +134,6 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | **Nested Comments** | **24,205** 🚀 ☕ | 2,344 | 4,737 | 2,131 | 696 | 642 | 389 | 1,104 | 251 | 1,018 | 1,339 | **`dot`** 🚀 ☕ |
 | **US Phone (Single)** | **15,005** 🚀 ☕ | 7,107 | 8,446 | 11,439 | 13,992 | 8,501 | 4,226 | 5,851 | 3,183 | 6,666 | 9,607 | **`dot`** 🚀 ☕ |
 | **US Phone (1,000-List)** | **11.67** 🚀 ☕ | 9.31 | 8.97 | 11.20 | 8.53 | 1.83 | 3.68 | 7.50 | 2.81 | 5.32 | 5.28 | **`dot`** 🚀 ☕ |
-
-The *Nested Comments* row was re-measured on 2026-10-03 (JDK 24.0.1, Apple M3 Pro, macOS 15.7.9)
-after `nestedBy()` switched to `indexOf()`-based delimiter search. Each number is the mean of 7
-single-fork JMH passes (3 warmup and 5 measurement iterations each); the 95% confidence intervals
-are ± 265 for `dot-parse` and ± 151 for `fastparse`.
 
 ---
 
@@ -210,9 +199,6 @@ to the regex grammar can be trended over time.
 
 Throughput was measured in **operations per second** (higher is better). Ratio is
 `RegexPattern.of / Pattern.compile`.
-
-Snapshot: 2026-09-12, JDK 24.0.1, Apple M3 Pro, macOS 15.7.9. JMH, 5×1s warmup, 10×1s measurement,
-1 fork, 2 rounds averaged; per-round ratios agreed within 2%.
 
 | Pattern | `RegexPattern.of` (ops/s) | `Pattern.compile` (ops/s) | Ratio |
 | :--- | ---: | ---: | :---: |

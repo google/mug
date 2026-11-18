@@ -6,18 +6,16 @@ import jjparse.Parsing;
 
 public class JjparseUsPhoneTest extends AbstractUsPhoneParserTest {
 
-  @Override
-  protected String parseSingle(String input) throws Throwable {
-    Parsing<Character>.Result<String> res = new JjparseShowdown.UsPhoneFixture().run(input);
+  @Override protected String parseSingle(String input) throws Throwable {
+    Parsing<Integer>.Result<String> res = new JjparseShowdown.UsPhoneFixture().run(input);
     if (!res.isSuccess()) {
       throw new Exception("failed");
     }
     return res.getOrFail();
   }
 
-  @Override
-  protected List<String> parseList(String input) throws Throwable {
-    Parsing<Character>.Result<List<String>> res = new JjparseShowdown.UsPhoneListFixture().run(input);
+  @Override protected List<String> parseList(String input) throws Throwable {
+    Parsing<Integer>.Result<List<String>> res = new JjparseShowdown.UsPhoneListFixture().run(input);
     if (!res.isSuccess()) {
       throw new Exception("failed");
     }

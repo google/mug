@@ -17,10 +17,10 @@ package com.google.mu.safesql;
 import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
 import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.word;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
@@ -31,6 +31,20 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.errorprone.annotations.MustBeClosed;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Optionals;
+import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -53,23 +67,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import javax.sql.DataSource;
-
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.errorprone.annotations.CompileTimeConstant;
-import com.google.errorprone.annotations.MustBeClosed;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.mu.annotations.TemplateFormatMethod;
-import com.google.mu.annotations.TemplateString;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Optionals;
-import com.google.mu.util.StringFormat;
-import com.google.mu.util.StringFormat.Template;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * An injection-safe <em>dynamic SQL</em>, constructed using compile-time enforced templates.
@@ -169,7 +167,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>11.2</version>
+ *               <version>11.3</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -313,8 +311,8 @@ import com.google.mu.util.stream.BiStream;
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  * identifiers). SafeSql will sanity-check the string(s) to ensure injection safety.
  *
- * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the generated
- * SQL will be:
+ * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the generated SQL
+ * will be:
  *
  * <pre>{@code
  * SELECT `id`, `age` FROM Users
@@ -1701,9 +1699,9 @@ public final class SafeSql {
               String left = "'" + prefix;
               // ILIKE is the case-insensitive variant in PostgreSQL, H2 and CockroachDB.
               String operator =
-                  context.lookbehind("LIKE " + left, placeholder) ? "LIKE"
-                      : context.lookbehind("ILIKE " + left, placeholder) ? "ILIKE"
-                      : null;
+                  context.lookbehind("LIKE " + left, placeholder)
+                      ? "LIKE"
+                      : context.lookbehind("ILIKE " + left, placeholder) ? "ILIKE" : null;
               return Optionals.optionally(
                   operator != null,
                   () -> {
@@ -1714,8 +1712,9 @@ public final class SafeSql {
                         .findFirst()
                         .peek((fragment, suffix) -> builder.appendSql(fragment))
                         .map((fragment, suffix) -> suffix)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                            "unsupported wildcard in " + operator + " " + left + placeholder));
+                        .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                "unsupported wildcard in " + operator + " " + left + placeholder));
                   });
             }
 
@@ -1763,8 +1762,7 @@ public final class SafeSql {
                   }
                   return;
                 }
-                if (value instanceof Number || value instanceof UUID
-                    || value.getClass().isArray()
+                if (value instanceof Number || value instanceof UUID || value.getClass().isArray()
                     || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
                         value.getClass().getPackageName())) {
                   String rhs = validateOptionalOperatorRhs(conditional);

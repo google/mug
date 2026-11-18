@@ -39,6 +39,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1902,8 +1903,172 @@ public final class RegexPatternTest {
     assertThat(seq.toString()).isEqualTo("x(?i)(?:a|b)y");
   }
 
+  @Test public void of_withZeroFlags_sameAsWithoutFlags() {
+    assertThat(RegexPattern.of("a b", 0)).isEqualTo(new Literal("a b"));
+  }
+
+  @Test public void of_withCommentsFlag_sameAsLeadingDirective() {
+    assertThat(RegexPattern.of("a b", Pattern.COMMENTS)).isEqualTo(RegexPattern.of("(?x)a b"));
+  }
+
+  @Test public void of_withCommentsFlag_skipsLeadingAndTrailingWhitespace() {
+    assertThat(RegexPattern.of(" a b ", Pattern.COMMENTS))
+        .isEqualTo(freeSpacing(new Literal("ab")));
+  }
+
+  @Test public void of_withCommentsFlag_skipsComment() {
+    assertThat(RegexPattern.of("a # comment\nb", Pattern.COMMENTS))
+        .isEqualTo(freeSpacing(new Literal("ab")));
+  }
+
+  @Test public void of_withCommentsFlag_whitespaceOnly() {
+    assertThat(RegexPattern.of("  ", Pattern.COMMENTS)).isEqualTo(FREE_SPACING);
+  }
+
+  @Test public void of_withCommentsFlag_disabledByLeadingDirective() {
+    assertThat(RegexPattern.of("(?-x)a b", Pattern.COMMENTS))
+        .isEqualTo(
+            sequence(
+                FREE_SPACING,
+                new ModifierDirective(List.of(), List.of(ModifierFlag.COMMENTS)),
+                new Literal("a b")));
+  }
+
+  @Test public void of_withCaseInsensitiveFlag_keepsWhitespace() {
+    assertThat(RegexPattern.of("a b", Pattern.CASE_INSENSITIVE))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+                new Literal("a b")));
+  }
+
+  @Test public void of_withFlags_regexWithLeadingDirective() {
+    assertThat(RegexPattern.of("(?x)a b", Pattern.CASE_INSENSITIVE))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+                FREE_SPACING,
+                new Literal("ab")));
+  }
+
+  @Test public void of_withFlags_emptyRegex() {
+    assertThat(RegexPattern.of("", Pattern.CASE_INSENSITIVE))
+        .isEqualTo(new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()));
+  }
+
+  @Test public void of_withPatternFlag_leadingDirective(@TestParameter PatternFlag patternFlag) {
+    assertThat(RegexPattern.of("a", patternFlag.flag))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(List.of(patternFlag.modifier), List.of()), new Literal("a")));
+  }
+
+  @Test public void of_withMultipleFlags_toString() {
+    assertThat(RegexPattern.of("a", Pattern.COMMENTS | Pattern.CASE_INSENSITIVE).toString())
+        .isEqualTo("(?ix)a");
+  }
+
+  @Test public void of_withLiteralFlag_wholeRegexIsLiteral() {
+    assertThat(RegexPattern.of("a.b(", Pattern.LITERAL)).isEqualTo(new Literal("a.b("));
+  }
+
+  @Test public void of_withLiteralAndCaseInsensitiveFlags_keepsCaseInsensitivity() {
+    assertThat(RegexPattern.of("a.b", Pattern.LITERAL | Pattern.CASE_INSENSITIVE))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+                new Literal("a.b")));
+  }
+
+  @Test public void of_withLiteralAndUnicodeCaseFlags_keepsUnicodeCase() {
+    assertThat(
+            RegexPattern.of(
+                "a.b", Pattern.LITERAL | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(
+                    List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.UNICODE_CASE), List.of()),
+                new Literal("a.b")));
+  }
+
+  @Test public void of_withLiteralAndUnicodeCharacterClassFlags_keepsUnicodeCharacterClass() {
+    assertThat(
+            RegexPattern.of(
+                "a.b",
+                Pattern.LITERAL | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS))
+        .isEqualTo(
+            sequence(
+                new ModifierDirective(
+                    List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.UNICODE_CHARACTER_CLASS),
+                    List.of()),
+                new Literal("a.b")));
+  }
+
+  @Test public void of_withLiteralFlag_dropsFlagWithoutEffect(
+      @TestParameter({"UNIX_LINES", "MULTILINE", "DOTALL", "COMMENTS", "CANON_EQ"})
+          PatternFlag patternFlag) {
+    assertThat(RegexPattern.of("a.b", Pattern.LITERAL | patternFlag.flag))
+        .isEqualTo(new Literal("a.b"));
+  }
+
+  @Test public void of_withLiteralAndCommentsFlags_keepsWhitespace() {
+    assertThat(RegexPattern.of("a b", Pattern.LITERAL | Pattern.COMMENTS))
+        .isEqualTo(new Literal("a b"));
+  }
+
+  @Test public void of_withLiteralAndCaseInsensitiveFlags_emptyRegex() {
+    assertThat(RegexPattern.of("", Pattern.LITERAL | Pattern.CASE_INSENSITIVE))
+        .isEqualTo(new ModifierDirective(List.of(ModifierFlag.CASE_INSENSITIVE), List.of()));
+  }
+
+  @Test public void of_withUnknownFlag_throws() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("a", 0x200));
+    assertThat(e).hasMessageThat().isEqualTo("Unknown flag 0x200");
+  }
+
+  @Test public void of_withNegativeFlags_throws() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("a", -1));
+    assertThat(e).hasMessageThat().isEqualTo("Unknown flag 0xfffffe00");
+  }
+
+  @Test public void of_withLiteralAndUnknownFlag_throws() {
+    IllegalArgumentException e = assertThrows(
+        IllegalArgumentException.class, () -> RegexPattern.of("a", Pattern.LITERAL | 0x200));
+    assertThat(e).hasMessageThat().isEqualTo("Unknown flag 0x200");
+  }
+
+  @Test public void of_withFlags_nullRegex_throws() {
+    assertThrows(NullPointerException.class, () -> RegexPattern.of(null, 0));
+  }
+
+  @Test public void of_withLiteralFlag_nullRegex_throws() {
+    assertThrows(NullPointerException.class, () -> RegexPattern.of(null, Pattern.LITERAL));
+  }
+
   /** A leading {@code (?x)} is a directive followed by the rest of the pattern it applies to. */
   private static RegexPattern freeSpacing(RegexPattern rest) {
     return Stream.of(FREE_SPACING, rest).collect(inSequence());
+  }
+
+  /** A {@link Pattern} flag and the inline modifier it stands for. */
+  private enum PatternFlag {
+    CASE_INSENSITIVE(Pattern.CASE_INSENSITIVE, ModifierFlag.CASE_INSENSITIVE),
+    UNIX_LINES(Pattern.UNIX_LINES, ModifierFlag.UNIX_LINES),
+    MULTILINE(Pattern.MULTILINE, ModifierFlag.MULTILINE),
+    DOTALL(Pattern.DOTALL, ModifierFlag.DOTALL),
+    UNICODE_CASE(Pattern.UNICODE_CASE, ModifierFlag.UNICODE_CASE),
+    COMMENTS(Pattern.COMMENTS, ModifierFlag.COMMENTS),
+    UNICODE_CHARACTER_CLASS(Pattern.UNICODE_CHARACTER_CLASS, ModifierFlag.UNICODE_CHARACTER_CLASS),
+    CANON_EQ(Pattern.CANON_EQ, ModifierFlag.CANONICAL_EQUIVALENCE);
+
+    private final int flag;
+    private final ModifierFlag modifier;
+
+    PatternFlag(int flag, ModifierFlag modifier) {
+      this.flag = flag;
+      this.modifier = modifier;
+    }
   }
 }

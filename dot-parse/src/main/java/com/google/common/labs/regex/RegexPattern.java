@@ -17,6 +17,7 @@ package com.google.common.labs.regex;
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -26,9 +27,11 @@ import com.google.common.labs.parse.Parser;
 import com.google.mu.annotations.ParametersMustMatchByName;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
@@ -463,19 +466,54 @@ public sealed interface RegexPattern {
 
   /** Regex modifiers that can be enabled or disabled inline. */
   enum ModifierFlag {
-    CASE_INSENSITIVE("i"),
-    UNIX_LINES("d"),
-    MULTILINE("m"),
-    DOTALL("s"),
-    UNICODE_CASE("u"),
-    COMMENTS("x"),
-    UNICODE_CHARACTER_CLASS("U"),
-    CANONICAL_EQUIVALENCE("c");
+    /** Enables case-insensitive matching ({@code i}). */
+    CASE_INSENSITIVE("i", Pattern.CASE_INSENSITIVE),
+    /**
+     * Enables Unix lines mode ({@code d}), where only {@code '\n'} is recognized as a line
+     * terminator.
+     */
+    UNIX_LINES("d", Pattern.UNIX_LINES),
+    /**
+     * Enables multiline mode ({@code m}), where {@code ^} and {@code $} match at the beginning/end
+     * of line.
+     */
+    MULTILINE("m", Pattern.MULTILINE),
+    /**
+     * Enables dotall mode ({@code s}), where {@code .} matches any character including line
+     * terminators.
+     */
+    DOTALL("s", Pattern.DOTALL),
+    /** Enables Unicode-aware case folding ({@code u}). */
+    UNICODE_CASE("u", Pattern.UNICODE_CASE),
+    /** Enables comments and whitespace in pattern ({@code x}). */
+    COMMENTS("x", Pattern.COMMENTS),
+    /** Enables Unicode character class support ({@code U}). */
+    UNICODE_CHARACTER_CLASS("U", Pattern.UNICODE_CHARACTER_CLASS),
+    /** Enables canonical equivalence matching ({@code c}). */
+    CANONICAL_EQUIVALENCE("c", Pattern.CANON_EQ);
 
     private final String shortName;
+    private final int flag;
 
-    ModifierFlag(String shortName) {
+    ModifierFlag(String shortName, int flag) {
       this.shortName = shortName;
+      this.flag = flag;
+    }
+
+    /** The modifiers enabled by {@code flags} of {@link Pattern#compile(String, int)}. */
+    static Set<ModifierFlag> fromFlags(int flags) {
+      int unknown = flags & ~Pattern.LITERAL;
+      Set<ModifierFlag> enabled = EnumSet.noneOf(ModifierFlag.class);
+      for (ModifierFlag modifier : values()) {
+        if ((flags & modifier.flag) != 0) {
+          enabled.add(modifier);
+        }
+        unknown &= ~modifier.flag;
+      }
+      if (unknown != 0) {
+        throw new IllegalArgumentException("Unknown flag 0x" + Integer.toHexString(unknown));
+      }
+      return enabled;
     }
 
     @Override public String toString() {
@@ -936,6 +974,27 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    return RegexParsers.TOP_LEVEL.orElse(new Literal("")).parse(regex);
+    return of(regex, 0);
+  }
+
+  /**
+   * Parses {@code regex} as {@link Pattern#compile(String, int)} reads it with {@code flags}: the
+   * flags are a leading modifier directive, so {@code of("a b", Pattern.COMMENTS)} equals {@code
+   * of("(?x)a b")}. Under {@link Pattern#LITERAL} the whole {@code regex} is a {@link Literal}, and
+   * only the flags that still apply to it ({@code i}, {@code u} and {@code U}) stay in the
+   * directive.
+   *
+   * @throws Parser.ParseException if the regex pattern is malformed
+   * @throws IllegalArgumentException if the regex pattern is invalid, or if {@code flags} has a bit
+   *     that isn't a {@link Pattern} flag
+   * @since 11.4
+   */
+  static RegexPattern of(String regex, int flags) {
+    requireNonNull(regex);
+    Set<ModifierFlag> enabled = ModifierFlag.fromFlags(flags);
+    if ((flags & Pattern.LITERAL) != 0) {
+      return RegexParsers.literalWithFlags(regex, enabled);
+    }
+    return RegexParsers.parseWithFlags(regex, enabled);
   }
 }
