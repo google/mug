@@ -160,8 +160,35 @@ final class RegexParsers {
 
   private static final Parser<Quantifier> QUANTIFIER = quantifier();
   private static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
-  static final Parser<RegexPattern> TOP_LEVEL =
+  private static final Parser<RegexPattern> TOP_LEVEL =
       anyOf(string("(?").then(MODIFIER_FLAGS).flatMap(flags -> flags.until(')')), PARSER);
+
+  /** All that {@code Pattern.LITERAL} leaves in effect. */
+  private static final Set<ModifierFlag> CASE_FOLDING = Set.of(
+      ModifierFlag.CASE_INSENSITIVE,
+      ModifierFlag.UNICODE_CASE,
+      ModifierFlag.UNICODE_CHARACTER_CLASS); // implies UNICODE_CASE
+
+  /** {@code regex} as {@code Pattern.compile(regex, flags)} reads it, {@code enabled} the flags. */
+  static RegexPattern parseWithFlags(String regex, Set<ModifierFlag> enabled) {
+    var orEmpty = TOP_LEVEL.orElse(EMPTY);
+    if (enabled.isEmpty()) {
+      return orEmpty.parse(regex);
+    }
+    return new ModifierFlags(List.copyOf(enabled), List.of())
+        .with(
+            enabled.contains(ModifierFlag.COMMENTS)
+                ? orEmpty.parseSkipping(FREE_SPACES, regex)
+                : orEmpty.parse(regex));
+  }
+
+  /** {@code a.b} with {@code LITERAL | CASE_INSENSITIVE | MULTILINE} is {@code (?i)a\.b}. */
+  static RegexPattern literalWithFlags(String literal, Set<ModifierFlag> enabled) {
+    List<ModifierFlag> kept = enabled.stream().filter(CASE_FOLDING::contains).toList();
+    return kept.isEmpty()
+        ? new Literal(literal)
+        : new ModifierFlags(kept, List.of()).with(new Literal(literal));
+  }
 
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atom = anyOf(
@@ -442,8 +469,7 @@ final class RegexParsers {
       if (enabled.contains(ModifierFlag.COMMENTS)) {
         enclosed = enclosed.followedBy(FREE_SPACES.zeroOrMore());
       }
-      return enclosed.map(
-          rest -> rest.equals(EMPTY) ? asDirective() : RegexPattern.sequence(asDirective(), rest));
+      return enclosed.map(this::with);
     }
 
     Parser<RegexPattern> modifying(Parser<RegexPattern> content) {
@@ -456,6 +482,13 @@ final class RegexParsers {
 
     RegexPattern asDirective() {
       return new ModifierDirective(enabled, disabled);
+    }
+
+    /** {@code (?x)ab} for {@code ab}; just {@code (?x)} when {@code remaining} is empty. */
+    RegexPattern with(RegexPattern remaining) {
+      return remaining.equals(EMPTY)
+          ? asDirective()
+          : RegexPattern.sequence(asDirective(), remaining);
     }
 
     private <T> Parser<T> applyFreeSpacing(Parser<T> parser) {

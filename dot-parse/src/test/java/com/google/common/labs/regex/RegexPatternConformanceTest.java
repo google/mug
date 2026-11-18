@@ -1142,6 +1142,43 @@ public final class RegexPatternConformanceTest {
     assertThat(java.matcher("").matches()).isFalse();
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // Finding 28: `of(regex, flags)` drops the flags that still apply under Pattern.LITERAL.
+  //
+  // LITERAL makes most flags superfluous, but CASE_INSENSITIVE and UNICODE_CASE keep their effect,
+  // and UNICODE_CHARACTER_CLASS implies UNICODE_CASE. Mug returned a bare Literal regardless.
+  // ---------------------------------------------------------------------------------------------
+
+  @Test public void of_literalWithCaseInsensitiveFlag_renderedPatternMatchesOtherCase() {
+    RegexPattern pattern = RegexPattern.of("a.b", Pattern.LITERAL | Pattern.CASE_INSENSITIVE);
+    assertThat(Pattern.compile(pattern.toString()).matcher("A.B").matches()).isTrue();
+  }
+
+  /** The reference behavior: case-insensitivity survives LITERAL. */
+  @Test public void of_literalWithCaseInsensitiveFlag_javaMatchesOtherCase() {
+    Pattern java = Pattern.compile("a.b", Pattern.LITERAL | Pattern.CASE_INSENSITIVE);
+    assertThat(java.matcher("A.B").matches()).isTrue();
+  }
+
+  @Test public void of_literalWithUnicodeCharacterClassFlag_renderedPatternFoldsUnicodeCase() {
+    RegexPattern pattern = RegexPattern.of(
+        "\u00E4", Pattern.LITERAL | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
+    assertThat(Pattern.compile(pattern.toString()).matcher("\u00C4").matches()).isTrue();
+  }
+
+  /** The reference behavior: UNICODE_CHARACTER_CLASS implies UNICODE_CASE, even under LITERAL. */
+  @Test public void of_literalWithUnicodeCharacterClassFlag_javaFoldsUnicodeCase() {
+    Pattern java = Pattern.compile(
+        "\u00E4", Pattern.LITERAL | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
+    assertThat(java.matcher("\u00C4").matches()).isTrue();
+  }
+
+  /** The reference behavior: LITERAL ignores CANON_EQ, which is why it isn't kept. */
+  @Test public void of_literalWithCanonEqFlag_javaIgnoresCanonicalEquivalence() {
+    Pattern java = Pattern.compile("\u00E9", Pattern.LITERAL | Pattern.CANON_EQ);
+    assertThat(java.matcher("e\u0301").matches()).isFalse();
+  }
+
   /**
    * Compiles {@code regex} with {@code java.util.regex}. Reference tests for patterns Java rejects
    * go through here because Error Prone flags an invalid constant passed to {@code Pattern.compile}

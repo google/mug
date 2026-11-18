@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.labs.parse.Parser.ParseException;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -803,6 +804,32 @@ public final class RegexParserErrorTest {
                 a # comment
                  (b
                    ^
+            """);
+  }
+
+  @Test public void withFlags_unclosedGroup() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> RegexPattern.of("a(b", Pattern.CASE_INSENSITIVE));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <)>, encountered:
+                a(b
+                   ^
+            """);
+  }
+
+  @Test public void withCommentsFlag_unclosedGroup() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> RegexPattern.of(" (abc", Pattern.COMMENTS));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: expecting <)>, encountered:
+                 (abc
+                     ^
             """);
   }
 
