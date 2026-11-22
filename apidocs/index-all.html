@@ -312,6 +312,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block"><code>a.and(b)</code> is equivalent to <code>CelExpr.of("a &amp;&amp; b")</code>.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#and(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">and(ImmutableBitSet)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Clears the bits that aren't set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#and(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.and(BitSet)</code></a>.</div>
+</dd>
 <dt><a href="com/google/mu/util/CharPredicate.html#and(com.google.mu.util.CharPredicate)" class="member-name-link">and(CharPredicate)</a> - Method in interface com.google.mu.util.<a href="com/google/mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></dt>
 <dd>
 <div class="block">Returns a <a href="com/google/mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> that evaluates true if both this and <code>that</code> predicate
@@ -324,6 +328,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/cel/CelExpr.And.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" class="member-name-link">And(CelExpr, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.And.html" title="class in com.google.mu.cel">CelExpr.And</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>And</code> record class.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#andNot(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">andNot(ImmutableBitSet)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Clears the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#andNot(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.andNot(BitSet)</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/function/CheckedBiConsumer.html#andThen(com.google.mu.function.CheckedBiConsumer)" class="member-name-link">andThen(CheckedBiConsumer&lt;? super A, ? super B, ? extends E&gt;)</a> - Method in interface com.google.mu.function.<a href="com/google/mu/function/CheckedBiConsumer.html" title="interface in com.google.mu.function">CheckedBiConsumer</a></dt>
 <dd>
@@ -810,6 +818,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a lazy stream of words split out from <code>text</code>, delimited by non-letter-digit ascii
  characters, and further split at <code>lowerCamelCase</code> and <code>UpperCamelCase</code> boundaries.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#build()" class="member-name-link">build()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Returns an immutable set of the bits set so far.</div>
+</dd>
 <dt><a href="com/google/mu/collect/PrefixSearchTable.Builder.html#build()" class="member-name-link">build()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.Builder.html" title="class in com.google.mu.collect">PrefixSearchTable.Builder</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/protobuf/util/StructBuilder.html#build()" class="member-name-link">build()</a> - Method in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/StructBuilder.html" title="class in com.google.mu.protobuf.util">StructBuilder</a></dt>
@@ -826,6 +838,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Builds a parser with the configured operators applied to the given operand.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#builder()" class="member-name-link">builder()</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a new builder.</div>
+</dd>
 <dt><a href="com/google/mu/collect/PrefixSearchTable.html#builder()" class="member-name-link">builder()</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.html" title="class in com.google.mu.collect">PrefixSearchTable</a></dt>
 <dd>
 <div class="block">Returns a new builder.</div>
@@ -841,6 +857,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/testing/concurrent/Happenstance.html#builder(K...)" class="member-name-link">builder(K...)</a> - Static method in class com.google.mu.testing.concurrent.<a href="com/google/mu/testing/concurrent/Happenstance.html" title="class in com.google.mu.testing.concurrent">Happenstance</a></dt>
 <dd>
 <div class="block">Returns a new <a href="com/google/mu/testing/concurrent/Happenstance.Builder.html" title="class in com.google.mu.testing.concurrent"><code>Happenstance.Builder</code></a> initialized with <code>sequencePoints</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize(int)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a new builder with room for the bits below <code>expectedSize</code>, the expected <a href="com/google/mu/collect/ImmutableBitSet.html#size()"><code>ImmutableBitSet.size()</code></a> of the built set.</div>
 </dd>
 <dt><a href="com/google/guava/labs/collect/BinarySearch.Table.html#by(java.util.function.Function)" class="member-name-link">by(Function&lt;Q, ? extends K&gt;)</a> - Method in class com.google.guava.labs.collect.<a href="com/google/guava/labs/collect/BinarySearch.Table.html" title="class in com.google.guava.labs.collect">BinarySearch.Table</a></dt>
 <dd>
@@ -869,6 +889,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Group.Capturing.html#%3Cinit%3E(com.google.common.labs.regex.RegexPattern)" class="member-name-link">Capturing(RegexPattern)</a> - Constructor for record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Group.Capturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Capturing</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Capturing</code> record class.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#cardinality()" class="member-name-link">cardinality()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the number of set bits.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.ModifierFlag.html#CASE_INSENSITIVE" class="member-name-link">CASE_INSENSITIVE</a> - Enum constant in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a></dt>
 <dd>
@@ -1732,6 +1756,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">An empty query</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#EMPTY" class="member-name-link">EMPTY</a> - Static variable in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">The empty set.</div>
+</dd>
 <dt><a href="com/google/mu/safesql/SafeSql.html#EMPTY" class="member-name-link">EMPTY</a> - Static variable in class com.google.mu.safesql.<a href="com/google/mu/safesql/SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></dt>
 <dd>
 <div class="block">An empty SQL</div>
@@ -2056,6 +2084,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/cel/CelExpr.UintValue.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a></dt>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns true if <code>obj</code> is an <code>ImmutableBitSet</code> with the same bits set.</div>
 </dd>
 <dt><a href="com/google/mu/collect/Selection.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>
@@ -2654,6 +2686,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/function/CheckedSupplier.html#get()" class="member-name-link">get()</a> - Method in interface com.google.mu.function.<a href="com/google/mu/function/CheckedSupplier.html" title="interface in com.google.mu.function">CheckedSupplier</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/collect/Chain.html#get(int)" class="member-name-link">get(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#get(int)" class="member-name-link">get(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns true if the bit at <code>index</code> is set.</div>
+</dd>
 <dt><a href="com/google/mu/collect/PrefixSearchTable.html#get(java.util.List)" class="member-name-link">get(List&lt;? extends K&gt;)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.html" title="class in com.google.mu.collect">PrefixSearchTable</a></dt>
 <dd>
 <div class="block">Searches the table for the longest prefix match of <code>compoundKey</code>.</div>
@@ -3106,6 +3142,8 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#hashCode()" class="member-name-link">hashCode()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/collect/Selection.html#hashCode()" class="member-name-link">hashCode()</a> - Method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/safesql/SafeSql.html#hashCode()" class="member-name-link">hashCode()</a> - Method in class com.google.mu.safesql.<a href="com/google/mu/safesql/SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></dt>
@@ -3207,6 +3245,14 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns an otherwise equivalent pattern except it requires the matched substring be
  immediately preceded by the <code>lookbehind</code> string and immediately followed by the <code>
  lookahead</code> string.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html" class="type-name-link" title="class in com.google.mu.collect">ImmutableBitSet</a> - Class in <a href="com/google/mu/collect/package-summary.html">com.google.mu.collect</a></dt>
+<dd>
+<div class="block">An immutable set of non-negative bit indices.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html" class="type-name-link" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a> - Class in <a href="com/google/mu/collect/package-summary.html">com.google.mu.collect</a></dt>
+<dd>
+<div class="block">Builder of <a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect"><code>ImmutableBitSet</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.html#in(com.google.mu.cel.CelExpr)" class="member-name-link">in(CelExpr)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
@@ -3383,6 +3429,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Creates an instance of a <code>Intersection</code> record class.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#intersects(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">intersects(ImmutableBitSet)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns true if any bit is set in both this set and <code>that</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/stream/BiAccumulator.html#into(C)" class="member-name-link">into(C)</a> - Method in interface com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiAccumulator.html" title="interface in com.google.mu.util.stream">BiAccumulator</a></dt>
 <dd>
 <div class="block">Returns a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiConsumer.html" title="class or interface in java.util.function" class="external-link"><code>BiConsumer</code></a> that accumulates pairs into <code>container</code>.</div>
@@ -3417,6 +3467,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/Chain.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 <dd>
 <div class="block">Always false.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns true if no bit is set.</div>
 </dd>
 <dt><a href="com/google/mu/collect/Selection.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>
@@ -3738,6 +3792,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/parse/OperatorTable.html#leftAssociative(java.lang.String,java.util.function.BinaryOperator,int)" class="member-name-link">leftAssociative(String, BinaryOperator&lt;T&gt;, int)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/OperatorTable.html" title="class in com.google.common.labs.parse">OperatorTable</a></dt>
 <dd>
 <div class="block">Adds a left-associative infix operator with the given precedence to the table.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#length()" class="member-name-link">length()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the index of the highest set bit plus one, or 0 if no bit is set, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#length()" title="class or interface in java.util" class="external-link"><code>BitSet.length()</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.Match.html#length()" class="member-name-link">length()</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Match.html" title="class in com.google.mu.util">Substring.Match</a></dt>
 <dd>
@@ -4835,6 +4893,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">A collector that joins boolean query snippets using <code>OR</code> operator.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#or()" class="member-name-link">or()</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a collector of the union of the input sets: a bit is in the result if it's set in any
+ input set.</div>
+</dd>
 <dt><a href="com/google/mu/safesql/SafeSql.html#or()" class="member-name-link">or()</a> - Static method in class com.google.mu.safesql.<a href="com/google/mu/safesql/SafeSql.html" title="class in com.google.mu.safesql">SafeSql</a></dt>
 <dd>
 <div class="block">A collector that joins boolean query snippet using <code>OR</code> operator.</div>
@@ -4859,6 +4922,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/cel/CelExpr.html#or(com.google.mu.cel.CelExpr)" class="member-name-link">or(CelExpr)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
 <div class="block"><code>a.or(b)</code> is equivalent to <code>CelExpr.of("a || b")</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#or(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">or(ImmutableBitSet)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Sets the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#or(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.or(BitSet)</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Premise.html#or(com.google.mu.function.CheckedSupplier)" class="member-name-link">or(CheckedSupplier&lt;? extends Premise, E&gt;)</a> - Method in interface com.google.mu.util.<a href="com/google/mu/util/Premise.html" title="interface in com.google.mu.util">Premise</a></dt>
 <dd>
@@ -6348,6 +6415,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Creates an instance of a <code>Sequence</code> record class.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#set(int)" class="member-name-link">set(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Sets the bit at <code>index</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/graph/ShortestPath.html" class="type-name-link" title="class in com.google.mu.util.graph">ShortestPath&lt;N&gt;</a> - Class in <a href="com/google/mu/util/graph/package-summary.html">com.google.mu.util.graph</a></dt>
 <dd>
 <div class="block">The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream.</div>
@@ -6364,6 +6435,12 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/Chain.html#size()" class="member-name-link">size()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 <dd>
 <div class="block">Returns the size of the chain.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#size()" class="member-name-link">size()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used:
+ 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
+ 64-bit words up to and including the one holding the highest set bit.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#skip(int)" class="member-name-link">skip(int)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -6699,6 +6776,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/Chain.html#stream()" class="member-name-link">stream()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 <dd>
 <div class="block">Returns a <em>lazy</em> stream of the elements in this list.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#stream()" class="member-name-link">stream()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the indices of the set bits in ascending order, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#stream()" title="class or interface in java.util" class="external-link"><code>BitSet.stream()</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/BiOptional.html#stream()" class="member-name-link">stream()</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/BiOptional.html" title="class in com.google.mu.util">BiOptional</a></dt>
 <dd>
@@ -7092,6 +7173,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a <code>Collector</code> that splits each input element as a pair and collects them into a
  <a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#toBuilder()" class="member-name-link">toBuilder()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a new builder with the bits of this set.</div>
+</dd>
 <dt><a href="com/google/mu/collect/PrefixSearchTable.html#toBuilder()" class="member-name-link">toBuilder()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/PrefixSearchTable.html" title="class in com.google.mu.collect">PrefixSearchTable</a></dt>
 <dd>
 <div class="block">Returns a new builder initialized with the same prefix mappings in this table.</div>
@@ -7134,6 +7219,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a collector that first maps each input into a key-value pair, and then collects them
  into a <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ImmutableBiMap.html" title="class or interface in com.google.common.collect" class="external-link"><code>ImmutableBiMap</code></a>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#toImmutableBitSet()" class="member-name-link">toImmutableBitSet()</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a collector of bit indices, the opposite of <a href="com/google/mu/collect/ImmutableBitSet.html#stream()"><code>ImmutableBitSet.stream()</code></a>: <code>
+ set.stream().boxed().collect(toImmutableBitSet())</code> equals <code>set</code>.</div>
 </dd>
 <dt><a href="com/google/guava/labs/collect/GuavaCollectors.html#toImmutableListMultimap()" class="member-name-link">toImmutableListMultimap()</a> - Static method in class com.google.guava.labs.collect.<a href="com/google/guava/labs/collect/GuavaCollectors.html" title="class in com.google.guava.labs.collect">GuavaCollectors</a></dt>
 <dd>
@@ -7242,6 +7332,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/protobuf/util/MoreValues.html#toListValue()" class="member-name-link">toListValue()</a> - Static method in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/MoreValues.html" title="class in com.google.mu.protobuf.util">MoreValues</a></dt>
 <dd>
 <div class="block">Returns a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link"><code>Collector</code></a> that collects the input values into <code>ListValue</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#toLongArray()" class="member-name-link">toLongArray()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long...)"><code>ImmutableBitSet.valueOf(long...)</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#toMap()" class="member-name-link">toMap()</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
@@ -7608,6 +7702,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#toString()" class="member-name-link">toString()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the set bits in ascending order, formatted like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toString()" title="class or interface in java.util" class="external-link"><code>BitSet.toString()</code></a>, for example
+ <code>{1, 3, 100}</code>.</div>
+</dd>
 <dt><a href="com/google/mu/collect/Selection.html#toString()" class="member-name-link">toString()</a> - Method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>
 <div class="block">Returns <code>"ALL"</code> if <a href="com/google/mu/collect/Selection.html#all()"><code>unlimited</code></a>, or else returns the string representation of
@@ -7857,6 +7956,17 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/cel/CelExpr.html#value(long)" class="member-name-link">value(long)</a> - Static method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
 <div class="block"><code>CelExpr.value(123)</code> is equivalent to <code>CelExpr.of("123")</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long)" class="member-name-link">valueOf(long)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the set of bits that are set in <code>word</code>: bit <code>n</code> is in the set if <code>
+ (word &amp; (1L &lt;&lt; n)) != 0</code>, for all <code>n &lt; 64</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long...)" class="member-name-link">valueOf(long...)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns the set of bits that are set in <code>words</code>, in the same little-endian layout as
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if
+ <code>(words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Anchor.html#valueOf(java.lang.String)" class="member-name-link">valueOf(String)</a> - Static method in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a></dt>
 <dd>
@@ -8131,6 +8241,15 @@ the order they are declared.</div>
 <dl class="index">
 <dt><a href="com/google/common/labs/regex/RegexPattern.PosixCharClass.html#XDIGIT" class="member-name-link">XDIGIT</a> - Enum constant in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#xor()" class="member-name-link">xor()</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dd>
+<div class="block">Returns a collector of the symmetric difference of the input sets: a bit is in the result if
+ it's set in an odd number of input sets.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#xor(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">xor(ImmutableBitSet)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Flips the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#xor(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.xor(BitSet)</code></a>.</div>
+</dd>
 </dl>
 <h2 class="title" id="I:Z">Z</h2>
 <dl class="index">
