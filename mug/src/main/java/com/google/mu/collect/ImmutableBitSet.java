@@ -29,6 +29,19 @@ import java.util.stream.StreamSupport;
 /**
  * An immutable set of non-negative bit indices.
  *
+ * <p>{@code ImmutableBitSet} is not a subclass of {@link BitSet}, but it emulates the read-only API
+ * of {@code BitSet} ({@link #get get()}, {@link #cardinality cardinality()}, {@link #length
+ * length()}, {@link #stream stream()}, {@link #toLongArray toLongArray()} etc.), so it can mostly
+ * be a drop-in replacement for {@code BitSet} where immutability is desirable. Instances are safe
+ * to share between threads. The differences from {@code BitSet}:
+ *
+ * <ul>
+ *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long...)} or {@link
+ *       #toImmutableBitSet} to create a set, and {@link #toBuilder} to derive a modified copy.
+ *   <li>{@link #intersects} takes another {@code ImmutableBitSet}.
+ *   <li>An {@code ImmutableBitSet} is never {@link #equals equal} to a {@code BitSet}.
+ * </ul>
+ *
  * @since 11.4
  */
 public abstract class ImmutableBitSet {
