@@ -44,6 +44,7 @@ import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.collect.ImmutableBitSet;
 import com.google.mu.function.CheckedIntConsumer;
 import com.google.mu.function.Function4;
 import com.google.mu.function.ObjInt2Function;
@@ -55,7 +56,6 @@ import com.google.mu.util.stream.BiStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -178,7 +178,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return prefixesIfAscii(matcher);
       }
 
-      @Override BitSet computeBlocklist() {
+      @Override ImmutableBitSet computeBlocklist() {
         return blockedCommonAsciiChars(matcher);
       }
     };
@@ -203,7 +203,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return prefixesIfAscii(matcher);
       }
 
-      @Override BitSet computeBlocklist() {
+      @Override ImmutableBitSet computeBlocklist() {
         return blockedCommonAsciiChars(matcher);
       }
     };
@@ -281,7 +281,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return prefixesIfAscii(matcher);
       }
 
-      @Override BitSet computeBlocklist() {
+      @Override ImmutableBitSet computeBlocklist() {
         return blockedCommonAsciiChars(matcher);
       }
     };
@@ -2640,7 +2640,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @LazyInit private volatile Set<String> prefixes;
-  @LazyInit private volatile BitSet blocklist;
+  // Racy single-check (see getBlocklist()); safe because ImmutableBitSet has only final fields.
+  @LazyInit private ImmutableBitSet blocklist;
 
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
@@ -2663,27 +2664,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Returns the characters that are known to disqualify this parser if it's the next char in the
    * input. Note that characters not returned don't guarantee this parser will match.
    */
-  final BitSet getBlocklist() {
-    BitSet result = blocklist;
+  final ImmutableBitSet getBlocklist() {
+    ImmutableBitSet result = blocklist;
     if (result == null) {
       blocklist = result = computeBlocklist();
     }
     return result;
   }
 
-  BitSet computeBlocklist() {
+  ImmutableBitSet computeBlocklist() {
     Set<String> prefixes = getPrefixes();
-    BitSet firstAsciiChars = new BitSet(128);
+    ImmutableBitSet.Builder firstAsciiChars = ImmutableBitSet.builderWithExpectedSize(128);
     for (String prefix : prefixes) {
       if (prefix.isEmpty()) {
-        return new BitSet(0);
+        return ImmutableBitSet.EMPTY;
       }
       char firstChar = prefix.charAt(0);
       if (firstChar < 128) {
         firstAsciiChars.set(firstChar);
       }
     }
-    return blockedCommonAsciiChars(firstAsciiChars::get);
+    return blockedCommonAsciiChars(firstAsciiChars.build()::get);
   }
 
   Set<String> computePrefixes() {
@@ -2714,7 +2715,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return left().getPrefixes();
     }
 
-    @Override BitSet computeBlocklist() {
+    @Override ImmutableBitSet computeBlocklist() {
       return left().getBlocklist();
     }
 
@@ -2746,16 +2747,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return predicate instanceof CharacterRangeSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
-  private static BitSet blockedCommonAsciiChars(CharPredicate predicate) {
+  private static ImmutableBitSet blockedCommonAsciiChars(CharPredicate predicate) {
     String commonAscii = "abcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]_`{|}";
-    BitSet bitSet = new BitSet(128);
+    ImmutableBitSet.Builder blocked = ImmutableBitSet.builderWithExpectedSize(128);
     for (int i = 0; i < commonAscii.length(); i++) {
       char c = commonAscii.charAt(i);
       if (!predicate.test(c)) {
-        bitSet.set(c);
+        blocked.set(c);
       }
     }
-    return bitSet;
+    return blocked.build();
   }
 
   private static Production<?>[] concat(Production<?> first, Production<?>[] more) {
