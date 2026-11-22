@@ -2,7 +2,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.BitSet;
+import com.google.mu.collect.ImmutableBitSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -247,11 +247,11 @@ public final class PrefixPruneTreeTest {
         .inOrder();
   }
 
-  private static BitSet bitSetOf(char... chars) {
-    BitSet bitSet = new BitSet();
+  private static ImmutableBitSet bitSetOf(char... chars) {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
     for (char c : chars) {
-      bitSet.set(c);
+      builder.set(c);
     }
-    return bitSet;
+    return builder.build();
   }
 }

@@ -23,8 +23,8 @@ import static java.util.Comparator.reverseOrder;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.collect.ImmutableBitSet;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +117,7 @@ record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie
      *
      * <p>Should only be called after all prefixes have been added.
      */
-    void addBlocklist(BitSet blocklist, V candidate) {
+    void addBlocklist(ImmutableBitSet blocklist, V candidate) {
       if (blocklist.isEmpty()) return;
       children.forEach((k, child) -> {
         if (blocklist.get(k)) {

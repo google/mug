@@ -25,8 +25,8 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.collect.ImmutableBitSet;
 import com.google.mu.util.stream.Joiner;
-import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -92,12 +92,12 @@ final class OrParser<T> extends Parser<T> {
     return elided.equals(parsers) ? this : new OrParser<>(elided);
   }
 
-  @Override BitSet computeBlocklist() {
-    var result = (BitSet) parsers.get(0).getBlocklist().clone();
+  @Override ImmutableBitSet computeBlocklist() {
+    var builder = parsers.get(0).getBlocklist().toBuilder();
     for (int i = 1; i < parsers.size(); i++) {
-      result.and(parsers.get(i).getBlocklist());
+      builder.and(parsers.get(i).getBlocklist());
     }
-    return result;
+    return builder.build();
   }
 
   private PrefixPruneTree<Parser<T>> getPrefixTree() {

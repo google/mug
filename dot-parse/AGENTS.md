@@ -129,6 +129,8 @@ Instead, consider these safe patterns:
   or many times.
 - **Use** `optionallyFollowedBy(suffixString)` if an optional suffix string
   doesn't change the result.
+- **Use** `sequence(p1, p2, ..., pn)` if you don't need the result instead of
+  `p1.then(p2)...then(pn)` for more readable code.
 - **Use** `anyOf()` to split the rule into two choices for an optional
   prefix:
 
