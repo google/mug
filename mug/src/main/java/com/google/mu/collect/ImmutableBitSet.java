@@ -175,16 +175,10 @@ public abstract class ImmutableBitSet {
     return asBitSet().toString();
   }
 
-  abstract BitSet asBitSet();
-  abstract boolean intersects(long word);
-  abstract boolean intersects(BitSet bits);
-
   /**
    * Returns a new builder with the bits of this set. Changes to the builder don't affect this set.
    */
-  public Builder toBuilder() {
-    return builderWithExpectedSize(size()).or(this);
-  }
+  public abstract Builder toBuilder();
 
   /** Builder of {@link ImmutableBitSet}. */
   public static final class Builder {
@@ -341,6 +335,10 @@ public abstract class ImmutableBitSet {
       return Long.hashCode(word);
     }
 
+    @Override public Builder toBuilder() {
+      return new Builder(BitSet.valueOf(new long[] {word}));
+    }
+
     @Override BitSet asBitSet() {
       return BitSet.valueOf(new long[] {word});
     }
@@ -404,6 +402,13 @@ public abstract class ImmutableBitSet {
       return bits.hashCode();
     }
 
+    @Override public Builder toBuilder() {
+      // Can't use bits.clone(): if its size isn't sticky, clone() may trim its array, an
+      // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
+      // argument.
+      return builderWithExpectedSize(size()).or(this);
+    }
+
     @Override BitSet asBitSet() {
       return bits;
     }
@@ -416,6 +421,10 @@ public abstract class ImmutableBitSet {
       return bits.intersects(other);
     }
   }
+
+  abstract BitSet asBitSet();
+  abstract boolean intersects(long word);
+  abstract boolean intersects(BitSet bits);
 
   private static boolean wordIntersects(long word, BitSet bits) {
     for (long remaining = word; remaining != 0; remaining &= remaining - 1) {
