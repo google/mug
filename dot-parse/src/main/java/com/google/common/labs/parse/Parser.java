@@ -2749,7 +2749,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static ImmutableBitSet blockedCommonAsciiChars(CharPredicate predicate) {
     String commonAscii = "abcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]_`{|}";
-    ImmutableBitSet.Builder blocked = ImmutableBitSet.builderWithExpectedSize(128);
+    ImmutableBitSet.Builder blocked = ImmutableBitSet.builder();
     for (int i = 0; i < commonAscii.length(); i++) {
       char c = commonAscii.charAt(i);
       if (!predicate.test(c)) {

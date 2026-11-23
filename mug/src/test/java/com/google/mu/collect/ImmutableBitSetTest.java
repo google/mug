@@ -19,9 +19,6 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.testing.EqualsTester;
-import com.google.common.testing.NullPointerTester;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
@@ -30,9 +27,14 @@ import java.util.function.IntPredicate;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public final class ImmutableBitSetTest {
@@ -342,7 +344,8 @@ public final class ImmutableBitSetTest {
   }
 
   @Test public void empty_intersectsNull_throws() {
-    assertThrows(NullPointerException.class, () -> ImmutableBitSet.EMPTY.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> ImmutableBitSet.EMPTY.intersects(that));
   }
 
   @Test public void empty_toBuilder_setBit_buildsThatBit() {
@@ -923,12 +926,14 @@ public final class ImmutableBitSetTest {
 
   @Test public void intersects_singleWordSet_null_throws() {
     ImmutableBitSet set = bitSetOf(1);
-    assertThrows(NullPointerException.class, () -> set.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> set.intersects(that));
   }
 
   @Test public void intersects_multiWordSet_null_throws() {
     ImmutableBitSet set = bitSetOf(1, 100);
-    assertThrows(NullPointerException.class, () -> set.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> set.intersects(that));
   }
 
   @Test public void toLongArray_emptySet_isEmpty() {
