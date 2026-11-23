@@ -176,8 +176,8 @@ public abstract class ImmutableBitSet {
   }
 
   abstract BitSet asBitSet();
-  abstract boolean intersectsWord(long word);
-  abstract boolean intersectsBitSet(BitSet bits);
+  abstract boolean intersects(long word);
+  abstract boolean intersects(BitSet bits);
 
   /**
    * Returns a new builder with the bits of this set. Changes to the builder don't affect this set.
@@ -325,7 +325,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public boolean intersects(ImmutableBitSet that) {
-      return that.intersectsWord(word);
+      return that.intersects(word);
     }
 
     @Override public long[] toLongArray() {
@@ -345,11 +345,11 @@ public abstract class ImmutableBitSet {
       return BitSet.valueOf(new long[] {word});
     }
 
-    @Override boolean intersectsWord(long other) {
+    @Override boolean intersects(long other) {
       return (word & other) != 0;
     }
 
-    @Override boolean intersectsBitSet(BitSet bits) {
+    @Override boolean intersects(BitSet bits) {
       return wordIntersects(word, bits);
     }
   }
@@ -389,7 +389,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public boolean intersects(ImmutableBitSet that) {
-      return that.intersectsBitSet(bits);
+      return that.intersects(bits);
     }
 
     @Override public long[] toLongArray() {
@@ -408,11 +408,11 @@ public abstract class ImmutableBitSet {
       return bits;
     }
 
-    @Override boolean intersectsWord(long word) {
+    @Override boolean intersects(long word) {
       return wordIntersects(word, bits);
     }
 
-    @Override boolean intersectsBitSet(BitSet other) {
+    @Override boolean intersects(BitSet other) {
       return bits.intersects(other);
     }
   }
