@@ -75,8 +75,8 @@ public abstract class ImmutableBitSet {
 
   /**
    * Returns the set of bits that are set in {@code words}, in the same little-endian layout as
-   * {@link java.util.BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if
-   * {@code (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
+   * {@link BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if {@code
+   * (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
    */
   public static ImmutableBitSet valueOf(long... words) {
     int used = words.length;
@@ -132,16 +132,14 @@ public abstract class ImmutableBitSet {
   public abstract int cardinality();
 
   /**
-   * Like {@link java.util.BitSet#size() BitSet.size()}, returns the number of bits of space used:
-   * 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
-   * 64-bit words up to and including the one holding the highest set bit.
+   * Like {@link BitSet#size() BitSet.size()}, returns the number of bits of space used: 64 if every
+   * set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
+   * to and including the one holding the highest set bit.
    */
   public abstract int size();
 
   /** Returns true if no bit is set. */
-  public boolean isEmpty() {
-    return cardinality() == 0;
-  }
+  public abstract boolean isEmpty();
 
   /**
    * Returns the index of the highest set bit plus one, or 0 if no bit is set, like {@link
@@ -153,7 +151,7 @@ public abstract class ImmutableBitSet {
   public abstract boolean intersects(ImmutableBitSet that);
 
   /**
-   * Returns the indices of the set bits in ascending order, like {@link java.util.BitSet#stream()
+   * Returns the indices of the set bits in ascending order, like {@link BitSet#stream()
    * BitSet.stream()}.
    */
   public abstract IntStream stream();
@@ -174,10 +172,10 @@ public abstract class ImmutableBitSet {
    * {@code {1, 3, 100}}.
    */
   @Override public String toString() {
-    return readOnlyBitSet().toString();
+    return asBitSet().toString();
   }
 
-  abstract BitSet readOnlyBitSet();
+  abstract BitSet asBitSet();
   abstract boolean intersectsWord(long word);
   abstract boolean intersectsBitSet(BitSet bits);
 
@@ -214,7 +212,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder and(ImmutableBitSet that) {
-      bits.and(that.readOnlyBitSet());
+      bits.and(that.asBitSet());
       return this;
     }
 
@@ -224,7 +222,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder or(ImmutableBitSet that) {
-      bits.or(that.readOnlyBitSet());
+      bits.or(that.asBitSet());
       return this;
     }
 
@@ -234,7 +232,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder xor(ImmutableBitSet that) {
-      bits.xor(that.readOnlyBitSet());
+      bits.xor(that.asBitSet());
       return this;
     }
 
@@ -244,7 +242,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder andNot(ImmutableBitSet that) {
-      bits.andNot(that.readOnlyBitSet());
+      bits.andNot(that.asBitSet());
       return this;
     }
 
@@ -293,6 +291,10 @@ public abstract class ImmutableBitSet {
       return Long.SIZE;
     }
 
+    @Override public boolean isEmpty() {
+      return word == 0;
+    }
+
     @Override public IntStream stream() {
       PrimitiveIterator.OfInt iterator = new PrimitiveIterator.OfInt() {
         private long unvisitedBits = word;
@@ -339,7 +341,7 @@ public abstract class ImmutableBitSet {
       return Long.hashCode(word);
     }
 
-    @Override BitSet readOnlyBitSet() {
+    @Override BitSet asBitSet() {
       return BitSet.valueOf(new long[] {word});
     }
 
@@ -371,7 +373,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int size() {
-      return (bits.length() + Long.SIZE - 1) / Long.SIZE * Long.SIZE;
+      return bits.size();
+    }
+
+    @Override public boolean isEmpty() {
+      return bits.isEmpty();
     }
 
     @Override public IntStream stream() {
@@ -398,7 +404,7 @@ public abstract class ImmutableBitSet {
       return bits.hashCode();
     }
 
-    @Override BitSet readOnlyBitSet() {
+    @Override BitSet asBitSet() {
       return bits;
     }
 

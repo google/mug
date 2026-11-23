@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
@@ -810,6 +811,22 @@ public final class ImmutableBitSetTest {
 
   @Test public void hashCode_multiWordSetsWithDifferentBits_differ() {
     assertThat(bitSetOf(1, 100).hashCode()).isNotEqualTo(bitSetOf(2, 100).hashCode());
+  }
+
+  @Test public void testNulls_staticMethods() {
+    new NullPointerTester().testAllPublicStaticMethods(ImmutableBitSet.class);
+  }
+
+  @Test public void testNulls_singleWordSetMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(bitSetOf(1, 3));
+  }
+
+  @Test public void testNulls_multiWordSetMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(bitSetOf(1, 100));
+  }
+
+  @Test public void testNulls_builderMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(ImmutableBitSet.builder());
   }
 
   @Test public void toString_emptySet() {
