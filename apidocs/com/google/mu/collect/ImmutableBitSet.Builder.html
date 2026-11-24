@@ -67,10 +67,12 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#set(int)" tabindex="0">set(int)</a></li>
+<li><a href="#clear(int)" tabindex="0">clear(int)</a></li>
 <li><a href="#and(com.google.mu.collect.ImmutableBitSet)" tabindex="0">and(ImmutableBitSet)</a></li>
 <li><a href="#or(com.google.mu.collect.ImmutableBitSet)" tabindex="0">or(ImmutableBitSet)</a></li>
 <li><a href="#xor(com.google.mu.collect.ImmutableBitSet)" tabindex="0">xor(ImmutableBitSet)</a></li>
 <li><a href="#andNot(com.google.mu.collect.ImmutableBitSet)" tabindex="0">andNot(ImmutableBitSet)</a></li>
+<li><a href="#isEmpty()" tabindex="0">isEmpty()</a></li>
 <li><a href="#build()" tabindex="0">build()</a></li>
 </ol>
 </li>
@@ -129,6 +131,16 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns an immutable set of the bits set so far.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#clear(int)" class="member-name-link">clear</a><wbr>(int&nbsp;index)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Clears the bit at <code>index</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isEmpty()" class="member-name-link">isEmpty</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns true if no bit is set.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#or(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">or</a><wbr>(<a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&nbsp;that)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#or(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.or(BitSet)</code></a>.</div>
@@ -166,6 +178,21 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">set</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
 <div class="block">Sets the bit at <code>index</code>. Setting a bit that is already set has no effect.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>this builder</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IndexOutOfBoundsException.html" title="class or interface in java.lang" class="external-link">IndexOutOfBoundsException</a></code> - if <code>index</code> is negative</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="clear(int)">
+<h3>clear</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">clear</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
+<div class="block">Clears the bit at <code>index</code>. Clearing a bit that is already cleared has no effect.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>this builder</dd>
@@ -224,6 +251,15 @@ loadScripts(document, 'script');</script>
 <dt>Returns:</dt>
 <dd>this builder</dd>
 </dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="isEmpty()">
+<h3>isEmpty</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isEmpty</span>()</div>
+<div class="block">Returns true if no bit is set.</div>
 </div>
 </section>
 </li>

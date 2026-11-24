@@ -1192,6 +1192,10 @@ loadScripts(document, 'script');</script>
      around them. Use <a href="com/google/mu/testing/concurrent/Happenstance.html#join(K)"><code>Happenstance.join(K)</code></a> instead.</div>
 </div>
 </dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#clear(int)" class="member-name-link">clear(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Clears the bit at <code>index</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#close()" class="member-name-link">close()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Closes any resources associated with this stream, typically used in a try-with-resources
@@ -3467,6 +3471,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/Chain.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 <dd>
 <div class="block">Always false.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Returns true if no bit is set.</div>
 </dd>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.html#isEmpty()" class="member-name-link">isEmpty()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
 <dd>
@@ -6438,9 +6446,9 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.html#size()" class="member-name-link">size()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
 <dd>
-<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used:
- 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
- 64-bit words up to and including the one holding the highest set bit.</div>
+<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used: 64 if every
+ set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
+ to and including the one holding the highest set bit.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#skip(int)" class="member-name-link">skip(int)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -7335,7 +7343,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.html#toLongArray()" class="member-name-link">toLongArray()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
 <dd>
-<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long...)"><code>ImmutableBitSet.valueOf(long...)</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
+<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long%5B%5D)"><code>ImmutableBitSet.valueOf(long[])</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiCollectors.html#toMap()" class="member-name-link">toMap()</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiCollectors.html" title="class in com.google.mu.util.stream">BiCollectors</a></dt>
 <dd>
@@ -7957,16 +7965,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block"><code>CelExpr.value(123)</code> is equivalent to <code>CelExpr.of("123")</code>.</div>
 </dd>
-<dt><a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long)" class="member-name-link">valueOf(long)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
-<dd>
-<div class="block">Returns the set of bits that are set in <code>word</code>: bit <code>n</code> is in the set if <code>
- (word &amp; (1L &lt;&lt; n)) != 0</code>, for all <code>n &lt; 64</code>.</div>
-</dd>
-<dt><a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long...)" class="member-name-link">valueOf(long...)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.html#valueOf(long%5B%5D)" class="member-name-link">valueOf(long[])</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
 <dd>
 <div class="block">Returns the set of bits that are set in <code>words</code>, in the same little-endian layout as
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if
- <code>(words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if <code>
+ (words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Anchor.html#valueOf(java.lang.String)" class="member-name-link">valueOf(String)</a> - Static method in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a></dt>
 <dd>

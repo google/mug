@@ -74,8 +74,7 @@ loadScripts(document, 'script');</script>
 <ol class="toc-list">
 <li><a href="#builder()" tabindex="0">builder()</a></li>
 <li><a href="#builderWithExpectedSize(int)" tabindex="0">builderWithExpectedSize(int)</a></li>
-<li><a href="#valueOf(long)" tabindex="0">valueOf(long)</a></li>
-<li><a href="#valueOf(long...)" tabindex="0">valueOf(long...)</a></li>
+<li><a href="#valueOf(long%5B%5D)" tabindex="0">valueOf(long[])</a></li>
 <li><a href="#toImmutableBitSet()" tabindex="0">toImmutableBitSet()</a></li>
 <li><a href="#or()" tabindex="0">or()</a></li>
 <li><a href="#xor()" tabindex="0">xor()</a></li>
@@ -116,7 +115,9 @@ loadScripts(document, 'script');</script>
  to share between threads. The differences from <code>BitSet</code>:
 
  <ul>
-   <li>There are no mutating methods. Use <a href="#builder()"><code>builder()</code></a>, <a href="#valueOf(long...)"><code>valueOf(long...)</code></a> or <a href="#toImmutableBitSet()"><code>toImmutableBitSet()</code></a> to create a set, and <a href="#toBuilder()"><code>toBuilder()</code></a> to derive a modified copy.
+   <li>There are no mutating methods. Use <a href="#builder()"><code>builder()</code></a>, <a href="#valueOf(long%5B%5D)"><code>valueOf(long[])</code></a> or <a href="#toImmutableBitSet()"><code>toImmutableBitSet()</code></a> to create a set, and <a href="#toBuilder()"><code>toBuilder()</code></a> to derive a modified copy.
+   <li>There is no <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#nextSetBit(int)" title="class or interface in java.util" class="external-link"><code>BitSet.nextSetBit()</code></a>; in place of the legacy
+       <code>nextSetBit()</code> loop, use <a href="#stream()"><code>stream()</code></a><code>.forEach(...)</code>.
    <li><a href="#intersects(com.google.mu.collect.ImmutableBitSet)"><code>intersects(com.google.mu.collect.ImmutableBitSet)</code></a> takes another <code>ImmutableBitSet</code>.
    <li>An <code>ImmutableBitSet</code> is never <a href="#equals(java.lang.Object)"><code>equal</code></a> to a <code>BitSet</code>.
  </ul></div>
@@ -206,9 +207,9 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns true if any bit is set in both this set and <code>that</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isEmpty()" class="member-name-link">isEmpty</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#isEmpty()" class="member-name-link">isEmpty</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns true if no bit is set.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract int</code></div>
@@ -225,18 +226,18 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract int</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#size()" class="member-name-link">size</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used:
- 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
- 64-bit words up to and including the one holding the highest set bit.</div>
+<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used: 64 if every
+ set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
+ to and including the one holding the highest set bit.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/IntStream.html" title="class or interface in java.util.stream" class="external-link">IntStream</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#stream()" class="member-name-link">stream</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns the indices of the set bits in ascending order, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#stream()" title="class or interface in java.util" class="external-link"><code>BitSet.stream()</code></a>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toBuilder()" class="member-name-link">toBuilder</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#toBuilder()" class="member-name-link">toBuilder</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns a new builder with the bits of this set.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>, ?, <a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&gt;</code></div>
@@ -248,7 +249,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract long[]</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#toLongArray()" class="member-name-link">toLongArray</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="#valueOf(long...)"><code>valueOf(long...)</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
+<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="#valueOf(long%5B%5D)"><code>valueOf(long[])</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
@@ -257,21 +258,15 @@ loadScripts(document, 'script');</script>
  <code>{1, 3, 100}</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#valueOf(long)" class="member-name-link">valueOf</a><wbr>(long&nbsp;word)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#valueOf(long%5B%5D)" class="member-name-link">valueOf</a><wbr>(long[]&nbsp;words)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns the set of bits that are set in <code>word</code>: bit <code>n</code> is in the set if <code>
- (word &amp; (1L &lt;&lt; n)) != 0</code>, for all <code>n &lt; 64</code>.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#valueOf(long...)" class="member-name-link">valueOf</a><wbr>(long...&nbsp;words)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns the set of bits that are set in <code>words</code>, in the same little-endian layout as
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if
- <code>(words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if <code>
+ (words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>, ?, <a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#xor()" class="member-name-link">xor</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;<a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>, ?, <a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#xor()" class="member-name-link">xor</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a collector of the symmetric difference of the input sets: a bit is in the result if
  it's set in an odd number of input sets.</div>
 </div>
@@ -333,23 +328,17 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="valueOf(long)">
+<section class="detail" id="valueOf(long[])">
 <h3>valueOf</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></span>&nbsp;<span class="element-name">valueOf</span><wbr><span class="parameters">(long&nbsp;word)</span></div>
-<div class="block">Returns the set of bits that are set in <code>word</code>: bit <code>n</code> is in the set if <code>
- (word &amp; (1L &lt;&lt; n)) != 0</code>, for all <code>n &lt; 64</code>.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="valueOf(long...)">
-<h3>valueOf</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></span>&nbsp;<span class="element-name">valueOf</span><wbr><span class="parameters">(long...&nbsp;words)</span></div>
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></span>&nbsp;<span class="element-name">valueOf</span><wbr><span class="parameters">(long[]&nbsp;words)</span></div>
 <div class="block">Returns the set of bits that are set in <code>words</code>, in the same little-endian layout as
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if
- <code>(words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if <code>
+ (words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
+<dl class="notes">
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if any set bit would have an index above <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -412,9 +401,11 @@ loadScripts(document, 'script');</script>
 <h3>size</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">size</span>()</div>
-<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used:
- 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
- 64-bit words up to and including the one holding the highest set bit.</div>
+<div class="block">Like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#size()" title="class or interface in java.util" class="external-link"><code>BitSet.size()</code></a>, returns the number of bits of space used: 64 if every
+ set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
+ to and including the one holding the highest set bit. As in <code>BitSet.size()</code>, this
+ overflows to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MIN_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MIN_VALUE</code></a> when any bit in <code>[Integer.MAX_VALUE - 63,
+ Integer.MAX_VALUE]</code> is set.</div>
 </div>
 </section>
 </li>
@@ -422,7 +413,7 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="isEmpty()">
 <h3>isEmpty</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isEmpty</span>()</div>
+<div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isEmpty</span>()</div>
 <div class="block">Returns true if no bit is set.</div>
 </div>
 </section>
@@ -432,7 +423,8 @@ loadScripts(document, 'script');</script>
 <h3>length</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">length</span>()</div>
-<div class="block">Returns the index of the highest set bit plus one, or 0 if no bit is set, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#length()" title="class or interface in java.util" class="external-link"><code>BitSet.length()</code></a>.</div>
+<div class="block">Returns the index of the highest set bit plus one, or 0 if no bit is set, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#length()" title="class or interface in java.util" class="external-link"><code>BitSet.length()</code></a>. As in <code>BitSet.length()</code>, this overflows to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MIN_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MIN_VALUE</code></a>
+ when <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> is set.</div>
 </div>
 </section>
 </li>
@@ -459,7 +451,7 @@ loadScripts(document, 'script');</script>
 <h3>toLongArray</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type">long[]</span>&nbsp;<span class="element-name">toLongArray</span>()</div>
-<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="#valueOf(long...)"><code>valueOf(long...)</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
+<div class="block">Returns the set bits as a new array of words, in the little-endian layout of <a href="#valueOf(long%5B%5D)"><code>valueOf(long[])</code></a> and without trailing zero words, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#toLongArray()" title="class or interface in java.util" class="external-link"><code>BitSet.toLongArray()</code></a>.</div>
 </div>
 </section>
 </li>
@@ -506,7 +498,7 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="toBuilder()">
 <h3>toBuilder</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">toBuilder</span>()</div>
+<div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">toBuilder</span>()</div>
 <div class="block">Returns a new builder with the bits of this set. Changes to the builder don't affect this set.</div>
 </div>
 </section>

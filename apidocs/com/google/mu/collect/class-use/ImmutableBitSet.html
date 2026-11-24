@@ -95,17 +95,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns an immutable set of the bits set so far.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#valueOf(long)" class="member-name-link">valueOf</a><wbr>(long&nbsp;word)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#valueOf(long%5B%5D)" class="member-name-link">valueOf</a><wbr>(long[]&nbsp;words)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns the set of bits that are set in <code>word</code>: bit <code>n</code> is in the set if <code>
- (word &amp; (1L &lt;&lt; n)) != 0</code>, for all <code>n &lt; 64</code>.</div>
-</div>
-<div class="col-first even-row-color"><code>static <a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#valueOf(long...)" class="member-name-link">valueOf</a><wbr>(long...&nbsp;words)</code></div>
-<div class="col-last even-row-color">
 <div class="block">Returns the set of bits that are set in <code>words</code>, in the same little-endian layout as
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if
- <code>(words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#valueOf(long%5B%5D)" title="class or interface in java.util" class="external-link"><code>BitSet.valueOf(long[])</code></a>: bit <code>n</code> is in the set if <code>
+ (words[n / 64] &amp; (1L &lt;&lt; (n % 64))) != 0</code>, for all <code>n &lt; 64 * words.length</code>.</div>
 </div>
 </div>
 <div class="caption"><span>Methods in <a href="../package-summary.html">com.google.mu.collect</a> that return types with arguments of type <a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></span></div>
