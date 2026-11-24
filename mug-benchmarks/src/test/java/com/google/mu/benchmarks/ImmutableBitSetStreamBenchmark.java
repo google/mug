@@ -83,7 +83,7 @@ public class ImmutableBitSetStreamBenchmark {
   @Setup
   public void chooseBits() {
     word = randomWord(cardinality, new Random(42));
-    set = ImmutableBitSet.valueOf(word);
+    set = ImmutableBitSet.valueOf(new long[] {word});
   }
 
   @Benchmark

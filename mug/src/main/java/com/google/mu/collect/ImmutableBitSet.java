@@ -36,8 +36,10 @@ import java.util.stream.StreamSupport;
  * to share between threads. The differences from {@code BitSet}:
  *
  * <ul>
- *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long...)} or {@link
+ *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long[])} or {@link
  *       #toImmutableBitSet} to create a set, and {@link #toBuilder} to derive a modified copy.
+ *   <li>There is no {@link BitSet#nextSetBit(int) BitSet.nextSetBit()}; in place of the legacy
+ *       {@code nextSetBit()} loop, use {@link #stream stream()}{@code .forEach(...)}.
  *   <li>{@link #intersects} takes another {@code ImmutableBitSet}.
  *   <li>An {@code ImmutableBitSet} is never {@link #equals equal} to a {@code BitSet}.
  * </ul>
@@ -66,30 +68,27 @@ public abstract class ImmutableBitSet {
   }
 
   /**
-   * Returns the set of bits that are set in {@code word}: bit {@code n} is in the set if {@code
-   * (word & (1L << n)) != 0}, for all {@code n < 64}.
-   */
-  public static ImmutableBitSet valueOf(long word) {
-    return word == 0 ? EMPTY : new SingleWord(word);
-  }
-
-  /**
    * Returns the set of bits that are set in {@code words}, in the same little-endian layout as
-   * {@link java.util.BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if
-   * {@code (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
+   * {@link BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if {@code
+   * (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
+   *
+   * @throws IllegalArgumentException if any set bit would have an index above {@link
+   *     Integer#MAX_VALUE}
    */
-  public static ImmutableBitSet valueOf(long... words) {
-    int used = words.length;
-    while (used > 0 && words[used - 1] == 0) {
-      used--;
+  public static ImmutableBitSet valueOf(long[] words) {
+    for (int i = words.length - 1; i >= 0; i--) {
+      long word = words[i];
+      if (word != 0) {
+        if (i == 0) {
+          return new SingleWord(word);
+        }
+        checkArgument(
+            i <= Integer.MAX_VALUE / 64,
+            "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", i);
+        return new MultiWord(BitSet.valueOf(words));
+      }
     }
-    if (used == 0) {
-      return EMPTY;
-    }
-    if (used == 1) {
-      return new SingleWord(words[0]);
-    }
-    return new MultiWord(BitSet.valueOf(words));
+    return EMPTY;
   }
 
   /**
@@ -132,20 +131,21 @@ public abstract class ImmutableBitSet {
   public abstract int cardinality();
 
   /**
-   * Like {@link java.util.BitSet#size() BitSet.size()}, returns the number of bits of space used:
-   * 64 if every set bit is below 64 (including the empty set), otherwise 64 times the number of
-   * 64-bit words up to and including the one holding the highest set bit.
+   * Like {@link BitSet#size() BitSet.size()}, returns the number of bits of space used: 64 if every
+   * set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
+   * to and including the one holding the highest set bit. As in {@code BitSet.size()}, this
+   * overflows to {@link Integer#MIN_VALUE} when any bit in {@code [Integer.MAX_VALUE - 63,
+   * Integer.MAX_VALUE]} is set.
    */
   public abstract int size();
 
   /** Returns true if no bit is set. */
-  public boolean isEmpty() {
-    return cardinality() == 0;
-  }
+  public abstract boolean isEmpty();
 
   /**
    * Returns the index of the highest set bit plus one, or 0 if no bit is set, like {@link
-   * BitSet#length()}.
+   * BitSet#length()}. As in {@code BitSet.length()}, this overflows to {@link Integer#MIN_VALUE}
+   * when {@link Integer#MAX_VALUE} is set.
    */
   public abstract int length();
 
@@ -153,14 +153,14 @@ public abstract class ImmutableBitSet {
   public abstract boolean intersects(ImmutableBitSet that);
 
   /**
-   * Returns the indices of the set bits in ascending order, like {@link java.util.BitSet#stream()
+   * Returns the indices of the set bits in ascending order, like {@link BitSet#stream()
    * BitSet.stream()}.
    */
   public abstract IntStream stream();
 
   /**
    * Returns the set bits as a new array of words, in the little-endian layout of {@link
-   * #valueOf(long...)} and without trailing zero words, like {@link BitSet#toLongArray()}.
+   * #valueOf(long[])} and without trailing zero words, like {@link BitSet#toLongArray()}.
    */
   public abstract long[] toLongArray();
 
@@ -174,19 +174,13 @@ public abstract class ImmutableBitSet {
    * {@code {1, 3, 100}}.
    */
   @Override public String toString() {
-    return readOnlyBitSet().toString();
+    return asBitSet().toString();
   }
-
-  abstract BitSet readOnlyBitSet();
-  abstract boolean intersectsWord(long word);
-  abstract boolean intersectsBitSet(BitSet bits);
 
   /**
    * Returns a new builder with the bits of this set. Changes to the builder don't affect this set.
    */
-  public Builder toBuilder() {
-    return builderWithExpectedSize(size()).or(this);
-  }
+  public abstract Builder toBuilder();
 
   /** Builder of {@link ImmutableBitSet}. */
   public static final class Builder {
@@ -209,12 +203,24 @@ public abstract class ImmutableBitSet {
     }
 
     /**
+     * Clears the bit at {@code index}. Clearing a bit that is already cleared has no effect.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code index} is negative
+     */
+    public Builder clear(int index) {
+      checkNotNegative(index);
+      bits.clear(index);
+      return this;
+    }
+
+    /**
      * Clears the bits that aren't set in {@code that}, like {@link BitSet#and(BitSet)}.
      *
      * @return this builder
      */
     public Builder and(ImmutableBitSet that) {
-      bits.and(that.readOnlyBitSet());
+      bits.and(that.asBitSet());
       return this;
     }
 
@@ -224,7 +230,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder or(ImmutableBitSet that) {
-      bits.or(that.readOnlyBitSet());
+      bits.or(that.asBitSet());
       return this;
     }
 
@@ -234,7 +240,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder xor(ImmutableBitSet that) {
-      bits.xor(that.readOnlyBitSet());
+      bits.xor(that.asBitSet());
       return this;
     }
 
@@ -244,7 +250,7 @@ public abstract class ImmutableBitSet {
      * @return this builder
      */
     public Builder andNot(ImmutableBitSet that) {
-      bits.andNot(that.readOnlyBitSet());
+      bits.andNot(that.asBitSet());
       return this;
     }
 
@@ -258,16 +264,21 @@ public abstract class ImmutableBitSet {
       return this;
     }
 
+    /** Returns true if no bit is set. */
+    public boolean isEmpty() {
+      return bits.isEmpty();
+    }
+
     /** Returns an immutable set of the bits set so far. */
     public ImmutableBitSet build() {
       int length = bits.length();
       if (length == 0) {
         return EMPTY;
       }
-      if (length <= Long.SIZE) {
+      if (length > 0 && length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
-      BitSet trimmed = new BitSet(length);
+      BitSet trimmed = new BitSet(length < 0 ? Integer.MAX_VALUE : length);
       trimmed.or(bits);
       return new MultiWord(trimmed);
     }
@@ -280,9 +291,11 @@ public abstract class ImmutableBitSet {
       this.word = word;
     }
 
+    // & rather than &&: faster when indices fall unpredictably inside and outside [0, 64).
+    @SuppressWarnings("ShortCircuitBoolean")
     @Override public boolean get(int index) {
       checkNotNegative(index);
-      return index < Long.SIZE && (word & (1L << index)) != 0;
+      return index < 64 & (word & (1L << index)) != 0;
     }
 
     @Override public int cardinality() {
@@ -290,7 +303,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int size() {
-      return Long.SIZE;
+      return 64;
+    }
+
+    @Override public boolean isEmpty() {
+      return word == 0;
     }
 
     @Override public IntStream stream() {
@@ -319,11 +336,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int length() {
-      return Long.SIZE - Long.numberOfLeadingZeros(word);
+      return 64 - Long.numberOfLeadingZeros(word);
     }
 
     @Override public boolean intersects(ImmutableBitSet that) {
-      return that.intersectsWord(word);
+      return that.intersects(word);
     }
 
     @Override public long[] toLongArray() {
@@ -339,15 +356,19 @@ public abstract class ImmutableBitSet {
       return Long.hashCode(word);
     }
 
-    @Override BitSet readOnlyBitSet() {
+    @Override public Builder toBuilder() {
+      return new Builder(BitSet.valueOf(new long[] {word}));
+    }
+
+    @Override BitSet asBitSet() {
       return BitSet.valueOf(new long[] {word});
     }
 
-    @Override boolean intersectsWord(long other) {
+    @Override boolean intersects(long other) {
       return (word & other) != 0;
     }
 
-    @Override boolean intersectsBitSet(BitSet bits) {
+    @Override boolean intersects(BitSet bits) {
       return wordIntersects(word, bits);
     }
   }
@@ -371,7 +392,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int size() {
-      return (bits.length() + Long.SIZE - 1) / Long.SIZE * Long.SIZE;
+      return bits.size();
+    }
+
+    @Override public boolean isEmpty() {
+      return false;
     }
 
     @Override public IntStream stream() {
@@ -383,7 +408,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public boolean intersects(ImmutableBitSet that) {
-      return that.intersectsBitSet(bits);
+      return that.intersects(bits);
     }
 
     @Override public long[] toLongArray() {
@@ -398,18 +423,30 @@ public abstract class ImmutableBitSet {
       return bits.hashCode();
     }
 
-    @Override BitSet readOnlyBitSet() {
+    @Override public Builder toBuilder() {
+      // Can't use bits.clone(): if its size isn't sticky, clone() may trim its array, an
+      // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
+      // argument.
+      int expectedSize = size();
+      return builderWithExpectedSize(expectedSize < 0 ? Integer.MAX_VALUE : expectedSize).or(this);
+    }
+
+    @Override BitSet asBitSet() {
       return bits;
     }
 
-    @Override boolean intersectsWord(long word) {
+    @Override boolean intersects(long word) {
       return wordIntersects(word, bits);
     }
 
-    @Override boolean intersectsBitSet(BitSet other) {
+    @Override boolean intersects(BitSet other) {
       return bits.intersects(other);
     }
   }
+
+  abstract BitSet asBitSet();
+  abstract boolean intersects(long word);
+  abstract boolean intersects(BitSet bits);
 
   private static boolean wordIntersects(long word, BitSet bits) {
     for (long remaining = word; remaining != 0; remaining &= remaining - 1) {

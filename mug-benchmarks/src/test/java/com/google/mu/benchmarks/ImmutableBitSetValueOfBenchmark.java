@@ -42,32 +42,22 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Compares building 64-, 128- and 256-bit {@link ImmutableBitSet}s from words with {@code
- * ImmutableBitSet.valueOf()} against building them from indices with the builder, with {@link
+ * Compares building 64-, 128- and 256-bit {@link ImmutableBitSet}s from words with {@link
+ * ImmutableBitSet#valueOf(long[])} against building them from indices with the builder, with {@link
  * BitSet#valueOf(long[])} as a reference.
  *
  * <p>The bits are chosen as in {@link ImmutableBitSetBuildBenchmark}: about half of the indices in
  * {@code [0, universe)} are set, plus the highest index, in ascending order. {@link Sized} holds
- * them as indices and as a {@code long[]}. {@link OneWord}, {@link TwoWords} and {@link FourWords}
- * hold the same words as {@code Sized} at 64, 128 and 256 bits, passed to {@code valueOf()} as
- * separate arguments.
+ * them as indices and as a {@code long[]}.
  *
  * <p>Results on JMH 1.37, JDK 24.0.1, arm64 macOS (Apple M3 Pro) with {@code -prof gc}; 5x1s
  * warmup, 5x1s measurement, 3 forks. Each cell is ns/op with its 99.9% confidence interval, and
- * B/op on the line below. The {@code immutableBitSet_valueOfOneWord}, {@code
- * immutableBitSet_valueOfTwoWords} and {@code immutableBitSet_valueOfFourWords} rows have one cell
- * each. In the 64-bit {@code immutableBitSet_builder*} cells, individual iterations measured either
- * 49 to 52 ns or 88 to 103 ns, with the same B/op, which widens their intervals. The cause is not
- * known.
+ * B/op on the line below. In the 64-bit {@code immutableBitSet_builder*} cells, individual
+ * iterations measured either 49 to 52 ns or 88 to 103 ns, with the same B/op, which widens their
+ * intervals. The cause is not known.
  *
  * <pre>
  * Benchmark                                64 bits         128 bits        256 bits
- * immutableBitSet_valueOfOneWord           1.096 +- 0.011
- *                                          24
- * immutableBitSet_valueOfTwoWords                          3.825 +- 0.030
- *                                                          80
- * immutableBitSet_valueOfFourWords                                         4.074 +- 0.065
- *                                                                          96
  * immutableBitSet_valueOfWordArray         1.181 +- 0.020  5.728 +- 0.036  6.230 +- 0.030
  *                                          24              80              96
  * immutableBitSet_valueOfWordsFromIndices  29.3 +- 0.4     65.1 +- 3.8     175 +- 2
@@ -103,62 +93,6 @@ public class ImmutableBitSetValueOfBenchmark {
     }
   }
 
-  @State(Scope.Benchmark)
-  public static class OneWord {
-    long word0;
-
-    @Setup
-    public void chooseBits() {
-      long[] words = toWords(chooseIndices(64), 64);
-      word0 = words[0];
-    }
-  }
-
-  @State(Scope.Benchmark)
-  public static class TwoWords {
-    long word0;
-    long word1;
-
-    @Setup
-    public void chooseBits() {
-      long[] words = toWords(chooseIndices(128), 128);
-      word0 = words[0];
-      word1 = words[1];
-    }
-  }
-
-  @State(Scope.Benchmark)
-  public static class FourWords {
-    long word0;
-    long word1;
-    long word2;
-    long word3;
-
-    @Setup
-    public void chooseBits() {
-      long[] words = toWords(chooseIndices(256), 256);
-      word0 = words[0];
-      word1 = words[1];
-      word2 = words[2];
-      word3 = words[3];
-    }
-  }
-
-  @Benchmark
-  public ImmutableBitSet immutableBitSet_valueOfOneWord(OneWord state) {
-    return ImmutableBitSet.valueOf(state.word0);
-  }
-
-  @Benchmark
-  public ImmutableBitSet immutableBitSet_valueOfTwoWords(TwoWords state) {
-    return ImmutableBitSet.valueOf(state.word0, state.word1);
-  }
-
-  @Benchmark
-  public ImmutableBitSet immutableBitSet_valueOfFourWords(FourWords state) {
-    return ImmutableBitSet.valueOf(state.word0, state.word1, state.word2, state.word3);
-  }
-
   @Benchmark
   public ImmutableBitSet immutableBitSet_valueOfWordArray(Sized state) {
     return ImmutableBitSet.valueOf(state.words);
@@ -190,30 +124,6 @@ public class ImmutableBitSetValueOfBenchmark {
   @Benchmark
   public BitSet javaUtilBitSet_valueOf(Sized state) {
     return BitSet.valueOf(state.words);
-  }
-
-  @Test public void immutableBitSet_valueOfOneWord_buildsExpectedBits() {
-    OneWord state = new OneWord();
-    state.chooseBits();
-    assertThat(immutableBitSet_valueOfOneWord(state).stream())
-        .containsExactlyElementsIn(expectedIndices(64))
-        .inOrder();
-  }
-
-  @Test public void immutableBitSet_valueOfTwoWords_buildsExpectedBits() {
-    TwoWords state = new TwoWords();
-    state.chooseBits();
-    assertThat(immutableBitSet_valueOfTwoWords(state).stream())
-        .containsExactlyElementsIn(expectedIndices(128))
-        .inOrder();
-  }
-
-  @Test public void immutableBitSet_valueOfFourWords_buildsExpectedBits() {
-    FourWords state = new FourWords();
-    state.chooseBits();
-    assertThat(immutableBitSet_valueOfFourWords(state).stream())
-        .containsExactlyElementsIn(expectedIndices(256))
-        .inOrder();
   }
 
   @Test public void immutableBitSet_valueOfWordArray_buildsExpectedBits() {

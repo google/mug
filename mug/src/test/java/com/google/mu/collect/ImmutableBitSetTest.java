@@ -18,11 +18,15 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import java.util.BitSet;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.function.IntPredicate;
@@ -41,6 +45,15 @@ public final class ImmutableBitSetTest {
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> builder.set(-1));
     assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+  }
+
+  @Test public void builder_setIntegerMinValue_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(Integer.MIN_VALUE));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
   }
 
   @Test public void builder_setSameIndexTwice_cardinalityIsOne() {
@@ -76,10 +89,111 @@ public final class ImmutableBitSetTest {
     assertThat(indicesBelow(200, second::get)).containsExactly(5, 127).inOrder();
   }
 
+  @Test public void builder_onlyBitIntegerMaxValue_isSet() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    assertThat(bitSetOf(Integer.MAX_VALUE).stream()).containsExactly(Integer.MAX_VALUE);
+  }
+
+  @Test public void builder_setIntegerMaxValue_preservesAllBits() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    assertThat(bitSetOf(0, 100, Integer.MAX_VALUE).stream())
+        .containsExactly(0, 100, Integer.MAX_VALUE)
+        .inOrder();
+  }
+
+  @Test public void builder_clearNegativeIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(-1));
+    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+  }
+
+  @Test public void builder_clearIntegerMinValue_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(Integer.MIN_VALUE));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+  }
+
+  @Test public void builder_clearSetBit_removesBit() {
+    ImmutableBitSet set = builderOf(1, 3, 100).clear(3).build();
+    assertThat(set.stream()).containsExactly(1, 100).inOrder();
+  }
+
+  @Test public void builder_clearUnsetBit_noEffect() {
+    ImmutableBitSet set = builderOf(1, 3).clear(2).build();
+    assertThat(set.stream()).containsExactly(1, 3).inOrder();
+  }
+
+  @Test public void builder_clearBitBeyondHighest_noEffect() {
+    ImmutableBitSet set = builderOf(1).clear(Integer.MAX_VALUE).build();
+    assertThat(set.stream()).containsExactly(1);
+  }
+
+  @Test public void builder_clearBitBeyondHighest_sizeUnchanged() {
+    assertThat(builderOf(1).clear(Integer.MAX_VALUE).build().size()).isEqualTo(64);
+  }
+
+  @Test public void builder_clearHighBit_sizeShrinks() {
+    assertThat(builderOf(1, 200).clear(200).build().size()).isEqualTo(64);
+  }
+
+  @Test public void builder_clearLastBit_returnsEmpty() {
+    assertThat(builderOf(5).clear(5).build()).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void builder_clearAfterBuild_builtSetUnchanged() {
+    ImmutableBitSet.Builder builder = builderOf(1, 3);
+    ImmutableBitSet first = builder.build();
+    builder.clear(1);
+    assertThat(first.stream()).containsExactly(1, 3).inOrder();
+  }
+
+  @Test public void builder_isEmpty_newBuilder_isTrue() {
+    assertThat(ImmutableBitSet.builder().isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_withExpectedSize_isTrue() {
+    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_afterSet_isFalse() {
+    assertThat(ImmutableBitSet.builder().set(0).isEmpty()).isFalse();
+  }
+
+  @Test public void builder_isEmpty_afterSetHighBit_isFalse() {
+    assertThat(ImmutableBitSet.builder().set(100).isEmpty()).isFalse();
+  }
+
+  @Test public void builder_isEmpty_afterClearLastBit_isTrue() {
+    assertThat(builderOf(5).clear(5).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_afterAndNotAllBits_isTrue() {
+    assertThat(builderOf(1, 100).andNot(bitSetOf(1, 100)).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_fromEmptyToBuilder_isTrue() {
+    assertThat(ImmutableBitSet.EMPTY.toBuilder().isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_fromNonEmptyToBuilder_isFalse() {
+    assertThat(bitSetOf(1, 100).toBuilder().isEmpty()).isFalse();
+  }
+
   @Test public void builderWithExpectedSize_negative_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> ImmutableBitSet.builderWithExpectedSize(-1));
     assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builderWithExpectedSize_integerMinValue_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> ImmutableBitSet.builderWithExpectedSize(Integer.MIN_VALUE));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
   }
 
   @Test public void builderWithExpectedSize_zero_buildsEmptySet() {
@@ -271,7 +385,7 @@ public final class ImmutableBitSetTest {
   }
 
   @Test public void toBuilder_valueOfWords_buildsSameBits() {
-    assertThat(ImmutableBitSet.valueOf(1L, 1L).toBuilder().build().stream())
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 1L}).toBuilder().build().stream())
         .containsExactly(0, 64)
         .inOrder();
   }
@@ -282,6 +396,12 @@ public final class ImmutableBitSetTest {
     assertThat(set.stream()).containsExactly(1, 100).inOrder();
   }
 
+  @Test public void toBuilder_clearBit_originalUnchanged() {
+    ImmutableBitSet set = bitSetOf(1, 100);
+    set.toBuilder().clear(100);
+    assertThat(set.stream()).containsExactly(1, 100).inOrder();
+  }
+
   @Test public void toBuilder_clearAllBits_originalUnchanged() {
     ImmutableBitSet set = bitSetOf(1, 100);
     set.toBuilder().andNot(set);
@@ -289,9 +409,21 @@ public final class ImmutableBitSetTest {
   }
 
   @Test public void toBuilder_valueOfWords_clearAllBits_originalUnchanged() {
-    ImmutableBitSet set = ImmutableBitSet.valueOf(1L, 1L);
+    ImmutableBitSet set = ImmutableBitSet.valueOf(new long[] {1L, 1L});
     set.toBuilder().andNot(set);
     assertThat(set.stream()).containsExactly(0, 64).inOrder();
+  }
+
+  @Test public void toBuilder_bitInTopWord_buildsSameBits() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    ImmutableBitSet set = bitSetOf(Integer.MAX_VALUE - 63);
+    assertThat(set.toBuilder().build().stream()).containsExactly(Integer.MAX_VALUE - 63);
+  }
+
+  @Test public void toBuilder_bitIntegerMaxValue_buildsSameBits() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    ImmutableBitSet set = bitSetOf(Integer.MAX_VALUE);
+    assertThat(set.toBuilder().build().stream()).containsExactly(Integer.MAX_VALUE);
   }
 
   @Test public void empty_isEmpty() {
@@ -341,7 +473,8 @@ public final class ImmutableBitSetTest {
   }
 
   @Test public void empty_intersectsNull_throws() {
-    assertThrows(NullPointerException.class, () -> ImmutableBitSet.EMPTY.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> ImmutableBitSet.EMPTY.intersects(that));
   }
 
   @Test public void empty_toBuilder_setBit_buildsThatBit() {
@@ -353,16 +486,17 @@ public final class ImmutableBitSetTest {
     assertThat(ImmutableBitSet.EMPTY.stream()).isEmpty();
   }
 
-  @Test public void valueOf_noWords_returnsEmpty() {
-    assertThat(ImmutableBitSet.valueOf()).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  @Test public void valueOf_emptyArray_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new long[0])).isSameInstanceAs(ImmutableBitSet.EMPTY);
   }
 
-  @Test public void valueOf_zero_returnsEmpty() {
-    assertThat(ImmutableBitSet.valueOf(0L)).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  @Test public void valueOf_singleZeroWord_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {0L})).isSameInstanceAs(ImmutableBitSet.EMPTY);
   }
 
-  @Test public void valueOfWords_allZeroWords_returnsEmpty() {
-    assertThat(ImmutableBitSet.valueOf(0L, 0L)).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  @Test public void valueOf_allZeroWords_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {0L, 0L}))
+        .isSameInstanceAs(ImmutableBitSet.EMPTY);
   }
 
   @Test public void build_noBits_returnsEmpty() {
@@ -374,84 +508,109 @@ public final class ImmutableBitSetTest {
         .isSameInstanceAs(ImmutableBitSet.EMPTY);
   }
 
+  @Test public void valueOf_emptyArray_isEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new long[0]).stream()).isEmpty();
+  }
+
   @Test public void valueOf_zero_isEmpty() {
-    assertThat(ImmutableBitSet.valueOf(0L).stream()).isEmpty();
+    assertThat(ImmutableBitSet.valueOf(new long[] {0L}).stream()).isEmpty();
+  }
+
+  @Test public void valueOf_nullArray_throws() {
+    assertThrows(NullPointerException.class, () -> ImmutableBitSet.valueOf(null));
   }
 
   @Test public void valueOf_bit0() {
-    assertThat(ImmutableBitSet.valueOf(1L).stream()).containsExactly(0);
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L}).stream()).containsExactly(0);
   }
 
   @Test public void valueOf_bit63() {
-    assertThat(ImmutableBitSet.valueOf(Long.MIN_VALUE).stream()).containsExactly(63);
+    assertThat(ImmutableBitSet.valueOf(new long[] {Long.MIN_VALUE}).stream()).containsExactly(63);
   }
 
   @Test public void valueOf_minusOne_allBitsBelow64() {
-    assertThat(ImmutableBitSet.valueOf(-1L).stream())
+    assertThat(ImmutableBitSet.valueOf(new long[] {-1L}).stream())
         .containsExactlyElementsIn(IntStream.range(0, 64).boxed().collect(toList()))
         .inOrder();
   }
 
-  @Test public void valueOf_sizeIs64() {
-    assertThat(ImmutableBitSet.valueOf(1L).size()).isEqualTo(64);
+  @Test public void valueOf_oneWord_sizeIs64() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L}).size()).isEqualTo(64);
   }
 
   @Test public void valueOf_matchesBitSetValueOf_randomWord() {
-    long word = new Random(42).nextLong();
-    assertThat(ImmutableBitSet.valueOf(word).stream())
-        .containsExactlyElementsIn(
-            BitSet.valueOf(new long[] {word}).stream().boxed().collect(toList()))
+    long[] words = {new Random(42).nextLong()};
+    assertThat(ImmutableBitSet.valueOf(words).stream())
+        .containsExactlyElementsIn(BitSet.valueOf(words).stream().boxed().collect(toList()))
         .inOrder();
   }
 
-  @Test public void valueOfWords_noWords_isEmpty() {
-    assertThat(ImmutableBitSet.valueOf().stream()).isEmpty();
-  }
-
-  @Test public void valueOfWords_nullArray_throws() {
-    assertThrows(NullPointerException.class, () -> ImmutableBitSet.valueOf((long[]) null));
-  }
-
-  @Test public void valueOfWords_oneWord() {
+  @Test public void valueOf_oneWord() {
     assertThat(ImmutableBitSet.valueOf(new long[] {0b101L}).stream())
         .containsExactly(0, 2)
         .inOrder();
   }
 
-  @Test public void valueOfWords_twoWords() {
-    assertThat(ImmutableBitSet.valueOf(1L, 1L).stream()).containsExactly(0, 64).inOrder();
+  @Test public void valueOf_twoWords() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 1L}).stream())
+        .containsExactly(0, 64)
+        .inOrder();
   }
 
-  @Test public void valueOfWords_fourWords() {
-    assertThat(ImmutableBitSet.valueOf(1L, 0L, 0L, Long.MIN_VALUE).stream())
+  @Test public void valueOf_fourWords() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L, Long.MIN_VALUE}).stream())
         .containsExactly(0, 255)
         .inOrder();
   }
 
-  @Test public void valueOfWords_fourWords_sizeIs256() {
-    assertThat(ImmutableBitSet.valueOf(1L, 0L, 0L, Long.MIN_VALUE).size()).isEqualTo(256);
+  @Test public void valueOf_fourWords_sizeIs256() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L, Long.MIN_VALUE}).size())
+        .isEqualTo(256);
   }
 
-  @Test public void valueOfWords_leadingZeroWords() {
-    assertThat(ImmutableBitSet.valueOf(0L, 0L, 1L).stream()).containsExactly(128);
+  @Test public void valueOf_leadingZeroWords() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {0L, 0L, 1L}).stream()).containsExactly(128);
   }
 
-  @Test public void valueOfWords_trailingZeroWords_sizeIs64() {
-    assertThat(ImmutableBitSet.valueOf(1L, 0L, 0L).size()).isEqualTo(64);
+  @Test public void valueOf_trailingZeroWords_sizeIs64() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L}).size()).isEqualTo(64);
   }
 
-  @Test public void valueOfWords_arrayModifiedAfterwards_setUnchanged() {
+  @Test public void valueOf_arrayModifiedAfterwards_setUnchanged() {
     long[] words = {1L, 1L};
     ImmutableBitSet set = ImmutableBitSet.valueOf(words);
     words[0] = 0L;
     assertThat(set.stream()).containsExactly(0, 64).inOrder();
   }
 
-  @Test public void valueOfWords_matchesBitSetValueOf_randomWords() {
+  @Test public void valueOf_matchesBitSetValueOf_randomWords() {
     long[] words = new Random(42).longs(4).toArray();
     assertThat(ImmutableBitSet.valueOf(words).stream())
         .containsExactlyElementsIn(BitSet.valueOf(words).stream().boxed().collect(toList()))
         .inOrder();
+  }
+
+  @Test public void valueOf_bitIndexExceedsIntegerMaxValue_throws() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    long[] words = new long[Integer.MAX_VALUE / 64 + 2];
+    words[Integer.MAX_VALUE / 64 + 1] = 1L;
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> ImmutableBitSet.valueOf(words));
+    assertThat(thrown).hasMessageThat().contains("Integer.MAX_VALUE");
+  }
+
+  @Test public void valueOf_trailingZeroWordPastIntegerMaxValue_succeeds() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    long[] words = new long[Integer.MAX_VALUE / 64 + 2];
+    words[0] = 1L;
+    assertThat(ImmutableBitSet.valueOf(words).stream()).containsExactly(0);
+  }
+
+  @Test public void valueOf_bitIntegerMaxValue_isSet() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    long[] words = new long[Integer.MAX_VALUE / 64 + 1];
+    words[Integer.MAX_VALUE / 64] = Long.MIN_VALUE;
+    assertThat(ImmutableBitSet.valueOf(words).stream()).containsExactly(Integer.MAX_VALUE);
   }
 
   @Test public void toImmutableBitSet_collectsIndices() {
@@ -589,6 +748,24 @@ public final class ImmutableBitSetTest {
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(-1));
     assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+  }
+
+  @Test public void get_integerMinValue_singleWord_throws() {
+    ImmutableBitSet set = bitSetOf(3);
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> set.get(Integer.MIN_VALUE));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+  }
+
+  @Test public void get_integerMinValue_multiWord_throws() {
+    ImmutableBitSet set = bitSetOf(100);
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> set.get(Integer.MIN_VALUE));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
   }
 
   @Test public void get_emptySet_noBitsSet() {
@@ -783,21 +960,34 @@ public final class ImmutableBitSetTest {
         .isTrue();
   }
 
+  @Test public void stream_emptySet_iteratorNextInt_throws() {
+    PrimitiveIterator.OfInt iterator = ImmutableBitSet.EMPTY.stream().iterator();
+    assertThrows(NoSuchElementException.class, iterator::nextInt);
+  }
+
+  @Test public void stream_singleWordSet_iteratorPastEnd_throws() {
+    PrimitiveIterator.OfInt iterator = bitSetOf(1).stream().iterator();
+    assertThat(iterator.nextInt()).isEqualTo(1);
+    assertThrows(NoSuchElementException.class, iterator::nextInt);
+  }
+
   @Test public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(
             ImmutableBitSet.EMPTY,
             bitSetOf(),
-            ImmutableBitSet.valueOf(0L),
-            ImmutableBitSet.valueOf(),
+            ImmutableBitSet.valueOf(new long[] {0L}),
+            ImmutableBitSet.valueOf(new long[0]),
             ImmutableBitSet.builderWithExpectedSize(1024).build())
         .addEqualityGroup(
-            bitSetOf(1, 3), ImmutableBitSet.valueOf(0b1010L), ImmutableBitSet.valueOf(0b1010L, 0L))
+            bitSetOf(1, 3),
+            ImmutableBitSet.valueOf(new long[] {0b1010L}),
+            ImmutableBitSet.valueOf(new long[] {0b1010L, 0L}))
         .addEqualityGroup(bitSetOf(1, 4))
-        .addEqualityGroup(bitSetOf(63), ImmutableBitSet.valueOf(Long.MIN_VALUE))
+        .addEqualityGroup(bitSetOf(63), ImmutableBitSet.valueOf(new long[] {Long.MIN_VALUE}))
         .addEqualityGroup(
             bitSetOf(0, 64),
-            ImmutableBitSet.valueOf(1L, 1L),
+            ImmutableBitSet.valueOf(new long[] {1L, 1L}),
             ImmutableBitSet.builderWithExpectedSize(1024).set(0).set(64).build())
         .addEqualityGroup(bitSetOf(0, 65))
         .addEqualityGroup(javaUtilBitSetOf(1, 3))
@@ -810,6 +1000,22 @@ public final class ImmutableBitSetTest {
 
   @Test public void hashCode_multiWordSetsWithDifferentBits_differ() {
     assertThat(bitSetOf(1, 100).hashCode()).isNotEqualTo(bitSetOf(2, 100).hashCode());
+  }
+
+  @Test public void testNulls_staticMethods() {
+    new NullPointerTester().testAllPublicStaticMethods(ImmutableBitSet.class);
+  }
+
+  @Test public void testNulls_singleWordSetMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(bitSetOf(1, 3));
+  }
+
+  @Test public void testNulls_multiWordSetMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(bitSetOf(1, 100));
+  }
+
+  @Test public void testNulls_builderMethods() {
+    new NullPointerTester().testAllPublicInstanceMethods(ImmutableBitSet.builder());
   }
 
   @Test public void toString_emptySet() {
@@ -900,18 +1106,36 @@ public final class ImmutableBitSetTest {
     assertThat(bitSetOf(0, 3).intersects(bitSetOf(4, 100))).isFalse();
   }
 
+  @Test public void intersects_singleWordBit63WithMultiWord_commonBit_isTrue() {
+    assertThat(bitSetOf(63).intersects(bitSetOf(63, 100))).isTrue();
+  }
+
+  @Test public void intersects_singleWordBit63WithMultiWord_noCommonBit_isFalse() {
+    assertThat(bitSetOf(63).intersects(bitSetOf(62, 100))).isFalse();
+  }
+
+  @Test public void intersects_multiWordWithSingleWordBit63_commonBit_isTrue() {
+    assertThat(bitSetOf(63, 100).intersects(bitSetOf(63))).isTrue();
+  }
+
+  @Test public void intersects_multiWordWithSingleWordBit63_noCommonBit_isFalse() {
+    assertThat(bitSetOf(62, 100).intersects(bitSetOf(63))).isFalse();
+  }
+
   @Test public void intersects_emptySet_isFalse() {
     assertThat(bitSetOf(1, 100).intersects(bitSetOf())).isFalse();
   }
 
   @Test public void intersects_singleWordSet_null_throws() {
     ImmutableBitSet set = bitSetOf(1);
-    assertThrows(NullPointerException.class, () -> set.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> set.intersects(that));
   }
 
   @Test public void intersects_multiWordSet_null_throws() {
     ImmutableBitSet set = bitSetOf(1, 100);
-    assertThrows(NullPointerException.class, () -> set.intersects(null));
+    ImmutableBitSet that = null;
+    assertThrows(NullPointerException.class, () -> set.intersects(that));
   }
 
   @Test public void toLongArray_emptySet_isEmpty() {
