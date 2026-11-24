@@ -83,16 +83,7 @@ public abstract class ImmutableBitSet {
         checkArgument(
             i <= Integer.MAX_VALUE / 64,
             "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", i);
-        BitSet bits = BitSet.valueOf(words);
-        int length = bits.length();
-        if (length == 0) {
-          return EMPTY;
-        }
-        if (length > 0 && length <= 64) {
-          long firstWord = bits.toLongArray()[0];
-          return firstWord == 0 ? EMPTY : new SingleWord(firstWord);
-        }
-        return new MultiWord(bits);
+        return new MultiWord(BitSet.valueOf(words));
       }
     }
     return EMPTY;

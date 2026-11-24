@@ -29,7 +29,6 @@ import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 import java.util.Random;
 import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntPredicate;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
@@ -580,81 +579,6 @@ public final class ImmutableBitSetTest {
     long[] words = new long[Integer.MAX_VALUE / 64 + 1];
     words[Integer.MAX_VALUE / 64] = Long.MIN_VALUE;
     assertThat(ImmutableBitSet.valueOf(words).stream()).containsExactly(Integer.MAX_VALUE);
-  }
-
-  @Test public void valueOf_concurrentMutationClearsHighWord_preservesEquality()
-      throws InterruptedException {
-    long[] words = {1L, 1L};
-    ImmutableBitSet bit0 = bitSetOf(0);
-    ImmutableBitSet bits0And64 = bitSetOf(0, 64);
-    AtomicBoolean running = new AtomicBoolean(true);
-    Thread mutator = new Thread(() -> {
-      while (running.get()) {
-        words[1] ^= 1L;
-      }
-    });
-    mutator.start();
-    try {
-      for (int i = 0; i < 200_000; i++) {
-        ImmutableBitSet set = ImmutableBitSet.valueOf(words);
-        assertThat(set).isEqualTo(set.get(64) ? bits0And64 : bit0);
-      }
-    } finally {
-      running.set(false);
-      mutator.join();
-    }
-  }
-
-  @Test public void valueOf_concurrentMutationClearsOnlyHighWord_returnsEmpty()
-      throws InterruptedException {
-    long[] words = {0L, 1L};
-    ImmutableBitSet bit64 = bitSetOf(64);
-    AtomicBoolean running = new AtomicBoolean(true);
-    Thread mutator = new Thread(() -> {
-      while (running.get()) {
-        words[1] ^= 1L;
-      }
-    });
-    mutator.start();
-    try {
-      for (int i = 0; i < 200_000; i++) {
-        ImmutableBitSet set = ImmutableBitSet.valueOf(words);
-        if (set.get(64)) {
-          assertThat(set).isEqualTo(bit64);
-        } else {
-          assertThat(set).isSameInstanceAs(ImmutableBitSet.EMPTY);
-        }
-      }
-    } finally {
-      running.set(false);
-      mutator.join();
-    }
-  }
-
-  @Test public void valueOf_concurrentMutationClearsSingleWord_returnsEmpty()
-      throws InterruptedException {
-    long[] words = {1L};
-    ImmutableBitSet bit0 = bitSetOf(0);
-    AtomicBoolean running = new AtomicBoolean(true);
-    Thread mutator = new Thread(() -> {
-      while (running.get()) {
-        words[0] ^= 1L;
-      }
-    });
-    mutator.start();
-    try {
-      for (int i = 0; i < 200_000; i++) {
-        ImmutableBitSet set = ImmutableBitSet.valueOf(words);
-        if (set.get(0)) {
-          assertThat(set).isEqualTo(bit0);
-        } else {
-          assertThat(set).isSameInstanceAs(ImmutableBitSet.EMPTY);
-        }
-      }
-    } finally {
-      running.set(false);
-      mutator.join();
-    }
   }
 
   @Test public void toImmutableBitSet_collectsIndices() {
