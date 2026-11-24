@@ -95,8 +95,8 @@ final class OrParser<T> extends Parser<T> {
   @Override ImmutableBitSet computeBlocklist() {
     var builder = parsers.get(0).getBlocklist().toBuilder();
     for (int i = 1; i < parsers.size(); i++) {
+      if (builder.isEmpty()) return builder.build();  // short-circuit
       ImmutableBitSet blocklist = parsers.get(i).getBlocklist();
-      if (blocklist.isEmpty()) return blocklist;  // short-circuit
       builder.and(blocklist);
     }
     return builder.build();

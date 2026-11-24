@@ -262,6 +262,11 @@ public abstract class ImmutableBitSet {
       return this;
     }
 
+    /** Returns true if no bit is set. */
+    public boolean isEmpty() {
+      return bits.isEmpty();
+    }
+
     /** Returns an immutable set of the bits set so far. */
     public ImmutableBitSet build() {
       int length = bits.length();

@@ -151,6 +151,38 @@ public final class ImmutableBitSetTest {
     assertThat(first.stream()).containsExactly(1, 3).inOrder();
   }
 
+  @Test public void builder_isEmpty_newBuilder_isTrue() {
+    assertThat(ImmutableBitSet.builder().isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_withExpectedSize_isTrue() {
+    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_afterSet_isFalse() {
+    assertThat(ImmutableBitSet.builder().set(0).isEmpty()).isFalse();
+  }
+
+  @Test public void builder_isEmpty_afterSetHighBit_isFalse() {
+    assertThat(ImmutableBitSet.builder().set(100).isEmpty()).isFalse();
+  }
+
+  @Test public void builder_isEmpty_afterClearLastBit_isTrue() {
+    assertThat(builderOf(5).clear(5).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_afterAndNotAllBits_isTrue() {
+    assertThat(builderOf(1, 100).andNot(bitSetOf(1, 100)).isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_fromEmptyToBuilder_isTrue() {
+    assertThat(ImmutableBitSet.EMPTY.toBuilder().isEmpty()).isTrue();
+  }
+
+  @Test public void builder_isEmpty_fromNonEmptyToBuilder_isFalse() {
+    assertThat(bitSetOf(1, 100).toBuilder().isEmpty()).isFalse();
+  }
+
   @Test public void builderWithExpectedSize_negative_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> ImmutableBitSet.builderWithExpectedSize(-1));
