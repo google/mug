@@ -237,6 +237,19 @@ public abstract class ImmutableBitSet {
     }
 
     /**
+     * Clears the bits from {@code fromIndex} (inclusive) to {@code toIndex} (exclusive), like
+     * {@link BitSet#clear(int, int)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative, {@code toIndex} is
+     *     negative, or {@code fromIndex > toIndex}
+     */
+    public Builder clear(int fromIndex, int toIndex) {
+      bits.clear(fromIndex, toIndex);
+      return this;
+    }
+
+    /**
      * Clears the bits that aren't set in {@code that}, like {@link BitSet#and(BitSet)}.
      *
      * @return this builder
@@ -399,11 +412,12 @@ public abstract class ImmutableBitSet {
 
   private static final class MultiWord extends ImmutableBitSet {
     private final BitSet bits;
-    private final int cardinality;
+    // Lazily cached (0 means uncomputed). Benign data races on int.
+    private int cardinality;
+    private int hashCode;
 
     MultiWord(BitSet bits) {
       this.bits = bits;
-      this.cardinality = bits.cardinality();
     }
 
     @Override public boolean get(int index) {
@@ -411,7 +425,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int cardinality() {
-      return cardinality;
+      int result = cardinality;
+      if (result == 0) {
+        cardinality = result = bits.cardinality();
+      }
+      return result;
     }
 
     @Override public int size() {
@@ -443,7 +461,11 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int hashCode() {
-      return bits.hashCode();
+      int result = hashCode;
+      if (result == 0) {
+        hashCode = result = bits.hashCode();
+      }
+      return result;
     }
 
     @Override public Builder toBuilder() {

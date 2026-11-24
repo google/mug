@@ -276,6 +276,102 @@ public final class ImmutableBitSetTest {
     assertThat(first.stream()).containsExactly(1, 3).inOrder();
   }
 
+  @Test public void builder_clearRange_emptyRange_noEffect() {
+    assertThat(builderOf(1, 5).clear(5, 5).build().stream()).containsExactly(1, 5).inOrder();
+  }
+
+  @Test public void builder_clearRange_emptyRangeAtIntegerMaxValue_noEffect() {
+    assertThat(builderOf(1).clear(Integer.MAX_VALUE, Integer.MAX_VALUE).build().stream())
+        .containsExactly(1);
+  }
+
+  @Test public void builder_clearRange_singleBit() {
+    assertThat(builderOf(1, 5, 100).clear(5, 6).build().stream()).containsExactly(1, 100).inOrder();
+  }
+
+  @Test public void builder_clearRange_withinSingleWord() {
+    assertThat(ImmutableBitSet.builder().set(0, 10).clear(2, 7).build().stream())
+        .containsExactly(0, 1, 7, 8, 9)
+        .inOrder();
+  }
+
+  @Test public void builder_clearRange_acrossWordBoundary() {
+    assertThat(ImmutableBitSet.builder().set(60, 68).clear(62, 66).build().stream())
+        .containsExactly(60, 61, 66, 67)
+        .inOrder();
+  }
+
+  @Test public void builder_clearRange_acrossMultipleWords() {
+    assertThat(ImmutableBitSet.builder().set(0, 200).clear(1, 199).build().stream())
+        .containsExactly(0, 199)
+        .inOrder();
+  }
+
+  @Test public void builder_clearRange_highBits_sizeShrinks() {
+    assertThat(ImmutableBitSet.builder().set(0, 200).clear(64, 200).build().size()).isEqualTo(64);
+  }
+
+  @Test public void builder_clearRange_toIntegerMaxValue_clearsHighBits() {
+    assertThat(builderOf(1, 200).clear(64, Integer.MAX_VALUE).build().stream()).containsExactly(1);
+  }
+
+  @Test public void builder_clearRange_toIntegerMaxValue_sizeShrinks() {
+    assertThat(builderOf(1, 200).clear(64, Integer.MAX_VALUE).build().size()).isEqualTo(64);
+  }
+
+  @Test public void builder_clearRange_allBits_returnsEmpty() {
+    assertThat(ImmutableBitSet.builder().set(0, 200).clear(0, 200).build())
+        .isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void builder_clearRange_beyondHighestBit_noEffect() {
+    assertThat(builderOf(1).clear(100, Integer.MAX_VALUE).build().stream()).containsExactly(1);
+  }
+
+  @Test public void builder_clearRange_negativeFromIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(-1, 5));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_clearRange_negativeToIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(0, -1));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_clearRange_fromGreaterThanTo_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(5, 4));
+    assertThat(thrown).hasMessageThat().contains("5");
+  }
+
+  @Test public void builder_clearRange_integerMinValueFromIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(Integer.MIN_VALUE, 0));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_clearRange_integerMinValueToIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(0, Integer.MIN_VALUE));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_clearRange_afterBuild_builtSetUnchanged() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder().set(0, 100);
+    ImmutableBitSet first = builder.build();
+    builder.clear(0, 50);
+    assertThat(first.stream())
+        .containsExactlyElementsIn(IntStream.range(0, 100).boxed().collect(toList()))
+        .inOrder();
+  }
+
   @Test public void builder_isEmpty_newBuilder_isTrue() {
     assertThat(ImmutableBitSet.builder().isEmpty()).isTrue();
   }
@@ -973,6 +1069,12 @@ public final class ImmutableBitSetTest {
     assertThat(bitSetOf(0, 63, 64, 127, 128, 1000).cardinality()).isEqualTo(6);
   }
 
+  @Test public void cardinality_multiWord_repeatedCallsReturnSameValue() {
+    ImmutableBitSet set = bitSetOf(0, 63, 64, 127, 128, 1000);
+    assertThat(set.cardinality()).isEqualTo(6);
+    assertThat(set.cardinality()).isEqualTo(6);
+  }
+
   @Test public void cardinality_matchesJavaUtilBitSet_randomBitsBelow64() {
     int[] indices = randomIndices(40, 64);
     assertThat(bitSetOf(indices).cardinality()).isEqualTo(javaUtilBitSetOf(indices).cardinality());
@@ -1121,6 +1223,18 @@ public final class ImmutableBitSetTest {
 
   @Test public void hashCode_multiWordSetsWithDifferentBits_differ() {
     assertThat(bitSetOf(1, 100).hashCode()).isNotEqualTo(bitSetOf(2, 100).hashCode());
+  }
+
+  @Test public void hashCode_multiWord_repeatedCallsReturnSameValue() {
+    ImmutableBitSet set = bitSetOf(1, 100, 200);
+    int first = set.hashCode();
+    assertThat(set.hashCode()).isEqualTo(first);
+  }
+
+  @Test public void hashCode_multiWordZeroHash_repeatedCallsReturnZero() {
+    ImmutableBitSet set = ImmutableBitSet.valueOf(new long[] {1234L ^ 2L, 1L});
+    assertThat(set.hashCode()).isEqualTo(0);
+    assertThat(set.hashCode()).isEqualTo(0);
   }
 
   @Test public void testNulls_staticMethods() {
