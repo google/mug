@@ -36,7 +36,7 @@ import java.util.stream.StreamSupport;
  * to share between threads. The differences from {@code BitSet}:
  *
  * <ul>
- *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long...)} or {@link
+ *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long[])} or {@link
  *       #toImmutableBitSet} to create a set, and {@link #toBuilder} to derive a modified copy.
  *   <li>{@link #intersects} takes another {@code ImmutableBitSet}.
  *   <li>An {@code ImmutableBitSet} is never {@link #equals equal} to a {@code BitSet}.
@@ -66,30 +66,36 @@ public abstract class ImmutableBitSet {
   }
 
   /**
-   * Returns the set of bits that are set in {@code word}: bit {@code n} is in the set if {@code
-   * (word & (1L << n)) != 0}, for all {@code n < 64}.
-   */
-  public static ImmutableBitSet valueOf(long word) {
-    return word == 0 ? EMPTY : new SingleWord(word);
-  }
-
-  /**
    * Returns the set of bits that are set in {@code words}, in the same little-endian layout as
    * {@link BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if {@code
    * (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
+   *
+   * @throws IllegalArgumentException if any set bit would have an index above {@link
+   *     Integer#MAX_VALUE}
    */
-  public static ImmutableBitSet valueOf(long... words) {
-    int used = words.length;
-    while (used > 0 && words[used - 1] == 0) {
-      used--;
+  public static ImmutableBitSet valueOf(long[] words) {
+    for (int i = words.length - 1; i >= 0; i--) {
+      long word = words[i];
+      if (word != 0) {
+        if (i == 0) {
+          return new SingleWord(word);
+        }
+        checkArgument(
+            i <= Integer.MAX_VALUE / 64,
+            "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", i);
+        BitSet bits = BitSet.valueOf(words);
+        int length = bits.length();
+        if (length == 0) {
+          return EMPTY;
+        }
+        if (length > 0 && length <= 64) {
+          long firstWord = bits.toLongArray()[0];
+          return firstWord == 0 ? EMPTY : new SingleWord(firstWord);
+        }
+        return new MultiWord(bits);
+      }
     }
-    if (used == 0) {
-      return EMPTY;
-    }
-    if (used == 1) {
-      return new SingleWord(words[0]);
-    }
-    return new MultiWord(BitSet.valueOf(words));
+    return EMPTY;
   }
 
   /**
@@ -134,7 +140,9 @@ public abstract class ImmutableBitSet {
   /**
    * Like {@link BitSet#size() BitSet.size()}, returns the number of bits of space used: 64 if every
    * set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
-   * to and including the one holding the highest set bit.
+   * to and including the one holding the highest set bit. As in {@code BitSet.size()}, this
+   * overflows to {@link Integer#MIN_VALUE} when any bit in {@code [Integer.MAX_VALUE - 63,
+   * Integer.MAX_VALUE]} is set.
    */
   public abstract int size();
 
@@ -143,7 +151,8 @@ public abstract class ImmutableBitSet {
 
   /**
    * Returns the index of the highest set bit plus one, or 0 if no bit is set, like {@link
-   * BitSet#length()}.
+   * BitSet#length()}. As in {@code BitSet.length()}, this overflows to {@link Integer#MIN_VALUE}
+   * when {@link Integer#MAX_VALUE} is set.
    */
   public abstract int length();
 
@@ -158,7 +167,7 @@ public abstract class ImmutableBitSet {
 
   /**
    * Returns the set bits as a new array of words, in the little-endian layout of {@link
-   * #valueOf(long...)} and without trailing zero words, like {@link BitSet#toLongArray()}.
+   * #valueOf(long[])} and without trailing zero words, like {@link BitSet#toLongArray()}.
    */
   public abstract long[] toLongArray();
 
@@ -197,6 +206,18 @@ public abstract class ImmutableBitSet {
     public Builder set(int index) {
       checkNotNegative(index);
       bits.set(index);
+      return this;
+    }
+
+    /**
+     * Clears the bit at {@code index}. Clearing a bit that is already cleared has no effect.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code index} is negative
+     */
+    public Builder clear(int index) {
+      checkNotNegative(index);
+      bits.clear(index);
       return this;
     }
 
@@ -256,10 +277,10 @@ public abstract class ImmutableBitSet {
       if (length == 0) {
         return EMPTY;
       }
-      if (length <= 64) {
+      if (length > 0 && length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
-      BitSet trimmed = new BitSet(length);
+      BitSet trimmed = new BitSet(length < 0 ? Integer.MAX_VALUE : length);
       trimmed.or(bits);
       return new MultiWord(trimmed);
     }
@@ -377,7 +398,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public boolean isEmpty() {
-      return bits.isEmpty();
+      return false;
     }
 
     @Override public IntStream stream() {
@@ -408,7 +429,8 @@ public abstract class ImmutableBitSet {
       // Can't use bits.clone(): if its size isn't sticky, clone() may trim its array, an
       // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
       // argument.
-      return builderWithExpectedSize(size()).or(this);
+      int expectedSize = size();
+      return builderWithExpectedSize(expectedSize < 0 ? Integer.MAX_VALUE : expectedSize).or(this);
     }
 
     @Override BitSet asBitSet() {
