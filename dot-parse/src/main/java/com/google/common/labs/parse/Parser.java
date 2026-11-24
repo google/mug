@@ -2674,11 +2674,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   ImmutableBitSet computeBlocklist() {
     Set<String> prefixes = getPrefixes();
+    if (prefixes.contains("")) {
+      return ImmutableBitSet.EMPTY;
+    }
     ImmutableBitSet.Builder firstAsciiChars = ImmutableBitSet.builderWithExpectedSize(128);
     for (String prefix : prefixes) {
-      if (prefix.isEmpty()) {
-        return ImmutableBitSet.EMPTY;
-      }
       char firstChar = prefix.charAt(0);
       if (firstChar < 128) {
         firstAsciiChars.set(firstChar);
