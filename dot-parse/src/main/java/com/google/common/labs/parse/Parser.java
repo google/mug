@@ -2284,9 +2284,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public final <E extends Throwable> T parse(
         String input, CheckedIntConsumer<E> onRemainder) throws E {
       requireNonNull(onRemainder);
-      if (input.isEmpty()) {
-        return computeDefaultValue();
-      }
+      if (input.isEmpty()) return computeDefaultValue();
       if (notEmpty().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
           instanceof MatchResult.Success<T> result) {
         if (result.tail() == input.length()) {
@@ -2674,9 +2672,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   ImmutableBitSet computeBlocklist() {
     Set<String> prefixes = getPrefixes();
-    if (prefixes.contains("")) {
-      return ImmutableBitSet.EMPTY;
-    }
+    if (prefixes.contains("")) return ImmutableBitSet.EMPTY;
     ImmutableBitSet.Builder firstAsciiChars = ImmutableBitSet.builderWithExpectedSize(128);
     for (String prefix : prefixes) {
       char firstChar = prefix.charAt(0);

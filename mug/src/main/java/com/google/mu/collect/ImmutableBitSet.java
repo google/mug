@@ -38,6 +38,8 @@ import java.util.stream.StreamSupport;
  * <ul>
  *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long[])} or {@link
  *       #toImmutableBitSet} to create a set, and {@link #toBuilder} to derive a modified copy.
+ *   <li>There is no {@link BitSet#nextSetBit(int) BitSet.nextSetBit()}; in place of the legacy
+ *       {@code nextSetBit()} loop, use {@link #stream stream()}{@code .forEach(...)}.
  *   <li>{@link #intersects} takes another {@code ImmutableBitSet}.
  *   <li>An {@code ImmutableBitSet} is never {@link #equals equal} to a {@code BitSet}.
  * </ul>
