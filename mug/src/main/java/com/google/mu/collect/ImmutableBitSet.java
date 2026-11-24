@@ -197,8 +197,31 @@ public abstract class ImmutableBitSet {
      * @throws IndexOutOfBoundsException if {@code index} is negative
      */
     public Builder set(int index) {
-      checkNotNegative(index);
       bits.set(index);
+      return this;
+    }
+
+    /**
+     * Sets the bit at {@code index} to {@code value}, like {@link BitSet#set(int, boolean)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code index} is negative
+     */
+    public Builder set(int index, boolean value) {
+      bits.set(index, value);
+      return this;
+    }
+
+    /**
+     * Sets the bits from {@code fromIndex} (inclusive) to {@code toIndex} (exclusive), like {@link
+     * BitSet#set(int, int)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative, {@code toIndex} is
+     *     negative, or {@code fromIndex > toIndex}
+     */
+    public Builder set(int fromIndex, int toIndex) {
+      bits.set(fromIndex, toIndex);
       return this;
     }
 
@@ -209,7 +232,6 @@ public abstract class ImmutableBitSet {
      * @throws IndexOutOfBoundsException if {@code index} is negative
      */
     public Builder clear(int index) {
-      checkNotNegative(index);
       bits.clear(index);
       return this;
     }
@@ -294,7 +316,9 @@ public abstract class ImmutableBitSet {
     // & rather than &&: faster when indices fall unpredictably inside and outside [0, 64).
     @SuppressWarnings("ShortCircuitBoolean")
     @Override public boolean get(int index) {
-      checkNotNegative(index);
+      if (index < 0) {
+        throw new IndexOutOfBoundsException("bitIndex < 0: " + index);
+      }
       return index < 64 & (word & (1L << index)) != 0;
     }
 
@@ -383,7 +407,6 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public boolean get(int index) {
-      checkNotNegative(index);
       return bits.get(index);
     }
 
@@ -455,12 +478,6 @@ public abstract class ImmutableBitSet {
       }
     }
     return false;
-  }
-
-  private static void checkNotNegative(int index) {
-    if (index < 0) {
-      throw new IndexOutOfBoundsException("index (" + index + ") cannot be negative");
-    }
   }
 
   private ImmutableBitSet() {}

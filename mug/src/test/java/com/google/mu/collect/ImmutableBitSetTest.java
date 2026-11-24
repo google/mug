@@ -44,16 +44,14 @@ public final class ImmutableBitSetTest {
     ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> builder.set(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void builder_setIntegerMinValue_throws() {
     ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> builder.set(Integer.MIN_VALUE));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
   }
 
   @Test public void builder_setSameIndexTwice_cardinalityIsOne() {
@@ -101,20 +99,147 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
+  @Test public void builder_setValueTrue_setsBit() {
+    assertThat(ImmutableBitSet.builder().set(5, true).build().stream()).containsExactly(5);
+  }
+
+  @Test public void builder_setValueFalse_clearsSetBit() {
+    assertThat(builderOf(1, 5, 100).set(5, false).build().stream())
+        .containsExactly(1, 100)
+        .inOrder();
+  }
+
+  @Test public void builder_setValueFalse_onUnsetBit_noEffect() {
+    assertThat(builderOf(1).set(5, false).build().stream()).containsExactly(1);
+  }
+
+  @Test public void builder_setValueFalse_clearsLastBit_returnsEmpty() {
+    assertThat(builderOf(5).set(5, false).build()).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void builder_setValueTrue_negativeIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(-1, true));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_setValueFalse_negativeIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(-1, false));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_setValueTrue_integerMinValue_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(Integer.MIN_VALUE, true));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_setValueFalse_integerMinValue_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(Integer.MIN_VALUE, false));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_setRange_emptyRange_returnsEmpty() {
+    assertThat(ImmutableBitSet.builder().set(5, 5).build()).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void builder_setRange_emptyRangeAtIntegerMaxValue_returnsEmpty() {
+    assertThat(ImmutableBitSet.builder().set(Integer.MAX_VALUE, Integer.MAX_VALUE).build())
+        .isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void builder_setRange_singleBit() {
+    assertThat(ImmutableBitSet.builder().set(5, 6).build().stream()).containsExactly(5);
+  }
+
+  @Test public void builder_setRange_withinSingleWord() {
+    assertThat(ImmutableBitSet.builder().set(1, 5).build().stream())
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
+  }
+
+  @Test public void builder_setRange_fullSingleWord_sizeIs64() {
+    assertThat(ImmutableBitSet.builder().set(0, 64).build().size()).isEqualTo(64);
+  }
+
+  @Test public void builder_setRange_fullSingleWord_allBitsBelow64() {
+    assertThat(ImmutableBitSet.builder().set(0, 64).build().stream())
+        .containsExactlyElementsIn(IntStream.range(0, 64).boxed().collect(toList()))
+        .inOrder();
+  }
+
+  @Test public void builder_setRange_acrossWordBoundary() {
+    assertThat(ImmutableBitSet.builder().set(62, 66).build().stream())
+        .containsExactly(62, 63, 64, 65)
+        .inOrder();
+  }
+
+  @Test public void builder_setRange_acrossMultipleWords() {
+    assertThat(ImmutableBitSet.builder().set(1, 200).build().stream())
+        .containsExactlyElementsIn(IntStream.range(1, 200).boxed().collect(toList()))
+        .inOrder();
+  }
+
+  @Test public void builder_setRange_negativeFromIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(-1, 5));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_setRange_negativeToIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(0, -1));
+    assertThat(thrown).hasMessageThat().contains("-1");
+  }
+
+  @Test public void builder_setRange_fromGreaterThanTo_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(5, 4));
+    assertThat(thrown).hasMessageThat().contains("5");
+  }
+
+  @Test public void builder_setRange_integerMinValueFromIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(Integer.MIN_VALUE, 0));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_setRange_integerMinValueToIndex_throws() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
+    IndexOutOfBoundsException thrown =
+        assertThrows(IndexOutOfBoundsException.class, () -> builder.set(0, Integer.MIN_VALUE));
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
+  }
+
+  @Test public void builder_setRange_afterBuild_builtSetUnchanged() {
+    ImmutableBitSet.Builder builder = ImmutableBitSet.builder().set(1);
+    ImmutableBitSet first = builder.build();
+    builder.set(2, 100);
+    assertThat(first.stream()).containsExactly(1);
+  }
+
   @Test public void builder_clearNegativeIndex_throws() {
     ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void builder_clearIntegerMinValue_throws() {
     ImmutableBitSet.Builder builder = ImmutableBitSet.builder();
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> builder.clear(Integer.MIN_VALUE));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
   }
 
   @Test public void builder_clearSetBit_removesBit() {
@@ -457,7 +582,7 @@ public final class ImmutableBitSetTest {
   @Test public void empty_getNegativeIndex_throws() {
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> ImmutableBitSet.EMPTY.get(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void empty_toLongArray_isEmpty() {
@@ -638,7 +763,7 @@ public final class ImmutableBitSetTest {
     IndexOutOfBoundsException thrown = assertThrows(
         IndexOutOfBoundsException.class,
         () -> indices.collect(ImmutableBitSet.toImmutableBitSet()));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void toImmutableBitSet_nullIndex_throws() {
@@ -733,39 +858,35 @@ public final class ImmutableBitSetTest {
     ImmutableBitSet set = bitSetOf();
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void get_negativeIndex_onlyBit3_throws() {
     ImmutableBitSet set = bitSetOf(3);
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void get_negativeIndex_onlyBit100_throws() {
     ImmutableBitSet set = bitSetOf(100);
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(-1));
-    assertThat(thrown).hasMessageThat().contains("index (-1) cannot be negative");
+    assertThat(thrown).hasMessageThat().contains("-1");
   }
 
   @Test public void get_integerMinValue_singleWord_throws() {
     ImmutableBitSet set = bitSetOf(3);
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(Integer.MIN_VALUE));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
   }
 
   @Test public void get_integerMinValue_multiWord_throws() {
     ImmutableBitSet set = bitSetOf(100);
     IndexOutOfBoundsException thrown =
         assertThrows(IndexOutOfBoundsException.class, () -> set.get(Integer.MIN_VALUE));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("index (" + Integer.MIN_VALUE + ") cannot be negative");
+    assertThat(thrown).hasMessageThat().contains(String.valueOf(Integer.MIN_VALUE));
   }
 
   @Test public void get_emptySet_noBitsSet() {
