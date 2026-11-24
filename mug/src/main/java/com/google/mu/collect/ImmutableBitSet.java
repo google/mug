@@ -256,7 +256,7 @@ public abstract class ImmutableBitSet {
       if (length == 0) {
         return EMPTY;
       }
-      if (length <= Long.SIZE) {
+      if (length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
       BitSet trimmed = new BitSet(length);
@@ -272,9 +272,11 @@ public abstract class ImmutableBitSet {
       this.word = word;
     }
 
+    // & rather than &&: faster when indices fall unpredictably inside and outside [0, 64).
+    @SuppressWarnings("ShortCircuitBoolean")
     @Override public boolean get(int index) {
       checkNotNegative(index);
-      return index < Long.SIZE && (word & (1L << index)) != 0;
+      return index < 64 & (word & (1L << index)) != 0;
     }
 
     @Override public int cardinality() {
@@ -282,7 +284,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int size() {
-      return Long.SIZE;
+      return 64;
     }
 
     @Override public boolean isEmpty() {
@@ -315,7 +317,7 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int length() {
-      return Long.SIZE - Long.numberOfLeadingZeros(word);
+      return 64 - Long.numberOfLeadingZeros(word);
     }
 
     @Override public boolean intersects(ImmutableBitSet that) {
