@@ -56,15 +56,15 @@ public abstract class ImmutableBitSet {
   }
 
   /**
-   * Returns a new builder with room for the bits below {@code expectedSize}, the expected {@link
-   * #size} of the built set. Bits at or above {@code expectedSize} can still be set, and the built
+   * Returns a new builder with room for the bits below {@code expectedBits}, the expected {@link
+   * #size} of the built set. Bits at or above {@code expectedBits} can still be set, and the built
    * set's {@link #size} depends only on the bits that are set.
    *
-   * @throws IllegalArgumentException if {@code expectedSize} is negative
+   * @throws IllegalArgumentException if {@code expectedBits} is negative
    */
-  public static Builder builderWithExpectedSize(int expectedSize) {
-    checkArgument(expectedSize >= 0, "expectedSize (%s) cannot be negative", expectedSize);
-    return new Builder(new BitSet(expectedSize));
+  public static Builder builderWithExpectedSize(int expectedBits) {
+    checkArgument(expectedBits >= 0, "expectedBits (%s) cannot be negative", expectedBits);
+    return new Builder(new BitSet(expectedBits));
   }
 
   /**
@@ -197,8 +197,31 @@ public abstract class ImmutableBitSet {
      * @throws IndexOutOfBoundsException if {@code index} is negative
      */
     public Builder set(int index) {
-      checkNotNegative(index);
       bits.set(index);
+      return this;
+    }
+
+    /**
+     * Sets the bit at {@code index} to {@code value}, like {@link BitSet#set(int, boolean)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code index} is negative
+     */
+    public Builder set(int index, boolean value) {
+      bits.set(index, value);
+      return this;
+    }
+
+    /**
+     * Sets the bits from {@code fromIndex} (inclusive) to {@code toIndex} (exclusive), like {@link
+     * BitSet#set(int, int)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative, {@code toIndex} is
+     *     negative, or {@code fromIndex > toIndex}
+     */
+    public Builder set(int fromIndex, int toIndex) {
+      bits.set(fromIndex, toIndex);
       return this;
     }
 
@@ -209,8 +232,20 @@ public abstract class ImmutableBitSet {
      * @throws IndexOutOfBoundsException if {@code index} is negative
      */
     public Builder clear(int index) {
-      checkNotNegative(index);
       bits.clear(index);
+      return this;
+    }
+
+    /**
+     * Clears the bits from {@code fromIndex} (inclusive) to {@code toIndex} (exclusive), like
+     * {@link BitSet#clear(int, int)}.
+     *
+     * @return this builder
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative, {@code toIndex} is
+     *     negative, or {@code fromIndex > toIndex}
+     */
+    public Builder clear(int fromIndex, int toIndex) {
+      bits.clear(fromIndex, toIndex);
       return this;
     }
 
@@ -271,14 +306,15 @@ public abstract class ImmutableBitSet {
 
     /** Returns an immutable set of the bits set so far. */
     public ImmutableBitSet build() {
-      int length = bits.length();
+      // BitSet.length() overflows to Integer.MIN_VALUE when bit Integer.MAX_VALUE is set.
+      int length = overflowSafe(bits.length());
       if (length == 0) {
         return EMPTY;
       }
-      if (length > 0 && length <= 64) {
+      if (length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
-      BitSet trimmed = new BitSet(length < 0 ? Integer.MAX_VALUE : length);
+      BitSet trimmed = new BitSet(length);
       trimmed.or(bits);
       return new MultiWord(trimmed);
     }
@@ -294,7 +330,9 @@ public abstract class ImmutableBitSet {
     // & rather than &&: faster when indices fall unpredictably inside and outside [0, 64).
     @SuppressWarnings("ShortCircuitBoolean")
     @Override public boolean get(int index) {
-      checkNotNegative(index);
+      if (index < 0) {
+        throw new IndexOutOfBoundsException("bitIndex < 0: " + index);
+      }
       return index < 64 & (word & (1L << index)) != 0;
     }
 
@@ -375,20 +413,24 @@ public abstract class ImmutableBitSet {
 
   private static final class MultiWord extends ImmutableBitSet {
     private final BitSet bits;
-    private final int cardinality;
+    // Lazily cached (0 means uncomputed). Benign data races on int.
+    private int cardinality;
+    private int hashCode;
 
     MultiWord(BitSet bits) {
       this.bits = bits;
-      this.cardinality = bits.cardinality();
     }
 
     @Override public boolean get(int index) {
-      checkNotNegative(index);
       return bits.get(index);
     }
 
     @Override public int cardinality() {
-      return cardinality;
+      int result = cardinality;
+      if (result == 0) {
+        cardinality = result = bits.cardinality();
+      }
+      return result;
     }
 
     @Override public int size() {
@@ -420,15 +462,19 @@ public abstract class ImmutableBitSet {
     }
 
     @Override public int hashCode() {
-      return bits.hashCode();
+      int result = hashCode;
+      if (result == 0) {
+        hashCode = result = bits.hashCode();
+      }
+      return result;
     }
 
     @Override public Builder toBuilder() {
       // Can't use bits.clone(): if its size isn't sticky, clone() may trim its array, an
       // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
       // argument.
-      int expectedSize = size();
-      return builderWithExpectedSize(expectedSize < 0 ? Integer.MAX_VALUE : expectedSize).or(this);
+      // BitSet.size() overflows to Integer.MIN_VALUE when a bit >= Integer.MAX_VALUE - 63 is set.
+      return builderWithExpectedSize(overflowSafe(size())).or(this);
     }
 
     @Override BitSet asBitSet() {
@@ -457,10 +503,8 @@ public abstract class ImmutableBitSet {
     return false;
   }
 
-  private static void checkNotNegative(int index) {
-    if (index < 0) {
-      throw new IndexOutOfBoundsException("index (" + index + ") cannot be negative");
-    }
+  private static int overflowSafe(int n) {
+    return n < 0 ? Integer.MAX_VALUE : n;
   }
 
   private ImmutableBitSet() {}
