@@ -306,15 +306,15 @@ public abstract class ImmutableBitSet {
 
     /** Returns an immutable set of the bits set so far. */
     public ImmutableBitSet build() {
-      int length = bits.length();
+      // BitSet.length() overflows to Integer.MIN_VALUE when bit Integer.MAX_VALUE is set.
+      int length = overflowSafe(bits.length());
       if (length == 0) {
         return EMPTY;
       }
-      // BitSet.length() overflows to Integer.MIN_VALUE when bit Integer.MAX_VALUE is set.
-      if (length > 0 && length <= 64) {
+      if (length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
-      BitSet trimmed = new BitSet(length < 0 ? Integer.MAX_VALUE : length);
+      BitSet trimmed = new BitSet(length);
       trimmed.or(bits);
       return new MultiWord(trimmed);
     }
@@ -473,9 +473,8 @@ public abstract class ImmutableBitSet {
       // Can't use bits.clone(): if its size isn't sticky, clone() may trim its array, an
       // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
       // argument.
-      int expectedSize = size();
       // BitSet.size() overflows to Integer.MIN_VALUE when a bit >= Integer.MAX_VALUE - 63 is set.
-      return builderWithExpectedSize(expectedSize < 0 ? Integer.MAX_VALUE : expectedSize).or(this);
+      return builderWithExpectedSize(overflowSafe(size())).or(this);
     }
 
     @Override BitSet asBitSet() {
@@ -502,6 +501,10 @@ public abstract class ImmutableBitSet {
       }
     }
     return false;
+  }
+
+  private static int overflowSafe(int n) {
+    return n < 0 ? Integer.MAX_VALUE : n;
   }
 
   private ImmutableBitSet() {}
