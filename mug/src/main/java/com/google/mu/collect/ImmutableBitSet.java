@@ -310,6 +310,7 @@ public abstract class ImmutableBitSet {
       if (length == 0) {
         return EMPTY;
       }
+      // BitSet.length() overflows to Integer.MIN_VALUE when bit Integer.MAX_VALUE is set.
       if (length > 0 && length <= 64) {
         return new SingleWord(bits.toLongArray()[0]);
       }
@@ -473,6 +474,7 @@ public abstract class ImmutableBitSet {
       // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
       // argument.
       int expectedSize = size();
+      // BitSet.size() overflows to Integer.MIN_VALUE when a bit >= Integer.MAX_VALUE - 63 is set.
       return builderWithExpectedSize(expectedSize < 0 ? Integer.MAX_VALUE : expectedSize).or(this);
     }
 
