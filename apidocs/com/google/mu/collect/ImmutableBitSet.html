@@ -180,9 +180,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a new builder.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize</a><wbr>(int&nbsp;expectedSize)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize</a><wbr>(int&nbsp;expectedBits)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a new builder with room for the bits below <code>expectedSize</code>, the expected <a href="#size()"><code>size()</code></a> of the built set.</div>
+<div class="block">Returns a new builder with room for the bits below <code>expectedBits</code>, the expected <a href="#size()"><code>size()</code></a> of the built set.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract int</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#cardinality()" class="member-name-link">cardinality</a>()</code></div>
@@ -317,12 +317,12 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="builderWithExpectedSize(int)">
 <h3>builderWithExpectedSize</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">builderWithExpectedSize</span><wbr><span class="parameters">(int&nbsp;expectedSize)</span></div>
-<div class="block">Returns a new builder with room for the bits below <code>expectedSize</code>, the expected <a href="#size()"><code>size()</code></a> of the built set. Bits at or above <code>expectedSize</code> can still be set, and the built
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></span>&nbsp;<span class="element-name">builderWithExpectedSize</span><wbr><span class="parameters">(int&nbsp;expectedBits)</span></div>
+<div class="block">Returns a new builder with room for the bits below <code>expectedBits</code>, the expected <a href="#size()"><code>size()</code></a> of the built set. Bits at or above <code>expectedBits</code> can still be set, and the built
  set's <a href="#size()"><code>size()</code></a> depends only on the bits that are set.</div>
 <dl class="notes">
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>expectedSize</code> is negative</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>expectedBits</code> is negative</dd>
 </dl>
 </div>
 </section>

@@ -95,9 +95,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a new builder.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize</a><wbr>(int&nbsp;expectedSize)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize</a><wbr>(int&nbsp;expectedBits)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns a new builder with room for the bits below <code>expectedSize</code>, the expected <a href="../ImmutableBitSet.html#size()"><code>ImmutableBitSet.size()</code></a> of the built set.</div>
+<div class="block">Returns a new builder with room for the bits below <code>expectedBits</code>, the expected <a href="../ImmutableBitSet.html#size()"><code>ImmutableBitSet.size()</code></a> of the built set.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#clear(int)" class="member-name-link">clear</a><wbr>(int&nbsp;index)</code></div>
@@ -105,23 +105,42 @@ loadScripts(document, 'script');</script>
 <div class="block">Clears the bit at <code>index</code>.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#or(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">or</a><wbr>(<a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&nbsp;that)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#clear(int,int)" class="member-name-link">clear</a><wbr>(int&nbsp;fromIndex,
+ int&nbsp;toIndex)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">Clears the bits from <code>fromIndex</code> (inclusive) to <code>toIndex</code> (exclusive), like
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#clear(int,int)" title="class or interface in java.util" class="external-link"><code>BitSet.clear(int, int)</code></a>.</div>
+</div>
+<div class="col-first even-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#or(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">or</a><wbr>(<a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&nbsp;that)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sets the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#or(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.or(BitSet)</code></a>.</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#set(int)" class="member-name-link">set</a><wbr>(int&nbsp;index)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#set(int)" class="member-name-link">set</a><wbr>(int&nbsp;index)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Sets the bit at <code>index</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>abstract <a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#toBuilder()" class="member-name-link">toBuilder</a>()</code></div>
+<div class="col-first even-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#set(int,boolean)" class="member-name-link">set</a><wbr>(int&nbsp;index,
+ boolean&nbsp;value)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Sets the bit at <code>index</code> to <code>value</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#set(int,boolean)" title="class or interface in java.util" class="external-link"><code>BitSet.set(int, boolean)</code></a>.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#set(int,int)" class="member-name-link">set</a><wbr>(int&nbsp;fromIndex,
+ int&nbsp;toIndex)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">Sets the bits from <code>fromIndex</code> (inclusive) to <code>toIndex</code> (exclusive), like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#set(int,int)" title="class or interface in java.util" class="external-link"><code>BitSet.set(int, int)</code></a>.</div>
+</div>
+<div class="col-first even-row-color"><code>abstract <a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.</span><code><a href="../ImmutableBitSet.html#toBuilder()" class="member-name-link">toBuilder</a>()</code></div>
+<div class="col-last even-row-color">
 <div class="block">Returns a new builder with the bits of this set.</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#xor(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">xor</a><wbr>(<a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&nbsp;that)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code><a href="../ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ImmutableBitSet.Builder.</span><code><a href="../ImmutableBitSet.Builder.html#xor(com.google.mu.collect.ImmutableBitSet)" class="member-name-link">xor</a><wbr>(<a href="../ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a>&nbsp;that)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Flips the bits that are set in <code>that</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#xor(java.util.BitSet)" title="class or interface in java.util" class="external-link"><code>BitSet.xor(BitSet)</code></a>.</div>
 </div>
 </div>

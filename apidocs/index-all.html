@@ -860,7 +860,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.html#builderWithExpectedSize(int)" class="member-name-link">builderWithExpectedSize(int)</a> - Static method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.html" title="class in com.google.mu.collect">ImmutableBitSet</a></dt>
 <dd>
-<div class="block">Returns a new builder with room for the bits below <code>expectedSize</code>, the expected <a href="com/google/mu/collect/ImmutableBitSet.html#size()"><code>ImmutableBitSet.size()</code></a> of the built set.</div>
+<div class="block">Returns a new builder with room for the bits below <code>expectedBits</code>, the expected <a href="com/google/mu/collect/ImmutableBitSet.html#size()"><code>ImmutableBitSet.size()</code></a> of the built set.</div>
 </dd>
 <dt><a href="com/google/guava/labs/collect/BinarySearch.Table.html#by(java.util.function.Function)" class="member-name-link">by(Function&lt;Q, ? extends K&gt;)</a> - Method in class com.google.guava.labs.collect.<a href="com/google/guava/labs/collect/BinarySearch.Table.html" title="class in com.google.guava.labs.collect">BinarySearch.Table</a></dt>
 <dd>
@@ -1195,6 +1195,11 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#clear(int)" class="member-name-link">clear(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
 <dd>
 <div class="block">Clears the bit at <code>index</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#clear(int,int)" class="member-name-link">clear(int, int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Clears the bits from <code>fromIndex</code> (inclusive) to <code>toIndex</code> (exclusive), like
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#clear(int,int)" title="class or interface in java.util" class="external-link"><code>BitSet.clear(int, int)</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#close()" class="member-name-link">close()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -6426,6 +6431,14 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#set(int)" class="member-name-link">set(int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
 <dd>
 <div class="block">Sets the bit at <code>index</code>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#set(int,boolean)" class="member-name-link">set(int, boolean)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Sets the bit at <code>index</code> to <code>value</code>, like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#set(int,boolean)" title="class or interface in java.util" class="external-link"><code>BitSet.set(int, boolean)</code></a>.</div>
+</dd>
+<dt><a href="com/google/mu/collect/ImmutableBitSet.Builder.html#set(int,int)" class="member-name-link">set(int, int)</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/ImmutableBitSet.Builder.html" title="class in com.google.mu.collect">ImmutableBitSet.Builder</a></dt>
+<dd>
+<div class="block">Sets the bits from <code>fromIndex</code> (inclusive) to <code>toIndex</code> (exclusive), like <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/BitSet.html#set(int,int)" title="class or interface in java.util" class="external-link"><code>BitSet.set(int, int)</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/util/graph/ShortestPath.html" class="type-name-link" title="class in com.google.mu.util.graph">ShortestPath&lt;N&gt;</a> - Class in <a href="com/google/mu/util/graph/package-summary.html">com.google.mu.util.graph</a></dt>
 <dd>
