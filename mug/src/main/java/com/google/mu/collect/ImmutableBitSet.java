@@ -56,15 +56,15 @@ public abstract class ImmutableBitSet {
   }
 
   /**
-   * Returns a new builder with room for the bits below {@code expectedSize}, the expected {@link
-   * #size} of the built set. Bits at or above {@code expectedSize} can still be set, and the built
+   * Returns a new builder with room for the bits below {@code expectedBits}, the expected {@link
+   * #size} of the built set. Bits at or above {@code expectedBits} can still be set, and the built
    * set's {@link #size} depends only on the bits that are set.
    *
-   * @throws IllegalArgumentException if {@code expectedSize} is negative
+   * @throws IllegalArgumentException if {@code expectedBits} is negative
    */
-  public static Builder builderWithExpectedSize(int expectedSize) {
-    checkArgument(expectedSize >= 0, "expectedSize (%s) cannot be negative", expectedSize);
-    return new Builder(new BitSet(expectedSize));
+  public static Builder builderWithExpectedSize(int expectedBits) {
+    checkArgument(expectedBits >= 0, "expectedBits (%s) cannot be negative", expectedBits);
+    return new Builder(new BitSet(expectedBits));
   }
 
   /**
