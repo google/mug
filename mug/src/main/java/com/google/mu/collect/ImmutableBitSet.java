@@ -127,7 +127,11 @@ public abstract class ImmutableBitSet {
    */
   public abstract boolean get(int index);
 
-  /** Returns the number of set bits. */
+  /**
+   * Returns the number of set bits, like {@link BitSet#cardinality()}. As in {@code
+   * BitSet.cardinality()}, this overflows to {@link Integer#MIN_VALUE} when every bit in {@code [0,
+   * Integer.MAX_VALUE]} is set.
+   */
   public abstract int cardinality();
 
   /**
