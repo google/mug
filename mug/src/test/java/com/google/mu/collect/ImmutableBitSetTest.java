@@ -164,10 +164,6 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
-  @Test public void builder_setRange_fullSingleWord_sizeIs64() {
-    assertThat(ImmutableBitSet.builder().set(0, 64).build().size()).isEqualTo(64);
-  }
-
   @Test public void builder_setRange_fullSingleWord_allBitsBelow64() {
     assertThat(ImmutableBitSet.builder().set(0, 64).build().stream())
         .containsExactlyElementsIn(IntStream.range(0, 64).boxed().collect(toList()))
@@ -257,12 +253,8 @@ public final class ImmutableBitSetTest {
     assertThat(set.stream()).containsExactly(1);
   }
 
-  @Test public void builder_clearBitBeyondHighest_sizeUnchanged() {
-    assertThat(builderOf(1).clear(Integer.MAX_VALUE).build().size()).isEqualTo(64);
-  }
-
-  @Test public void builder_clearHighBit_sizeShrinks() {
-    assertThat(builderOf(1, 200).clear(200).build().size()).isEqualTo(64);
+  @Test public void builder_clearHighBit_retainsLowBit() {
+    assertThat(builderOf(1, 200).clear(200).build().stream()).containsExactly(1);
   }
 
   @Test public void builder_clearLastBit_returnsEmpty() {
@@ -307,16 +299,13 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
-  @Test public void builder_clearRange_highBits_sizeShrinks() {
-    assertThat(ImmutableBitSet.builder().set(0, 200).clear(64, 200).build().size()).isEqualTo(64);
+  @Test public void builder_clearRange_highBits_retainsLowBits() {
+    assertThat(ImmutableBitSet.builder().set(0, 200).clear(64, 200).build())
+        .isEqualTo(ImmutableBitSet.valueOf(new long[] {-1L}));
   }
 
   @Test public void builder_clearRange_toIntegerMaxValue_clearsHighBits() {
     assertThat(builderOf(1, 200).clear(64, Integer.MAX_VALUE).build().stream()).containsExactly(1);
-  }
-
-  @Test public void builder_clearRange_toIntegerMaxValue_sizeShrinks() {
-    assertThat(builderOf(1, 200).clear(64, Integer.MAX_VALUE).build().size()).isEqualTo(64);
   }
 
   @Test public void builder_clearRange_allBits_returnsEmpty() {
@@ -426,13 +415,14 @@ public final class ImmutableBitSetTest {
     assertThat(indicesBelow(1100, set::get)).containsExactly(1000);
   }
 
-  @Test public void builderWithExpectedSize_1024_onlyBit3_sizeIs64() {
-    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).set(3).build().size()).isEqualTo(64);
+  @Test public void builderWithExpectedSize_1024_onlyBit3_buildsBit3() {
+    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).set(3).build().stream())
+        .containsExactly(3);
   }
 
-  @Test public void builderWithExpectedSize_1024_onlyBit100_sizeIs128() {
-    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).set(100).build().size())
-        .isEqualTo(128);
+  @Test public void builderWithExpectedSize_1024_onlyBit100_buildsBit100() {
+    assertThat(ImmutableBitSet.builderWithExpectedSize(1024).set(100).build().stream())
+        .containsExactly(100);
   }
 
   @Test public void builderAnd_multiWordSet() {
@@ -456,10 +446,6 @@ public final class ImmutableBitSetTest {
   @Test public void builderAnd_nullImmutableBitSet_throws() {
     ImmutableBitSet.Builder builder = builderOf(1, 3, 64, 100, 200);
     assertThrows(NullPointerException.class, () -> builder.and((ImmutableBitSet) null));
-  }
-
-  @Test public void builderAnd_clearsHighBits_sizeShrinks() {
-    assertThat(builderOf(1, 200).and(bitSetOf(1)).build().size()).isEqualTo(64);
   }
 
   @Test public void builderAnd_afterBuild_builtSetUnchanged() {
@@ -534,8 +520,8 @@ public final class ImmutableBitSetTest {
     assertThrows(NullPointerException.class, () -> builder.xor((ImmutableBitSet) null));
   }
 
-  @Test public void builderXor_clearsHighBits_sizeShrinks() {
-    assertThat(builderOf(1, 200).xor(bitSetOf(200)).build().size()).isEqualTo(64);
+  @Test public void builderXor_clearsHighBits_retainsLowBits() {
+    assertThat(builderOf(1, 200).xor(bitSetOf(200)).build().stream()).containsExactly(1);
   }
 
   @Test public void builderXor_afterBuild_builtSetUnchanged() {
@@ -574,8 +560,8 @@ public final class ImmutableBitSetTest {
     assertThrows(NullPointerException.class, () -> builder.andNot((ImmutableBitSet) null));
   }
 
-  @Test public void builderAndNot_clearsHighBits_sizeShrinks() {
-    assertThat(builderOf(1, 200).andNot(bitSetOf(200)).build().size()).isEqualTo(64);
+  @Test public void builderAndNot_clearsHighBits_retainsLowBits() {
+    assertThat(builderOf(1, 200).andNot(bitSetOf(200)).build().stream()).containsExactly(1);
   }
 
   @Test public void builderAndNot_afterBuild_builtSetUnchanged() {
@@ -657,10 +643,6 @@ public final class ImmutableBitSetTest {
 
   @Test public void empty_cardinality_isZero() {
     assertThat(ImmutableBitSet.EMPTY.cardinality()).isEqualTo(0);
-  }
-
-  @Test public void empty_size_is64() {
-    assertThat(ImmutableBitSet.EMPTY.size()).isEqualTo(64);
   }
 
   @Test public void empty_length_isZero() {
@@ -755,10 +737,6 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
-  @Test public void valueOf_oneWord_sizeIs64() {
-    assertThat(ImmutableBitSet.valueOf(new long[] {1L}).size()).isEqualTo(64);
-  }
-
   @Test public void valueOf_matchesBitSetValueOf_randomWord() {
     long[] words = {new Random(42).nextLong()};
     assertThat(ImmutableBitSet.valueOf(words).stream())
@@ -784,17 +762,12 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
-  @Test public void valueOf_fourWords_sizeIs256() {
-    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L, Long.MIN_VALUE}).size())
-        .isEqualTo(256);
-  }
-
   @Test public void valueOf_leadingZeroWords() {
     assertThat(ImmutableBitSet.valueOf(new long[] {0L, 0L, 1L}).stream()).containsExactly(128);
   }
 
-  @Test public void valueOf_trailingZeroWords_sizeIs64() {
-    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L}).size()).isEqualTo(64);
+  @Test public void valueOf_trailingZeroWords() {
+    assertThat(ImmutableBitSet.valueOf(new long[] {1L, 0L, 0L}).stream()).containsExactly(0);
   }
 
   @Test public void valueOf_arrayModifiedAfterwards_setUnchanged() {
@@ -925,10 +898,10 @@ public final class ImmutableBitSetTest {
     assertThat(Stream.<ImmutableBitSet>empty().collect(ImmutableBitSet.xor()).stream()).isEmpty();
   }
 
-  @Test public void xor_clearsHighBits_sizeShrinks() {
+  @Test public void xor_clearsHighBits_retainsLowBits() {
     ImmutableBitSet result =
         Stream.of(bitSetOf(1, 200), bitSetOf(200)).collect(ImmutableBitSet.xor());
-    assertThat(result.size()).isEqualTo(64);
+    assertThat(result.stream()).containsExactly(1);
   }
 
   @Test public void xor_combinesPartialResults() {
@@ -1083,30 +1056,6 @@ public final class ImmutableBitSetTest {
   @Test public void cardinality_matchesJavaUtilBitSet_randomBitsBelow5000() {
     int[] indices = randomIndices(500, 5000);
     assertThat(bitSetOf(indices).cardinality()).isEqualTo(javaUtilBitSetOf(indices).cardinality());
-  }
-
-  @Test public void size_emptySet_is64() {
-    assertThat(bitSetOf().size()).isEqualTo(64);
-  }
-
-  @Test public void size_onlyBit63_is64() {
-    assertThat(bitSetOf(63).size()).isEqualTo(64);
-  }
-
-  @Test public void size_onlyBit64_is128() {
-    assertThat(bitSetOf(64).size()).isEqualTo(128);
-  }
-
-  @Test public void size_onlyBit127_is128() {
-    assertThat(bitSetOf(127).size()).isEqualTo(128);
-  }
-
-  @Test public void size_onlyBit130_is192() {
-    assertThat(bitSetOf(130).size()).isEqualTo(192);
-  }
-
-  @Test public void size_onlyBit1000_is1024() {
-    assertThat(bitSetOf(1000).size()).isEqualTo(1024);
   }
 
   @Test public void stream_emptySet_isEmpty() {

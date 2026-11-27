@@ -56,9 +56,8 @@ public abstract class ImmutableBitSet {
   }
 
   /**
-   * Returns a new builder with room for the bits below {@code expectedBits}, the expected {@link
-   * #size} of the built set. Bits at or above {@code expectedBits} can still be set, and the built
-   * set's {@link #size} depends only on the bits that are set.
+   * Returns a new builder with initial space for bits below {@code expectedBits}. Bits at or above
+   * {@code expectedBits} can still be set, and the built set is trimmed to the bits that are set.
    *
    * @throws IllegalArgumentException if {@code expectedBits} is negative
    */
@@ -76,19 +75,20 @@ public abstract class ImmutableBitSet {
    *     Integer#MAX_VALUE}
    */
   public static ImmutableBitSet valueOf(long[] words) {
-    for (int i = words.length - 1; i >= 0; i--) {
-      long word = words[i];
-      if (word != 0) {
-        if (i == 0) {
-          return new SingleWord(word);
-        }
-        checkArgument(
-            i <= Integer.MAX_VALUE / 64,
-            "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", i);
-        return new MultiWord(BitSet.valueOf(words));
-      }
+    int n = words.length;
+    while (n > 0 && words[n - 1] == 0) {
+      n--;
     }
-    return EMPTY;
+    if (n == 0) {
+      return EMPTY;
+    }
+    if (n == 1) {
+      return new SingleWord(words[0]);
+    }
+    checkArgument(
+        n <= Integer.MAX_VALUE / 64 + 1,
+        "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", n - 1);
+    return new MultiWord(BitSet.valueOf(words));
   }
 
   /**
@@ -133,15 +133,6 @@ public abstract class ImmutableBitSet {
    * Integer.MAX_VALUE]} is set.
    */
   public abstract int cardinality();
-
-  /**
-   * Like {@link BitSet#size() BitSet.size()}, returns the number of bits of space used: 64 if every
-   * set bit is below 64 (including the empty set), otherwise 64 times the number of 64-bit words up
-   * to and including the one holding the highest set bit. As in {@code BitSet.size()}, this
-   * overflows to {@link Integer#MIN_VALUE} when any bit in {@code [Integer.MAX_VALUE - 63,
-   * Integer.MAX_VALUE]} is set.
-   */
-  public abstract int size();
 
   /** Returns true if no bit is set. */
   public abstract boolean isEmpty();
@@ -344,10 +335,6 @@ public abstract class ImmutableBitSet {
       return Long.bitCount(word);
     }
 
-    @Override public int size() {
-      return 64;
-    }
-
     @Override public boolean isEmpty() {
       return word == 0;
     }
@@ -437,10 +424,6 @@ public abstract class ImmutableBitSet {
       return result;
     }
 
-    @Override public int size() {
-      return bits.size();
-    }
-
     @Override public boolean isEmpty() {
       return false;
     }
@@ -478,7 +461,7 @@ public abstract class ImmutableBitSet {
       // unsynchronized write to a BitSet that other threads may be reading. or() only reads its
       // argument.
       // BitSet.size() overflows to Integer.MIN_VALUE when a bit >= Integer.MAX_VALUE - 63 is set.
-      return builderWithExpectedSize(overflowSafe(size())).or(this);
+      return builderWithExpectedSize(overflowSafe(bits.size())).or(this);
     }
 
     @Override BitSet asBitSet() {

@@ -118,10 +118,10 @@ public class ImmutableBitSetStreamBenchmark {
     assertThat(word).isEqualTo(-1L);
   }
 
-  @Test public void chooseBits_cardinality64_isSingleWordSet() {
+  @Test public void chooseBits_cardinality64_lengthIs64() {
     cardinality = 64;
     chooseBits();
-    assertThat(set.size()).isEqualTo(64);
+    assertThat(set.length()).isEqualTo(64);
   }
 
   @Test public void immutableBitSet_streamsSameBitsAsBitSet() {

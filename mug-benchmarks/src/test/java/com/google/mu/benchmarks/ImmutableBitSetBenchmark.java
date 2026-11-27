@@ -136,22 +136,22 @@ public class ImmutableBitSetBenchmark {
     }
   }
 
-  @Test public void smallUniverse_sizeIs64() {
+  @Test public void smallUniverse_lengthIs64() {
     universe = 64;
     buildBitSets();
-    assertThat(immutableBitSet.size()).isEqualTo(64);
+    assertThat(immutableBitSet.length()).isEqualTo(64);
   }
 
-  @Test public void universe128_sizeIs128() {
+  @Test public void universe128_lengthIs128() {
     universe = 128;
     buildBitSets();
-    assertThat(immutableBitSet.size()).isEqualTo(128);
+    assertThat(immutableBitSet.length()).isEqualTo(128);
   }
 
-  @Test public void largeUniverse_sizeIs1024() {
+  @Test public void largeUniverse_lengthIs1024() {
     universe = 1024;
     buildBitSets();
-    assertThat(immutableBitSet.size()).isEqualTo(1024);
+    assertThat(immutableBitSet.length()).isEqualTo(1024);
   }
 
   @Test public void universe128_immutableBitSetMatchesBitSet() {

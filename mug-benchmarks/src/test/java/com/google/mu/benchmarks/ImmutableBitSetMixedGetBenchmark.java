@@ -215,19 +215,19 @@ public class ImmutableBitSetMixedGetBenchmark {
                 smallAndLargeProbes, smallAndLargeBitSets[0]::get, smallAndLargeBitSets[1]::get));
   }
 
-  @Test public void smallAndLarge_sizesAre64And1024() {
+  @Test public void smallAndLarge_lengthsAre64And1024() {
     buildSets();
-    assertThat(sizes(smallAndLarge)).containsExactly(64, 1024).inOrder();
+    assertThat(lengths(smallAndLarge)).containsExactly(64, 1024).inOrder();
   }
 
-  @Test public void smallOnly_sizesAre64() {
+  @Test public void smallOnly_lengthsAre64() {
     buildSets();
-    assertThat(sizes(smallOnly)).containsExactly(64, 64);
+    assertThat(lengths(smallOnly)).containsExactly(64, 64);
   }
 
-  @Test public void largeOnly_sizesAre1024() {
+  @Test public void largeOnly_lengthsAre1024() {
     buildSets();
-    assertThat(sizes(largeOnly)).containsExactly(1024, 1024);
+    assertThat(lengths(largeOnly)).containsExactly(1024, 1024);
   }
 
   @Test public void emptyOnly_setsAreEmpty() {
@@ -297,8 +297,8 @@ public class ImmutableBitSetMixedGetBenchmark {
     return results;
   }
 
-  private static List<Integer> sizes(ImmutableBitSet[] sets) {
-    return Arrays.stream(sets).map(ImmutableBitSet::size).collect(toList());
+  private static List<Integer> lengths(ImmutableBitSet[] sets) {
+    return Arrays.stream(sets).map(ImmutableBitSet::length).collect(toList());
   }
 
   public static void main(String[] args) throws Exception {
