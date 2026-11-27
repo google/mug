@@ -667,6 +667,10 @@ public final class ImmutableBitSetTest {
     assertThat(ImmutableBitSet.EMPTY.toLongArray()).isEmpty();
   }
 
+  @Test public void empty_toByteArray_isEmpty() {
+    assertThat(ImmutableBitSet.EMPTY.toByteArray()).isEmpty();
+  }
+
   @Test public void empty_toString() {
     assertThat(ImmutableBitSet.EMPTY.toString()).isEqualTo("{}");
   }
@@ -719,8 +723,8 @@ public final class ImmutableBitSetTest {
     assertThat(ImmutableBitSet.valueOf(new long[] {0L}).stream()).isEmpty();
   }
 
-  @Test public void valueOf_nullArray_throws() {
-    assertThrows(NullPointerException.class, () -> ImmutableBitSet.valueOf(null));
+  @Test public void valueOf_nullLongArray_throws() {
+    assertThrows(NullPointerException.class, () -> ImmutableBitSet.valueOf((long[]) null));
   }
 
   @Test public void valueOf_bit0() {
@@ -784,15 +788,6 @@ public final class ImmutableBitSetTest {
         .inOrder();
   }
 
-  @Test public void valueOf_bitIndexExceedsIntegerMaxValue_throws() {
-    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
-    long[] words = new long[Integer.MAX_VALUE / 64 + 2];
-    words[Integer.MAX_VALUE / 64 + 1] = 1L;
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> ImmutableBitSet.valueOf(words));
-    assertThat(thrown).hasMessageThat().contains("Integer.MAX_VALUE");
-  }
-
   @Test public void valueOf_trailingZeroWordPastIntegerMaxValue_succeeds() {
     assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
     long[] words = new long[Integer.MAX_VALUE / 64 + 2];
@@ -805,6 +800,107 @@ public final class ImmutableBitSetTest {
     long[] words = new long[Integer.MAX_VALUE / 64 + 1];
     words[Integer.MAX_VALUE / 64] = Long.MIN_VALUE;
     assertThat(ImmutableBitSet.valueOf(words).stream()).containsExactly(Integer.MAX_VALUE);
+  }
+
+  @Test public void valueOfBytes_emptyArray_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new byte[0])).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void valueOfBytes_singleZeroByte_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {0})).isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void valueOfBytes_allZeroBytes_returnsEmpty() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0}))
+        .isSameInstanceAs(ImmutableBitSet.EMPTY);
+  }
+
+  @Test public void valueOfBytes_nullArray_throws() {
+    assertThrows(NullPointerException.class, () -> ImmutableBitSet.valueOf((byte[]) null));
+  }
+
+  @Test public void valueOfBytes_bit0() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {1}).stream()).containsExactly(0);
+  }
+
+  @Test public void valueOfBytes_bit7_signedNegativeByte() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {(byte) 0x80}).stream()).containsExactly(7);
+  }
+
+  @Test public void valueOfBytes_bit8() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {0, 1}).stream()).containsExactly(8);
+  }
+
+  @Test public void valueOfBytes_bit63() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {0, 0, 0, 0, 0, 0, 0, (byte) 0x80}).stream())
+        .containsExactly(63);
+  }
+
+  @Test public void valueOfBytes_eightMinusOneBytes_allBitsBelow64() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {-1, -1, -1, -1, -1, -1, -1, -1}).stream())
+        .containsExactlyElementsIn(IntStream.range(0, 64).boxed().collect(toList()))
+        .inOrder();
+  }
+
+  @Test public void valueOfBytes_nineBytes_bit64() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 1}).stream())
+        .containsExactly(64);
+  }
+
+  @Test public void valueOfBytes_multipleBytes() {
+    assertThat(
+            ImmutableBitSet.valueOf(new byte[] {1, 0, 0, 0, 0, 0, 0, 0, 1, (byte) 0x80}).stream())
+        .containsExactly(0, 64, 79)
+        .inOrder();
+  }
+
+  @Test public void valueOfBytes_trailingZeroBytes_beyondEightBytes() {
+    assertThat(ImmutableBitSet.valueOf(new byte[] {1, 0, 0, 0, 0, 0, 0, 0, 0, 0}).stream())
+        .containsExactly(0);
+  }
+
+  @Test public void valueOfBytes_arrayModifiedAfterwards_singleWordUnchanged() {
+    byte[] bytes = {1, 2};
+    ImmutableBitSet set = ImmutableBitSet.valueOf(bytes);
+    bytes[0] = 0;
+    assertThat(set.stream()).containsExactly(0, 9).inOrder();
+  }
+
+  @Test public void valueOfBytes_arrayModifiedAfterwards_multiWordUnchanged() {
+    byte[] bytes = {1, 0, 0, 0, 0, 0, 0, 0, 1};
+    ImmutableBitSet set = ImmutableBitSet.valueOf(bytes);
+    bytes[0] = 0;
+    assertThat(set.stream()).containsExactly(0, 64).inOrder();
+  }
+
+  @Test public void valueOfBytes_matchesBitSetValueOf_randomSingleWordBytes() {
+    byte[] bytes = new byte[7];
+    new Random(42).nextBytes(bytes);
+    assertThat(ImmutableBitSet.valueOf(bytes).stream())
+        .containsExactlyElementsIn(BitSet.valueOf(bytes).stream().boxed().collect(toList()))
+        .inOrder();
+  }
+
+  @Test public void valueOfBytes_matchesBitSetValueOf_randomMultiWordBytes() {
+    byte[] bytes = new byte[25];
+    new Random(42).nextBytes(bytes);
+    assertThat(ImmutableBitSet.valueOf(bytes).stream())
+        .containsExactlyElementsIn(BitSet.valueOf(bytes).stream().boxed().collect(toList()))
+        .inOrder();
+  }
+
+  @Test public void valueOfBytes_trailingZeroBytePastIntegerMaxValue_succeeds() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    byte[] bytes = new byte[Integer.MAX_VALUE / 8 + 2];
+    bytes[0] = 1;
+    assertThat(ImmutableBitSet.valueOf(bytes).stream()).containsExactly(0);
+  }
+
+  @Test public void valueOfBytes_bitIntegerMaxValue_isSet() {
+    assumeTrue(Runtime.getRuntime().maxMemory() >= 1024L * 1024 * 1024);
+    byte[] bytes = new byte[Integer.MAX_VALUE / 8 + 1];
+    bytes[Integer.MAX_VALUE / 8] = (byte) 0x80;
+    assertThat(ImmutableBitSet.valueOf(bytes).stream()).containsExactly(Integer.MAX_VALUE);
   }
 
   @Test public void toImmutableBitSet_collectsIndices() {
@@ -1350,6 +1446,58 @@ public final class ImmutableBitSetTest {
   @Test public void toLongArray_valueOfRoundTrip_equalsOriginal() {
     ImmutableBitSet set = bitSetOf(1, 64, 200);
     assertThat(ImmutableBitSet.valueOf(set.toLongArray())).isEqualTo(set);
+  }
+
+  @Test public void toByteArray_emptySet_isEmpty() {
+    assertThat(bitSetOf().toByteArray()).isEmpty();
+  }
+
+  @Test public void toByteArray_singleByte_bit0() {
+    assertThat(bitSetOf(0).toByteArray()).isEqualTo(new byte[] {1});
+  }
+
+  @Test public void toByteArray_singleByte_bit7() {
+    assertThat(bitSetOf(7).toByteArray()).isEqualTo(new byte[] {(byte) 0x80});
+  }
+
+  @Test public void toByteArray_twoBytes_bit8() {
+    assertThat(bitSetOf(8).toByteArray()).isEqualTo(new byte[] {0, 1});
+  }
+
+  @Test public void toByteArray_eightBytes_bit63() {
+    assertThat(bitSetOf(63).toByteArray()).isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, (byte) 0x80});
+  }
+
+  @Test public void toByteArray_multiWordSet() {
+    assertThat(bitSetOf(0, 64, 79).toByteArray())
+        .isEqualTo(new byte[] {1, 0, 0, 0, 0, 0, 0, 0, 1, (byte) 0x80});
+  }
+
+  @Test public void toByteArray_matchesJavaUtilBitSet_randomBitsBelow64() {
+    int[] indices = randomIndices(40, 64);
+    assertThat(bitSetOf(indices).toByteArray()).isEqualTo(javaUtilBitSetOf(indices).toByteArray());
+  }
+
+  @Test public void toByteArray_matchesJavaUtilBitSet_randomBitsBelow5000() {
+    int[] indices = randomIndices(500, 5000);
+    assertThat(bitSetOf(indices).toByteArray()).isEqualTo(javaUtilBitSetOf(indices).toByteArray());
+  }
+
+  @Test public void toByteArray_arrayModified_setUnchanged() {
+    ImmutableBitSet set = bitSetOf(0, 64);
+    byte[] bytes = set.toByteArray();
+    bytes[0] = 0;
+    assertThat(set.stream()).containsExactly(0, 64).inOrder();
+  }
+
+  @Test public void toByteArray_valueOfRoundTrip_singleWord_equalsOriginal() {
+    ImmutableBitSet set = bitSetOf(0, 7, 15, 63);
+    assertThat(ImmutableBitSet.valueOf(set.toByteArray())).isEqualTo(set);
+  }
+
+  @Test public void toByteArray_valueOfRoundTrip_multiWord_equalsOriginal() {
+    ImmutableBitSet set = bitSetOf(1, 64, 200);
+    assertThat(ImmutableBitSet.valueOf(set.toByteArray())).isEqualTo(set);
   }
 
   private static ImmutableBitSet bitSetOf(int... indices) {

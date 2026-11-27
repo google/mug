@@ -36,8 +36,9 @@ import java.util.stream.StreamSupport;
  * to share between threads. The differences from {@code BitSet}:
  *
  * <ul>
- *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long[])} or {@link
- *       #toImmutableBitSet} to create a set, and {@link #toBuilder} to derive a modified copy.
+ *   <li>There are no mutating methods. Use {@link #builder}, {@link #valueOf(long[])}, {@link
+ *       #valueOf(byte[])} or {@link #toImmutableBitSet} to create a set, and {@link #toBuilder} to
+ *       derive a modified copy.
  *   <li>There is no {@link BitSet#nextSetBit(int) BitSet.nextSetBit()}; in place of the legacy
  *       {@code nextSetBit()} loop, use {@link #stream stream()}{@code .forEach(...)}.
  *   <li>{@link #intersects} takes another {@code ImmutableBitSet}.
@@ -70,25 +71,18 @@ public abstract class ImmutableBitSet {
    * Returns the set of bits that are set in {@code words}, in the same little-endian layout as
    * {@link BitSet#valueOf(long[]) BitSet.valueOf(long[])}: bit {@code n} is in the set if {@code
    * (words[n / 64] & (1L << (n % 64))) != 0}, for all {@code n < 64 * words.length}.
-   *
-   * @throws IllegalArgumentException if any set bit would have an index above {@link
-   *     Integer#MAX_VALUE}
    */
   public static ImmutableBitSet valueOf(long[] words) {
-    int n = words.length;
-    while (n > 0 && words[n - 1] == 0) {
-      n--;
-    }
-    if (n == 0) {
-      return EMPTY;
-    }
-    if (n == 1) {
-      return new SingleWord(words[0]);
-    }
-    checkArgument(
-        n <= Integer.MAX_VALUE / 64 + 1,
-        "bit index exceeds Integer.MAX_VALUE (non-zero word at index %s)", n - 1);
-    return new MultiWord(BitSet.valueOf(words));
+    return new Builder(BitSet.valueOf(words)).build();
+  }
+
+  /**
+   * Returns the set of bits that are set in {@code bytes}, in the same little-endian layout as
+   * {@link BitSet#valueOf(byte[]) BitSet.valueOf(byte[])}: bit {@code n} is in the set if {@code
+   * (bytes[n / 8] & (1 << (n % 8))) != 0}, for all {@code n < 8 * bytes.length}.
+   */
+  public static ImmutableBitSet valueOf(byte[] bytes) {
+    return new Builder(BitSet.valueOf(bytes)).build();
   }
 
   /**
@@ -158,6 +152,14 @@ public abstract class ImmutableBitSet {
    * #valueOf(long[])} and without trailing zero words, like {@link BitSet#toLongArray()}.
    */
   public abstract long[] toLongArray();
+
+  /**
+   * Returns the set bits as a new array of bytes, in the little-endian layout of {@link
+   * #valueOf(byte[])} and without trailing zero bytes, like {@link BitSet#toByteArray()}.
+   */
+  public final byte[] toByteArray() {
+    return asBitSet().toByteArray();
+  }
 
   /** Returns true if {@code obj} is an {@code ImmutableBitSet} with the same bits set. */
   @Override public abstract boolean equals(Object obj);
